@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTrigger, DialogContent,
   DialogHeader, DialogTitle, DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogCamBoyaDuzenle = ({ color, onSave }) => {
   const [form, setForm] = useState({ name: '', unit_cost: 0 });

@@ -3,17 +3,17 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import Header from "@/components/mycomponents/Header";
-import { getSistemlerFromApi, addSystemVariantToApi } from "@/redux/actions/actions_sistemler";
+import Header from "@/components/mycomponents/Header.jsx";
+import { getSistemlerFromApi, addSystemVariantToApi } from "@/redux/actions/actions_sistemler.js";
 
 // Seçim diyalogları — PagedSelectDialog tabanlı (tutarlılık için düzen ekrandakiyle aynı katman)
-import DialogProfilSec from "./DialogProfilSec";
-import DialogCamSec from "./DialogCamSec";
-import DialogMalzemeSec from "./DialogMalzemeSec";
-import DialogKumandaSec from "./DialogKumandaSec";
+import DialogProfilSec from "./DialogProfilSec.jsx";
+import DialogCamSec from "./DialogCamSec.jsx";
+import DialogMalzemeSec from "./DialogMalzemeSec.jsx";
+import DialogKumandaSec from "./DialogKumandaSec.jsx";
 
 // PDF ayar modalı (shadcn/ui dialog ile)
-import DialogPdfAyar from "./DialogPdfAyar";
+import DialogPdfAyar from "./DialogPdfAyar.jsx";
 
 const SistemVaryantOlustur = () => {
   const dispatch = useDispatch();

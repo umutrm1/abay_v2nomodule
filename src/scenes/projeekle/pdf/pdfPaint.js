@@ -1,7 +1,7 @@
 // src/utils/pdf/pdfPaint.js
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon";
+import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
 /* ───── yardımcılar ───── */
 function arrayBufferToBase64(buf) {
   return new Promise((resolve, reject) => {
@@ -243,13 +243,16 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
   let cursorY = header.bottomY;
 
   /* (2) PDF filtresi: yalnızca pdf.boyaCiktisi === true olan profiller */
-  const filteredRequirements = {
-    ...requirements,
-    systems: (requirements?.systems || []).map(sys => ({
-      ...sys,
-      profiles: (sys?.profiles || []).filter(p => p?.pdf?.boyaCiktisi === true)
-    }))
-  };
+const filteredRequirements = {
+  ...requirements,
+  systems: (requirements?.systems || []).map(sys => ({
+    ...sys,
+    profiles: (sys?.profiles || [])
+      .filter(p => p?.pdf?.boyaCiktisi === true)
+      .slice()
+      .sort((a, b) => (a?.order_index ?? 0) - (b?.order_index ?? 0))
+  }))
+};
   // opt. girdisi (filtrelenmiş profiller)
   const siparis = {
     urunler: (filteredRequirements.systems || []).map(sys => ({

@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogProfilEkle = ({ onSave }) => {
   // 1) Form alanlarını tutacak state

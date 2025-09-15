@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogSistemEkle = ({ system, onSave }) => {
   // 1) system varsa düzenleme, yoksa ekleme formu

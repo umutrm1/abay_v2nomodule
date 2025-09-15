@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     getSistemlerFromApi,                 // tüm sistemleri çeker
     getSystemVariantsOfSystemFromApi     // seçilen sistemin variant’larını çeker
-} from '@/redux/actions/actions_sistemler';
+} from '@/redux/actions/actions_sistemler.js';
 
 const SistemSec = () => {
     // 1) dispatch ile action’lar tetiklenecek

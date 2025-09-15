@@ -1,7 +1,7 @@
 // src/utils/pdf/pdfOptimizeProfiles.js
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon";
+import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
 
 /**
  * Optimize Profiller PDF
@@ -211,13 +211,16 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
       : (f.optimizasyonDetaysizCiktisi === true);
   };
 
-  const filteredRequirements = {
-    ...requirements,
-    systems: (requirements?.systems || []).map(sys => ({
-      ...sys,
-      profiles: (sys?.profiles || []).filter(shouldIncludeProfile)
-    }))
-  };
+const filteredRequirements = {
+  ...requirements,
+  systems: (requirements?.systems || []).map(sys => ({
+    ...sys,
+    profiles: (sys?.profiles || [])
+      .filter(shouldIncludeProfile)
+      .slice()
+      .sort((a, b) => (a?.order_index ?? 0) - (b?.order_index ?? 0))
+  }))
+};
 
   // optimizasyon girdisi (yalnız filtrelenmiş profiller)
   const siparis = {

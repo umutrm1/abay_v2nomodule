@@ -9,10 +9,10 @@ import {
   editSystemOnApi,
   getSystemVariantsFromApi,
   deleteSystemVariantOnApi,
-} from '@/redux/actions/actions_sistemler';
-import Header from '@/components/mycomponents/Header';
-import DialogSistemEkle from './DialogSistemEkle';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from '@/redux/actions/actions_sistemler.js';
+import Header from '@/components/mycomponents/Header.jsx';
+import DialogSistemEkle from './DialogSistemEkle.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">

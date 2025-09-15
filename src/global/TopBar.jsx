@@ -1,10 +1,10 @@
 // src/global/TopBar.jsx
 import React, { useState, useContext, useRef, useEffect } from "react";
-import { SidebarContext } from "./SidebarContext";
+import { SidebarContext } from "./SideBarContext.jsx";
 import profileImg from "../assets/tumen_aliminyum_logo.png";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logoutUser } from "@/redux/actions/authActions";
+import { logoutUser } from "@/redux/actions/authActions.js";
 
 export default function TopBar() {
   const { expanded } = useContext(SidebarContext);

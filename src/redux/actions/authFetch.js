@@ -1,5 +1,5 @@
 // src/redux/actions/authFetch.js  (mevcut dosyanın üstüne yaz)
-import { LOGIN_SUCCESS, LOAD_USER_FAIL, LOGOUT } from "./actionTypes";
+import { LOGIN_SUCCESS, LOAD_USER_FAIL, LOGOUT } from "./actionTypes.js";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Aynı anda birden fazla refresh olmasın

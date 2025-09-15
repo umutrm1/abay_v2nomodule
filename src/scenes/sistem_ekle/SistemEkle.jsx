@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { getSystemFullVariantsOfSystemFromApi } from '@/redux/actions/actions_sistemler';
-import { addRequirementsToProjeToApi } from '@/redux/actions/actions_projeler';
+import { getSystemFullVariantsOfSystemFromApi } from '@/redux/actions/actions_sistemler.js';
+import { addRequirementsToProjeToApi } from '@/redux/actions/actions_projeler.js';
 import { ReactComponent as PencilRuler } from '../../icons/pencil-ruler_v2.svg';
 import * as math from 'mathjs';
-import SistemEkleTables from './SistemEkleTables';
-import { getProjeRequirementsFromApi } from '@/redux/actions/actions_projeler';
+import SistemEkleTables from './SistemEkleTables.jsx';
+import { getProjeRequirementsFromApi } from '@/redux/actions/actions_projeler.js';
 
 const SistemEkle = () => {
   const { projectId, variantId } = useParams();

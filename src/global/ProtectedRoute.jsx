@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { refreshAccessToken } from '@/redux/actions/authActions'
+import { refreshAccessToken } from '@/redux/actions/authActions.js'
 
 function isExpired(jwt) {
   try {

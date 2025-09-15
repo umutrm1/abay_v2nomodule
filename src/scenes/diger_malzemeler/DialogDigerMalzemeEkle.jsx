@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogDigerMalzemeEkle = ({ onSave }) => {
   const [form, setForm] = useState({

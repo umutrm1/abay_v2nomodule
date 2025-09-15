@@ -6,11 +6,11 @@ import {
   addKumandaToApi,
   editKumandaOnApi,
   deleteKumandaOnApi
-} from '@/redux/actions/actions_kumandalar';
-import DialogKumandaEkle from './DialogKumandaEkle';
-import DialogKumandaDuzenle from './DialogKumandaDuzenle';
-import Header from '@/components/mycomponents/Header';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from '@/redux/actions/actions_kumandalar.js';
+import DialogKumandaEkle from './DialogKumandaEkle.jsx';
+import DialogKumandaDuzenle from './DialogKumandaDuzenle.jsx';
+import Header from '@/components/mycomponents/Header.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 // DigerMalzemeler.jsx'deki ile aynı görsel spinner
 const Spinner = () => (

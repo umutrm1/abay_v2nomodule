@@ -1,12 +1,12 @@
 // src/scenes/projeler/Projeler.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import * as actions_projeler from "@/redux/actions/actions_projeler";
+import * as actions_projeler from "@/redux/actions/actions_projeler.js";
 
-import DialogProjeEkle from './DialogProjeEkle';
-import Header from '@/components/mycomponents/Header';
+import DialogProjeEkle from './DialogProjeEkle.jsx';
+import Header from '@/components/mycomponents/Header.jsx';
 import { useNavigate } from 'react-router-dom';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">

@@ -1,16 +1,16 @@
 // src/scenes/diger_malzemeler/DigerMalzemeler.jsx
 import React, { useEffect, useState, useCallback } from 'react';
-import DialogDigerMalzemeEkle from './DialogDigerMalzemeEkle';
-import DialogDigerMalzemeDuzenle from './DialogDigerMalzemeDuzenle';
+import DialogDigerMalzemeEkle from './DialogDigerMalzemeEkle.jsx';
+import DialogDigerMalzemeDuzenle from './DialogDigerMalzemeDuzenle.jsx';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   getDigerMalzemelerFromApi,
   addDigerMalzemeToApi,
   editDigerMalzemeOnApi,
   sellDigerMalzemeOnApi
-} from '@/redux/actions/actions_diger_malzemeler';
-import Header from '@/components/mycomponents/Header';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from '@/redux/actions/actions_diger_malzemeler.js';
+import Header from '@/components/mycomponents/Header.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
     <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>

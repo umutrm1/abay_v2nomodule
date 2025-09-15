@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogProjeEkle = ({ onSave }) => {
   // 2) Yeni proje objesini tek alanlı olarak tutmak için state oluşturuyoruz:

@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import PagedSelectDialog from "./PagedSelectDialog";
-import { getDigerMalzemelerFromApi } from "@/redux/actions/actions_diger_malzemeler";
+import PagedSelectDialog from "./PagedSelectDialog.jsx";
+import { getDigerMalzemelerFromApi } from "@/redux/actions/actions_diger_malzemeler.js";
 
 const EMPTY_PAGE = { items: [], total: 0, page: 1, limit: 5, total_pages: 1, has_next: false, has_prev: false };
 const LIMIT = 5;

@@ -7,7 +7,7 @@ import {
   LOGIN_FAILURE,
   LOAD_USER,
   LOAD_USER_FAIL
-} from './actionTypes'
+} from './actionTypes.js'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,

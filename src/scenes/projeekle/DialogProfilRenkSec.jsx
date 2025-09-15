@@ -1,8 +1,8 @@
 // src/components/dialogs/DialogProfilRenkSec.jsx
 import React, { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import PagedSelectDialog from "./PagedSelectDialog";
-import { getProfileColorFromApi } from "@/redux/actions/actions_boyalar";
+import PagedSelectDialog from "./PagedSelectDialog.jsx";
+import { getProfileColorFromApi } from "@/redux/actions/actions_boyalar.js";
 
 const EMPTY_PAGE = { items: [], total: 0, page: 1, limit: 5, total_pages: 1, has_next: false, has_prev: false };
 const LIMIT = 5;

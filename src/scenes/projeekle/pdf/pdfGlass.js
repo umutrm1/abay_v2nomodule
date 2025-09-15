@@ -1,7 +1,7 @@
 // src/scenes/projeekle/pdf/pdfGlass.js
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { mapGlass } from "./mappers/glass.mapper";
+import { mapGlass } from "./mappers/glass.mapper.js";
 
 /* ===================== ortak yardımcılar ===================== */
 function arrayBufferToBase64(buf) {

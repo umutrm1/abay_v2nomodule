@@ -1,8 +1,5 @@
-import SideBar from "./global/SideBar";
-import Topbar from "./global/TopBar";
-import ContentArea from "./global/ContentArea";
-import { useState,useContext } from "react";
-import { SidebarProvider } from "./global/SidebarContext";
+import ContentArea from "./global/ContentArea.jsx";
+import { SidebarProvider } from "./global/SideBarContext.jsx";
 
 function App() {
   return (

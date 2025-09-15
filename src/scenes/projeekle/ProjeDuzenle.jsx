@@ -1,25 +1,23 @@
 // src/scenes/projeekle/ProjeDuzenle.jsx
-import DialogMusteriSec from './DialogMusteriSec';
-import DialogCamRenkSec from './DialogCamRenkSec';
-import DialogProfilRenkSec from './DialogProfilRenkSec';
+import DialogMusteriSec from './DialogMusteriSec.jsx';
+import DialogCamRenkSec from './DialogCamRenkSec.jsx';
+import DialogProfilRenkSec from './DialogProfilRenkSec.jsx';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
-import * as actions_projeler from '../../redux/actions/actions_projeler';
-import { getProfilImageFromApi } from '../../redux/actions/actions_profiller';
-import Header from '@/components/mycomponents/Header';
-import SistemTable from './SistemTable';
-import MalzemeTable from './MalzemeTable';
+import * as actions_projeler from '../../redux/actions/actions_projeler.js';
+import { getProfilImageFromApi } from '../../redux/actions/actions_profiller.js';
+import Header from '@/components/mycomponents/Header.jsx';
+import SistemTable from './SistemTable.jsx';
+import MalzemeTable from './MalzemeTable.jsx';
 import { ReactComponent as Paintbrush } from '../../icons/paintbrush.svg';
 import { ReactComponent as User } from '../../icons/user_v2.svg';
-import { getBrandConfigByKey, getPdfConfigByKey } from '@/redux/actions/actions_pdfConfig';
-import { generateCamCiktisiPdf } from './pdf/pdfGlass';
-import { generateOrderPdf } from './pdf/pdfOrder';
-import { generatePaintPdf } from './pdf/pdfPaint';
-import { generateProfileAccessoryPdf } from './pdf/pdfProfileAccessory';
-import { generateOptimizeProfilesPdf } from './pdf/pdfOptimizeProfiles';
-import { getBrandImage, getPdfBrandByKey, getPdfTitleByKey } from '@/redux/actions/actionsPdf';
+import { generateCamCiktisiPdf } from './pdf/pdfGlass.js';
+import { generateOrderPdf } from './pdf/pdfOrder.js';
+import { generatePaintPdf } from './pdf/pdfPaint.js';
+import { generateOptimizeProfilesPdf } from './pdf/pdfOptimizeProfiles.js';
+import { getBrandImage, getPdfBrandByKey, getPdfTitleByKey } from '@/redux/actions/actionsPdf.js';
 // ✅ Spinner
 const Spinner = () => (
   <div className="flex justify-center items-center py-10 w-full h-full">
@@ -59,7 +57,6 @@ const ProjeDuzenle = () => {
   const proje = useSelector(state => state.getProjeFromApiReducer) || null;
   const requirements = useSelector(state => state.getProjeRequirementsFromApiReducer) ||
     { systems: [], extra_requirements: [], extra_profiles: [], extra_glasses: [] };
-  const brandLogoUrl = useSelector(state => state.getBrandImageReducer?.logo_url) || null;
   // ✅ İlk yüklemelerde ilgili API çağrılarını spinner ile sarmala
   useEffect(() => {
     const fetchData = async () => {
@@ -67,7 +64,6 @@ const ProjeDuzenle = () => {
         setLoading(true);
         await dispatch(actions_projeler.getProjeFromApi(id));
         await dispatch(actions_projeler.getProjeRequirementsFromApi(id));
-        await dispatch(getBrandImage());
 
       } finally {
         setLoading(false);
@@ -151,65 +147,22 @@ setPaintedPrice(
             </div>
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-white rounded-box w-52">
               <li className='hover:bg-gray-200'>
-                <a onClick={async () => {
-                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
-                  const brandCfg = brandCfgold.config_json
-                  const accCfgold = await dispatch(getPdfTitleByKey('pdf.profileAccessory'));
-                  const accCfg = accCfgold.config_json
-                  await generateProfileAccessoryPdf(
-                    {
-                      dispatch,
-                      getProfilImageFromApi,
-                      projectName,
-                      projectCode,
-                      proje,
-                      requirements,
-                      brandLogoUrl,
-                      // ✅ PDF tarafına state'teki değerleri de ilet
-                      pressPrice: pressPrice === '' ? null : Number(pressPrice),
-                      paintedPrice: paintedPrice === '' ? null : Number(paintedPrice)
-                    },
-                    accCfg,
-                    brandCfg,
-                    // ✅ "Press" modu
-                    { pricingMode: 'press' }
-                  );
-                }}>
+                <a onClick={() => navigate(`/profilaksesuar/edit/${id}?mode=press`)}>
                   Press
                 </a>
               </li>
               <li className='hover:bg-gray-200'>
-                <a onClick={async () => {
-                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
-                  const brandCfg = brandCfgold.config_json
-                  const accCfgold = await dispatch(getPdfTitleByKey('pdf.profileAccessory'));
-                  const accCfg = accCfgold.config_json
-                  await generateProfileAccessoryPdf(
-                    {
-                      dispatch,
-                      getProfilImageFromApi,
-                      projectName,
-                      projectCode,
-                      proje,
-                      requirements,
-                      brandLogoUrl,
-                      pressPrice: pressPrice === '' ? null : Number(pressPrice),
-                      paintedPrice: paintedPrice === '' ? null : Number(paintedPrice)
-                    },
-                    accCfg,
-                    brandCfg,
-                    // ✅ "Boyalı" modu
-                    { pricingMode: 'painted' }
-                  );
-                }}>
+                <a onClick={() => navigate(`/profilaksesuar/edit/${id}?mode=painted`)}>
                   Boyalı
                 </a>
               </li>
             </ul>
           </div>
           <button className="btn btn-sm btn-outline" onClick={async () => {
-            const brandCfg = await dispatch(getBrandConfigByKey('brand.default'));
-            const paintCfg = await dispatch(getPdfConfigByKey('pdf.paint'));
+                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
+                  const brandCfg = brandCfgold.config_json
+            const paintCfgold = await dispatch(getPdfTitleByKey('pdf.paint0'));
+            const paintCfg = paintCfgold.config_json
             await generatePaintPdf(
               {
                 dispatch,
@@ -226,8 +179,11 @@ setPaintedPrice(
             Boya Çıktısı
           </button>
           <button className="btn btn-sm" onClick={async () => {
-            const brandCfg = await dispatch(getBrandConfigByKey('brand.default'));
-            const orderCfg = await dispatch(getPdfConfigByKey('pdf.order'));
+                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
+                  const brandCfg = brandCfgold.config_json
+                  const orderCfgold = await dispatch(getPdfTitleByKey('pdf.order0'));
+            const orderCfg = orderCfgold.config_json
+
             await generateOrderPdf(
               {
                 dispatch,
@@ -241,11 +197,14 @@ setPaintedPrice(
               brandCfg
             );
           }}>
-            Sipariş Çıktısı
+            Üretim Çıktısı
           </button>
           <button className="btn btn-sm" onClick={async () => {
-            const brandCfg = await dispatch(getBrandConfigByKey('brand.default'));
-            const glassCfg = await dispatch(getPdfConfigByKey('pdf.glass'));
+                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
+                  const brandCfg = brandCfgold.config_json
+                  const glassCfgold = await dispatch(getPdfTitleByKey('pdf.glass0'));
+                  const glassCfg = glassCfgold.config_json
+
             await generateCamCiktisiPdf(
               { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
               glassCfg,
@@ -261,9 +220,11 @@ setPaintedPrice(
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-white rounded-box w-52">
               <li className='hover:bg-gray-200'>
                 <a onClick={async () => {
-                  const brandCfg = await dispatch(getBrandConfigByKey('brand.default'));
-                  const detaysizCfg = await dispatch(getPdfConfigByKey('pdf.optimize.detaysiz'));
-                  const detayliCfg = await dispatch(getPdfConfigByKey('pdf.optimize.detayli'));
+                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
+                  const brandCfg = brandCfgold.config_json
+                  const detayliCfgold = await dispatch(getPdfTitleByKey('pdf.optimize.detayli0'));
+                  const detayliCfg = detayliCfgold.config_json
+
                   await generateOptimizeProfilesPdf({ dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements }, 'detayli', detayliCfg, brandCfg);
                 }}>
                   Detaylı
@@ -271,9 +232,10 @@ setPaintedPrice(
               </li>
               <li className='hover:bg-gray-200'>
                 <a onClick={async () => {
-                  const brandCfg = await dispatch(getBrandConfigByKey('brand.default'));
-                  const detaysizCfg = await dispatch(getPdfConfigByKey('pdf.optimize.detaysiz'));
-                  const detayliCfg = await dispatch(getPdfConfigByKey('pdf.optimize.detayli'));
+                  const brandCfgold = await dispatch(getPdfBrandByKey('brand.default'));
+                  const brandCfg = brandCfgold.config_json
+                  const detaysizCfgold = await dispatch(getPdfTitleByKey('pdf.optimize.detaysiz0'));
+                  const detaysizCfg = detaysizCfgold.config_json
                   await generateOptimizeProfilesPdf({ dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements }, 'detaysiz', detaysizCfg, brandCfg);
                 }}>
                   Detaysız

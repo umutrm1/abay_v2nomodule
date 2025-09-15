@@ -1,41 +1,39 @@
 // src/global/ContentArea.jsx
 import React, { useContext } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { SidebarContext } from "./SidebarContext";
+import { SidebarContext } from "./SideBarContext.jsx";
 
-import SideBar from "./SideBar";
-import TopBar from "./TopBar";
-import ProtectedRoute from "./ProtectedRoute";
+import SideBar from "./SideBar.jsx";
+import TopBar from "./TopBar.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
 
-import LoginScreen from "@/scenes/login_screen/LoginScreen";
-import Profiller from "../scenes/profiller/Profiller";
-import AnaSayfa from "../scenes/ana_sayfa/AnaSayfa";
-import Bayiler from "../scenes/bayiler/Bayiler";
-import Musteriler from "../scenes/musteriler/Musteriler";
-import Projeler from "../scenes/projeler/Projeler";
-import Siparisler from "../scenes/siparisler/Siparisler";
-import Sistemler from "../scenes/sistemler/Sistemler";
-import Camlar from "../scenes/camlar/Camlar";
-import DigerMalzemeler from "../scenes/diger_malzemeler/DigerMalzemeler";
-import Bildirimler from "../scenes/bildirimler/Bildirimler";
-import Takvim from "../scenes/takvim/Takvim";
-import BarGrafigi from "../scenes/bar_grafigi/BarGrafigi";
-import PastaGrafigi from "../scenes/pasta_grafigi/PastaGrafigi";
-import CizgiGrafigi from "../scenes/cizgi_grafigi/CizgiGrafigi";
-import Sss from "../scenes/sss/Sss";
-import SiparisEkle from "../scenes/siparisekle/SiparisEkle";
-import SiparisDetay from "@/scenes/siparisdetay/SiparisDetay";
-import ProjeDuzenle from "@/scenes/projeekle/ProjeDuzenle";
-import SistemEkle from "@/scenes/sistem_ekle/SistemEkle";
-import SistemSec from "@/scenes/sistemsec/SistemSec";
-import EkstraMalzemeEkle from "@/scenes/ekstramalzemeekle/EkstraMalzemeEkle";
-import SistemVaryantOlustur from "@/scenes/sistemler/SistemVaryantOlustur";
-import Boyalar from "@/scenes/boyalar/Boyalar";
-import TanimlanmayanSayfa from "@/scenes/tanimlanmayan_sayfa/TanimlanmayanSayfa";
-import SistemVaryantDuzenle from "@/scenes/sistemler/SistemVaryantDuzenle";
-import Kumandalar from "@/scenes/kumandalar/Kumandalar";
-import SetPasswordPage from "@/scenes/setpassword/SetPasswordPage";
-import ProfilAksesuarEdit from "@/scenes/projeekle/ProfilAksesuarEdit";
+import LoginScreen from "@/scenes/login_screen/LoginScreen.jsx";
+import Profiller from "../scenes/profiller/Profiller.jsx";
+import AnaSayfa from "../scenes/ana_sayfa/AnaSayfa.jsx";
+import Bayiler from "../scenes/bayiler/Bayiler.jsx";
+import Musteriler from "../scenes/musteriler/Musteriler.jsx";
+import Projeler from "../scenes/projeler/Projeler.jsx";
+import Sistemler from "../scenes/sistemler/Sistemler.jsx";
+import Camlar from "../scenes/camlar/Camlar.jsx";
+import DigerMalzemeler from "../scenes/diger_malzemeler/DigerMalzemeler.jsx";
+import Bildirimler from "../scenes/bildirimler/Bildirimler.jsx";
+import Takvim from "../scenes/takvim/Takvim.jsx";
+import BarGrafigi from "../scenes/bar_grafigi/BarGrafigi.jsx";
+import PastaGrafigi from "../scenes/pasta_grafigi/PastaGrafigi.jsx";
+import CizgiGrafigi from "../scenes/cizgi_grafigi/CizgiGrafigi.jsx";
+import Sss from "../scenes/sss/Sss.jsx";
+import ProjeDuzenle from "@/scenes/projeekle/ProjeDuzenle.jsx";
+import SistemEkle from "@/scenes/sistem_ekle/SistemEkle.jsx";
+import SistemSec from "@/scenes/sistemsec/SistemSec.jsx";
+import EkstraMalzemeEkle from "@/scenes/ekstramalzemeekle/EkstraMalzemeEkle.jsx";
+import SistemVaryantOlustur from "@/scenes/sistemler/SistemVaryantOlustur.jsx";
+import Boyalar from "@/scenes/boyalar/Boyalar.jsx";
+import TanimlanmayanSayfa from "@/scenes/tanimlanmayan_sayfa/TanimlanmayanSayfa.jsx";
+import SistemVaryantDuzenle from "@/scenes/sistemler/SistemVaryantDuzenle.jsx";
+import Kumandalar from "@/scenes/kumandalar/Kumandalar.jsx";
+import SetPasswordPage from "@/scenes/setpassword/SetPasswordPage.jsx";
+import ProfilAksesuarEdit from "@/scenes/projeekle/ProfilAksesuarEdit.jsx";
+import Ayarlar from "@/scenes/ayarlar/Ayarlar.jsx";
 
 const ContentArea = () => {
   const { expanded } = useContext(SidebarContext);
@@ -68,10 +66,8 @@ const ContentArea = () => {
               <Route path="/bayiler" element={<Bayiler />} />
               <Route path="/musteriler" element={<Musteriler />} />
               <Route path="/projeler" element={<Projeler />} />
-              <Route path="/siparisler" element={<Siparisler />} />
               <Route path="/sistemler" element={<Sistemler />} />
               <Route path="/profiller" element={<Profiller />} />
-              <Route path="/siparis/:id" element={<SiparisDetay />} />
               <Route path="/camlar" element={<Camlar />} />
               <Route path="/digermalzemeler" element={<DigerMalzemeler />} />
               <Route path="/bildirimler" element={<Bildirimler />} />
@@ -80,11 +76,10 @@ const ContentArea = () => {
               <Route path="/pastagrafigi" element={<PastaGrafigi />} />
               <Route path="/cizgigrafigi" element={<CizgiGrafigi />} />
               <Route path="/sss" element={<Sss />} />
-              <Route path="/siparisekle" element={<SiparisEkle />} />
               <Route path="/projeduzenle" element={<ProjeDuzenle />} />
               <Route path="/sistemekle/:projectId/:variantId" element={<SistemEkle />} />
               <Route path="/projeduzenle/:id" element={<ProjeDuzenle />} />
-              <Route path="/profilaksesuar/:id" element={<ProfilAksesuarEdit />} />
+              <Route path="/profilaksesuar/edit/:id" element={<ProfilAksesuarEdit />} />
               <Route path="/sistemsec/:projectId" element={<SistemSec />} />
               <Route path="/ekstramalzemeekle/:projectId" element={<EkstraMalzemeEkle />} />
               <Route path="*" element={<TanimlanmayanSayfa />} />
@@ -92,7 +87,7 @@ const ContentArea = () => {
               <Route path="/boyalar" element={<Boyalar />} />
               <Route path="/sistemvaryantduzenle/:variantId" element={<SistemVaryantDuzenle />} />
               <Route path="/kumandalar" element={<Kumandalar />} />
-              <Route path="/ayarlar" element={<Kumandalar />} />
+              <Route path="/ayarlar" element={<Ayarlar />} />
 
 
             </Route>

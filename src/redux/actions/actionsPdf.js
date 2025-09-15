@@ -1,6 +1,6 @@
 // src/redux/actions/actionsPdf.js
-import * as actionTypes from "./actionTypes";
-import { fetchWithAuth } from "./authFetch";
+import * as actionTypes from "./actionTypes.js";
+import { fetchWithAuth } from "./authFetch.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -88,7 +88,7 @@ export function getPdfBrandByKey(key) {
     dispatch({ type: actionTypes.GET_PDF_BRAND_BY_KEY_REQUEST });
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/me/pdf/brands/by-key/${"brand.default"}`,
+        `${API_BASE_URL}/me/pdf/brands/by-key/${"brand.default0"}`,
         {
           method: "GET",
           headers: { accept: "application/json" },
@@ -118,12 +118,12 @@ export function getPdfBrandByKey(key) {
  * PDF BRAND GÜNCELLE (PUT /me/pdf/brands/:id)
  * - Payload: { key, config_json }
  */
-export function updatePdfBrand(id, { key, config_json = {} }) {
+export function updatePdfBrand({ key, config_json = {} }) {
   return async (dispatch) => {
     dispatch({ type: actionTypes.UPDATE_PDF_BRAND_REQUEST });
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/me/pdf/brands/${id}`,
+        `${API_BASE_URL}/me/pdf/brands/488d6fe2-1002-4e66-be65-e2ef6e3d079c`,
         {
           method: "PUT",
           headers: {

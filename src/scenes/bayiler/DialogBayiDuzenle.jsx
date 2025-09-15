@@ -1,6 +1,6 @@
 // src/scenes/bayiler/DialogBayiDuzenle.jsx
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
 
 const DialogBayiDuzenle = ({ bayi, onSave }) => {
   const [guncelBayi, setGuncelBayi] = useState({

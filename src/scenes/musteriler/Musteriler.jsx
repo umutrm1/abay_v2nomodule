@@ -6,11 +6,11 @@ import {
   addMusteriToApi,
   editMusteriOnApi,
   deleteMusteriOnApi
-} from "@/redux/actions/actions_musteriler";
-import Header from '@/components/mycomponents/Header';
-import DialogMusteriEkle from './DialogMusteriEkle';
-import DialogMusteriDuzenle from './DialogMusteriDuzenle';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from "@/redux/actions/actions_musteriler.js";
+import Header from '@/components/mycomponents/Header.jsx';
+import DialogMusteriEkle from './DialogMusteriEkle.jsx';
+import DialogMusteriDuzenle from './DialogMusteriDuzenle.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">

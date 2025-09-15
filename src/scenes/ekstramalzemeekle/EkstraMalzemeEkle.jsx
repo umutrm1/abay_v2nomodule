@@ -4,16 +4,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 
 // Server-side listeleme (limit 5) — daha önce entegre ettiğimiz fonksiyonlar
-import { getCamlarFromApi } from '@/redux/actions/actions_camlar';
-import { getDigerMalzemelerFromApi } from '@/redux/actions/actions_diger_malzemeler';
-import { getProfillerFromApi } from '@/redux/actions/actions_profiller';
+import { getCamlarFromApi } from '@/redux/actions/actions_camlar.js';
+import { getDigerMalzemelerFromApi } from '@/redux/actions/actions_diger_malzemeler.js';
+import { getProfillerFromApi } from '@/redux/actions/actions_profiller.js';
 
 // Projeye ekstra ekleme aksiyonları
 import {
   addExtraGlassToApi,
   addExtraMaterialToApi,
   addExtraProfileToApi
-} from '@/redux/actions/actions_projeler';
+} from '@/redux/actions/actions_projeler.js';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -202,6 +202,7 @@ const EkstraMalzemeEkle = () => {
       material_id: m.id,
       count: Number(data.count || 0),
       cut_length_mm: data.size_input_text || '',
+      unit_price:data.unit_price,
         pdf: {
     "camCiktisi": true,
     "profilAksesuarCiktisi": true,

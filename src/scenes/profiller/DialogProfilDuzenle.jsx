@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogProfilDuzenle = ({ profil, onSave }) => {
   // 1) Düzenlenen profil alanlarını tutacak state

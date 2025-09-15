@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux"
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { SetUserNamePasswordOnApi } from "@/redux/actions/actions_bayiler"
+import { SetUserNamePasswordOnApi } from "@/redux/actions/actions_bayiler.js"
 
 
 const Rule = ({ ok, text }) => (

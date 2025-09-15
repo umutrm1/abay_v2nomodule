@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from "@/components/ui/dialog"; // PagedSelectDialog ile aynı dialog katmanı
+} from "@/components/ui/dialog.jsx"; // PagedSelectDialog ile aynı dialog katmanı
 
 // Proje genelinde varsayılan pdf alanları
 const DEFAULT_PDF = {

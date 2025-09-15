@@ -315,15 +315,20 @@ doc.text(summary, midX, centerY, { align: "center" });
     /* -------------------------- Profiller Tablosu -------------------------- */
     if ((sys.profiles || []).length > 0) {
       // Profil kesit görsellerini hazırla
+        const profilesSorted = [...(sys.profiles || [])].sort((a, b) => {
+  const ai = (a?.order_index ?? 0);
+  const bi = (b?.order_index ?? 0);
+  return ai - bi;
+});
       const imageMap = {};
-      await Promise.all(
-        (sys.profiles || []).map(p =>
+ await Promise.all(
+   profilesSorted.map(p =>
           dispatch(getProfilImageFromApi(p.profile_id)).then(d => { imageMap[p.profile_id] = d; }).catch(() => {})
         )
       );
 
       const head = [['Profil Kodu','Profil Kesit','Profil Adı','Kesim Ölçüsü (mm)','Kesim Adedi','Birim Ağırlık (kg)','Toplam Ağırlık (kg)']];
-      const body = (sys.profiles || []).map(p => {
+      const body = profilesSorted.map(p => {
         const { profil_kodu, profil_isim, birim_agirlik } = p.profile || {};
         const toplamAgirlikKg =
           ((Number(birim_agirlik) || 0) * (Number(p.cut_length_mm) || 0) * (Number(p.cut_count) || 0)) / 1000;
@@ -347,7 +352,7 @@ doc.text(summary, midX, centerY, { align: "center" });
         columnStyles: { 1: { cellWidth: 40, halign: "center" } },
         didDrawCell: data => {
           if (data.section === "body" && data.column.index === 1) {
-            const pid = (sys.profiles || [])[data.row.index]?.profile_id;
+            const pid = profilesSorted[data.row.index]?.profile_id;
             const img = imageMap[pid];
             if (img) {
   const pad = 2;

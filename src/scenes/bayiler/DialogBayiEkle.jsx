@@ -1,6 +1,6 @@
 // src/scenes/bayiler/DialogBayiEkle.jsx
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
 
 const DialogBayiEkle = ({ onSave }) => {
   const [yeniBayi, setYeniBayi] = useState({

@@ -2,19 +2,18 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 import {
   getSystemFullVariantsOfSystemFromApi,
   editSystemVariantTemplatesOnApi
-} from '@/redux/actions/actions_sistemler';
-import DialogPdfAyar from "./DialogPdfAyar";
-import Header from '@/components/mycomponents/Header';
+} from '@/redux/actions/actions_sistemler.js';
+import DialogPdfAyar from "./DialogPdfAyar.jsx";
+import Header from '@/components/mycomponents/Header.jsx';
 
 // Daha önce oluşturduğumuz sarmalayıcı modallar:
-import DialogProfilSec from "./DialogProfilSec";
-import DialogCamSec from "./DialogCamSec";
-import DialogMalzemeSec from "./DialogMalzemeSec";
-import DialogKumandaSec from "./DialogKumandaSec";
+import DialogProfilSec from "./DialogProfilSec.jsx";
+import DialogCamSec from "./DialogCamSec.jsx";
+import DialogMalzemeSec from "./DialogMalzemeSec.jsx";
+import DialogKumandaSec from "./DialogKumandaSec.jsx";
 
 const SistemVaryantDuzenle = () => {
   const dispatch = useDispatch();

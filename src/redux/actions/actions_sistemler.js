@@ -1,12 +1,8 @@
-import * as actionTypes from "./actionTypes";
+// src/redux/actions/actions_sistemler.js
+import * as actionTypes from "./actionTypes.js";
+import { fetchWithAuth } from "./authFetch.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-function _getToken(getState) {
-  const reduxToken = getState?.().auth?.token;
-  if (reduxToken) return reduxToken;
-  return localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-}
 
 export function getSistemlerFromApiToReducer(payload) {
   return { type: actionTypes.GET_SISTEMLER_FROM_API, payload };
@@ -22,413 +18,367 @@ export function getSystemVariantsFromApiToReducer(payload) {
 }
 
 export function getSystemVariantsFromApi(page = 1, q = "", limit = 5) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
+  return async (dispatch) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (q) params.append("q", q);
 
-    return fetch(`${API_BASE_URL}/system-variants/?${params.toString()}`, {
-      method: "GET",
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Network not ok (${r.status})`);
-        return r.json();
-      })
-      .then((data) => {
-        // data: { items, total, page, limit, total_pages, has_next, has_prev }
-        dispatch(getSystemVariantsFromApiToReducer(data));
-        return data;
-      });
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/?${params.toString()}`,
+      { method: "GET", headers: { Accept: "application/json" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Network not ok (${res.status})`);
+    const data = await res.json();
+    dispatch(getSystemVariantsFromApiToReducer(data));
+    return data;
   };
 }
 
 export function getSistemlerFromApi(page = 1, q = "", limit = 5) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
+  return async (dispatch) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (q) params.append("q", q);
 
-    return fetch(`${API_BASE_URL}/systems?${params.toString()}`, {
-      method: "GET",
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Network not ok (${r.status})`);
-        return r.json();
-      })
-      .then((data) => {
-        // data: { items, total, page, limit, total_pages, has_next, has_prev }
-        dispatch(getSistemlerFromApiToReducer(data));
-        return data;
-      });
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/systems?${params.toString()}`,
+      { method: "GET", headers: { Accept: "application/json" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Network not ok (${res.status})`);
+    const data = await res.json();
+    dispatch(getSistemlerFromApiToReducer(data));
+    return data;
   };
 }
 
 export function getSystemVariantsOfSystemFromApi(systemId, page = 1, q = "", limit = 50) {
-  return async (dispatch, getState) => {
-    const token = _getToken(getState);
-
-    // query parametrelerini hazırla
+  return async (dispatch) => {
     const params = new URLSearchParams();
     if (q !== "") params.set("q", q);
     params.set("limit", String(limit));
     params.set("page", String(page));
 
-    const url = `${API_BASE_URL}/system-variants/system/${systemId}?${params.toString()}`;
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/system/${systemId}?${params.toString()}`,
+      { method: "GET", headers: { Accept: "application/json" } },
+      dispatch
+    );
 
-    try {
-      const r = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!r.ok) {
-        throw new Error(`Network not ok (${r.status})`);
-      }
-
-      const data = await r.json();
-      dispatch(getSystemVariantsOfSystemFromApiToReducer(data));
-    } catch (err) {
-      console.error("getSystemVariantsOfSystemFromApi API hatası:", err);
-    }
+    if (!res.ok) throw new Error(`Network not ok (${res.status})`);
+    const data = await res.json();
+    dispatch(getSystemVariantsOfSystemFromApiToReducer(data));
+    return data;
   };
 }
 
-
 export function getSystemFullVariantsOfSystemFromApi(variantId) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    fetch(`${API_BASE_URL}/system-variants/${variantId}`, {
-      method: "GET",
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Network not ok (${r.status})`);
-        return r.json();
-      })
-      .then((data) => dispatch(getSystemFullVariantsOfSystemFromApiToReducer(data)))
-      .catch((err) =>
-        console.error("getSystemVariantsOfSystemFromApi API hatası:", err)
-      );
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/${variantId}`,
+      { method: "GET", headers: { Accept: "application/json" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Network not ok (${res.status})`);
+    const data = await res.json();
+    dispatch(getSystemFullVariantsOfSystemFromApiToReducer(data));
+    return data;
   };
 }
 
 // --- SYSTEM CRUD ---
 export function addSystemToApi(system) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/systems`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/systems`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(system),
       },
-      body: JSON.stringify(system),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Sistem ekleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Sistem ekleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function editSystemOnApi(systemId, updated) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/systems/${systemId}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/systems/${systemId}`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       },
-      body: JSON.stringify(updated),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Sistem güncelleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Sistem güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function deleteSystemOnApi(systemId) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/systems/${systemId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Sistem silme başarısız: ${res.status}`);
-    });
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/systems/${systemId}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Sistem silme başarısız: ${res.status}`);
+    return true;
   };
 }
 
 // --- SYSTEM VARIANT CRUD ---
 export function addSystemVariantToApi(variant) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-variants/`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(variant),
       },
-      body: JSON.stringify(variant),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Varyant ekleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Varyant ekleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function editSystemVariantOnApi(variantId, updated) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-variants/${variantId}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/${variantId}`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       },
-      body: JSON.stringify(updated),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Varyant güncelleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Varyant güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function editSystemVariantTemplatesOnApi(variantId, updated) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-variants/${variantId}/templates`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/${variantId}/templates`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       },
-      body: JSON.stringify(updated),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Varyant güncelleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Varyant güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function deleteSystemVariantOnApi(variantId) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-variants/${variantId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Varyant silme başarısız: ${res.status}`);
-    });
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/${variantId}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Varyant silme başarısız: ${res.status}`);
+    return true;
   };
 }
 
-// --- PROFILE ON SYSTEM VARIANT CRUD ---
+// --- SYSTEM TEMPLATE: PROFILE
 export function addProfileOnSystemVariant(profileLink) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/profiles`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/profiles`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(profileLink),
       },
-      body: JSON.stringify(profileLink),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Profil ekleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Profil ekleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function editProfileOnSystemVariant(id, updated) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/profiles/${id}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/profiles/${id}`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       },
-      body: JSON.stringify(updated),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Profil güncelleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Profil güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function deleteProfileOnSystemVariant(id) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/profiles/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Profil silme başarısız: ${res.status}`);
-    });
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/profiles/${id}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Profil silme başarısız: ${res.status}`);
+    return true;
   };
 }
 
-// --- GLASS ON SYSTEM VARIANT CRUD ---
+// --- SYSTEM TEMPLATE: GLASS
 export function addGlassOnSystemVariant(glassLink) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/glasses`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/glasses`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(glassLink),
       },
-      body: JSON.stringify(glassLink),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Cam ekleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Cam ekleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function editGlassOnSystemVariant(id, updated) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/glasses/${id}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/glasses/${id}`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       },
-      body: JSON.stringify(updated),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Cam güncelleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Cam güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function deleteGlassOnSystemVariant(id) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/glasses/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Cam silme başarısız: ${res.status}`);
-    });
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/glasses/${id}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Cam silme başarısız: ${res.status}`);
+    return true;
   };
 }
 
-// --- EXTRA MATERIAL ON SYSTEM VARIANT CRUD ---
+// --- SYSTEM TEMPLATE: EXTRA MATERIAL
 export function addEkstraMalzemeOnSystemVariant(link) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/materials`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/materials`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(link),
       },
-      body: JSON.stringify(link),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Ekstra malzeme ekleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Ekstra malzeme ekleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function editEkstraMalzemeOnSystemVariant(id, updated) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/materials/${id}`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/materials/${id}`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       },
-      body: JSON.stringify(updated),
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Ekstra malzeme güncelleme başarısız: ${res.status}`);
-      return res.json();
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Ekstra malzeme güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
 
 export function deleteEkstraMalzemeOnSystemVariant(id) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-templates/materials/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
-      if (!res.ok) throw new Error(`Ekstra malzeme silme başarısız: ${res.status}`);
-    });
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-templates/materials/${id}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Ekstra malzeme silme başarısız: ${res.status}`);
+    return true;
   };
 }
 
-/** (ESKİ MOCK UÇLAR)
- * Aşağıdaki localhost fonksiyonları muhtemelen eski/mock amaçlıydı.
- * Yine de .env ve token kuralına uydurmak istersen, gerçek API eşleşmeleri gerekli.
- * Bu fonksiyonları projede kullanmıyorsan kaldırmanı öneririm.
- */
+// --- ESKİ MOCK UÇLAR (uyarlandı)
 export function editSistemOnApi(sistem_id, editedRow) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/systems/${sistem_id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/systems/${sistem_id}`,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(editedRow),
       },
-      body: JSON.stringify(editedRow),
-    }).then((r) => r.json());
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Sistem güncelleme başarısız: ${res.status}`);
+    return res.json();
   };
 }
+
 export function addSistemToApi(sistem) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/profiles/`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/profiles/`,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(sistem),
       },
-      body: JSON.stringify(sistem),
-    });
+      dispatch
+    );
+    if (!res.ok) throw new Error(`İstek başarısız: ${res.status}`);
+    return res.json();
   };
 }
+
 export function sellSistemOnApi(sistem_id) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/systems/${sistem_id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/systems/${sistem_id}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Silme başarısız: ${res.status}`);
+    return true;
   };
 }
 
 export function sellSystemVariantOnApi(sistem_id) {
-  return (dispatch, getState) => {
-    const token = _getToken(getState);
-    return fetch(`${API_BASE_URL}/system-variants/${sistem_id}`, {
-      method: "DELETE",
-      headers: { Accept: "*/*", Authorization: `Bearer ${token}` },
-    })
-      .then(() => dispatch(getSystemVariantsFromApi()))
-      .catch((err) => console.log(err));
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/system-variants/${sistem_id}`,
+      { method: "DELETE", headers: { Accept: "*/*" } },
+      dispatch
+    );
+    if (!res.ok) throw new Error(`Varyant silme başarısız: ${res.status}`);
+    return true;
   };
 }

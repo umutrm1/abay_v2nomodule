@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   Dialog, DialogTrigger, DialogContent,
   DialogHeader, DialogTitle, DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const initialForm = { name: '', unit_cost: 0 };
 

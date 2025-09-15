@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-8">

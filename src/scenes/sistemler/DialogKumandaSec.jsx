@@ -1,8 +1,8 @@
 // src/scenes/sistemler/DialogKumandaSec.jsx
 import React, { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import PagedSelectDialog from "./PagedSelectDialog";
-import { getKumandalarFromApi } from "@/redux/actions/actions_kumandalar";
+import PagedSelectDialog from "./PagedSelectDialog.jsx";
+import { getKumandalarFromApi } from "@/redux/actions/actions_kumandalar.js";
 
 const EMPTY_PAGE = {
   items: [],

@@ -1,6 +1,6 @@
 // src/redux/actions/actions_profiller.js
-import * as actionTypes from "./actionTypes";
-import { fetchWithAuth } from "./authFetch";
+import * as actionTypes from "./actionTypes.js";
+import { fetchWithAuth } from "./authFetch.js";
 // .env'den taban URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 

@@ -1,14 +1,8 @@
 import { useContext, createContext, useState } from "react"
 import { ReactComponent as ChevronFirst } from "../icons/chevron-first.svg";
 import { ReactComponent as ChevronLast } from "../icons/chevron-last.svg";
-import { ReactComponent as Bell } from "../icons/bell.svg";
-import { ReactComponent as CalendarDays } from "../icons/calendar-days.svg";
-import { ReactComponent as ChartNoAxesCombined } from "../icons/chart-no-axes-combined.svg";
-import { ReactComponent as ChartPie } from "../icons/chart-pie.svg";
-import { ReactComponent as ChartSpline } from "../icons/chart-spline.svg";
 import { ReactComponent as Clipboardlist } from "../icons/clipboard-list.svg";
 import { ReactComponent as Grid2x2 } from "../icons/grid-2x2.svg";
-import { ReactComponent as Info } from "../icons/info.svg";
 import { ReactComponent as Layoutdashboard } from "../icons/layout-dashboard.svg";
 import { ReactComponent as Package } from "../icons/package.svg";
 import { ReactComponent as Pencilruler } from "../icons/pencil-ruler.svg";
@@ -16,9 +10,9 @@ import {ReactComponent as Remote} from "../icons/git-pull-request-draft.svg";
 import { ReactComponent as Store } from "../icons/store.svg";
 import { ReactComponent as User } from "../icons/user.svg";
 import { ReactComponent as Wrench } from "../icons/wrench.svg";
-import { ReactComponent as Logs } from "../icons/logs.svg";
-import nikeLogo from "../icons/nike-logo.png";
-import { SidebarContext } from "./SidebarContext";
+import { ReactComponent as Settings } from "../icons/settings.svg";
+
+import { SidebarContext } from "./SideBarContext.jsx";
 import { useNavigate } from 'react-router-dom';
 import { ReactComponent as Paintbrush } from '../icons/paintbrush.svg';
 
@@ -99,7 +93,7 @@ const SideBar = () => {
   const navigate = useNavigate();
   return (
     <SidebarShema>
-      <SidebarItem onClick={() => navigate("/")} icon={<Layoutdashboard className="w-10" />} text={"Ana Sayfa"} />
+      {/* <SidebarItem onClick={() => navigate("/")} icon={<Layoutdashboard className="w-10" />} text={"Ana Sayfa"} /> */}
       <SidebarItem onClick={()=>navigate("bayiler")} icon={<Store className="w-10"/>} text={"Bayiler"} />
       <SidebarItem onClick={() => navigate("musteriler")} icon={<User className="w-10" />} text={"Müşteriler"} />
       <SidebarItem onClick={() => navigate("projeler")} icon={<Clipboardlist className="w-10" />} text={"Projeler"} />
@@ -109,7 +103,7 @@ const SideBar = () => {
       <SidebarItem onClick={() => navigate("digermalzemeler")} icon={<Package className="w-10" />} text={"Diğer Malzemeler"} />
       <SidebarItem onClick={() => navigate("boyalar")} icon={<Paintbrush className="w-8" />} text={"Boyalar"} />
       <SidebarItem onClick={() => navigate("kumandalar")} icon={<Remote className="w-8" />} text={"Kumandalar"} />
-      <SidebarItem onClick={() => navigate("ayarlar")} icon={<Remote className="w-8" />} text={"Ayarlar"} />
+      <SidebarItem onClick={() => navigate("ayarlar")} icon={<Settings className="w-8" />} text={"Ayarlar"} />
 
       {/* <SidebarItem onClick={()=>navigate("bildirimler")} icon={<Bell className="w-10"/>} text={"Bildirimler"} /> */}
       {/* <SidebarItem onClick={()=>navigate("takvim")} icon={<CalendarDays className="w-10"/>} text={"Takvim"} /> */}

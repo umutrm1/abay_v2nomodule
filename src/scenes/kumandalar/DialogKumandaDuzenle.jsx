@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
   const [form, setForm] = useState({

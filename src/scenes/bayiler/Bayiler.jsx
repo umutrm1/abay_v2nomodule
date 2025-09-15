@@ -7,11 +7,11 @@ import {
   editDealerOnApi,
   sellDealerOnApi,
   reSendInviteOnApi
-} from "@/redux/actions/actions_bayiler";
-import Header from '@/components/mycomponents/Header';
-import DialogBayiEkle from './DialogBayiEkle';
-import DialogBayiDuzenle from './DialogBayiDuzenle';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from "@/redux/actions/actions_bayiler.js";
+import Header from '@/components/mycomponents/Header.jsx';
+import DialogBayiEkle from './DialogBayiEkle.jsx';
+import DialogBayiDuzenle from './DialogBayiDuzenle.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 // Müşteriler ekranındaki spinner ve sayfalama yapısını koruyoruz. :contentReference[oaicite:3]{index=3}
 const Spinner = () => (

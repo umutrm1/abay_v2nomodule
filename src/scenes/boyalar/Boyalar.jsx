@@ -6,13 +6,13 @@ import {
   addColorToApi,
   editColorInApi,
   deleteColorFromApi
-} from '@/redux/actions/actions_boyalar';
-import Header from '@/components/mycomponents/Header';
-import DialogProfilBoyaEkle from './DialogProfilBoyaEkle';
-import DialogProfilBoyaDuzenle from './DialogProfilBoyaDuzenle';
-import DialogCamBoyaEkle from './DialogCamBoyaEkle';
-import DialogCamBoyaDuzenle from './DialogCamBoyaDuzenle';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from '@/redux/actions/actions_boyalar.js';
+import Header from '@/components/mycomponents/Header.jsx';
+import DialogProfilBoyaEkle from './DialogProfilBoyaEkle.jsx';
+import DialogProfilBoyaDuzenle from './DialogProfilBoyaDuzenle.jsx';
+import DialogCamBoyaEkle from './DialogCamBoyaEkle.jsx';
+import DialogCamBoyaDuzenle from './DialogCamBoyaDuzenle.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
     <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>

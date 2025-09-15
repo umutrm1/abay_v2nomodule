@@ -6,11 +6,11 @@ import {
   addCamToApi,
   editCamOnApi,
   sellCamOnApi
-} from '@/redux/actions/actions_camlar';
-import Header from '@/components/mycomponents/Header';
-import DialogCamEkle from './DialogCamEkle';
-import DialogCamDuzenle from './DialogCamDuzenle';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from '@/redux/actions/actions_camlar.js';
+import Header from '@/components/mycomponents/Header.jsx';
+import DialogCamEkle from './DialogCamEkle.jsx';
+import DialogCamDuzenle from './DialogCamDuzenle.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">

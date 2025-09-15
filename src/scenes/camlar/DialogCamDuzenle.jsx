@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 
 const DialogCamDuzenle = ({ cam, onSave }) => {
   // 1) Düzenlenen cam verisi için state

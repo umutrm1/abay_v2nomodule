@@ -8,11 +8,11 @@ import {
   getProfilImageFromApi,
   uploadProfilImageToApi,
   deleteProfilImageFromApi
-} from '@/redux/actions/actions_profiller';
-import DialogProfilEkle from './DialogProfilEkle';
-import DialogProfilDuzenle from './DialogProfilDuzenle';
-import Header from '@/components/mycomponents/Header';
-import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+} from '@/redux/actions/actions_profiller.js';
+import DialogProfilEkle from './DialogProfilEkle.jsx';
+import DialogProfilDuzenle from './DialogProfilDuzenle.jsx';
+import Header from '@/components/mycomponents/Header.jsx';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">

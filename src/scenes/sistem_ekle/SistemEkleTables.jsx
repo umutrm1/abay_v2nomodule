@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import * as math from 'mathjs';
-import { editProjeSystemOnApi } from '@/redux/actions/actions_projeler';
-import { getSystemFullVariantsOfSystemFromApi } from '@/redux/actions/actions_sistemler';
+import { editProjeSystemOnApi } from '@/redux/actions/actions_projeler.js';
+import { getSystemFullVariantsOfSystemFromApi } from '@/redux/actions/actions_sistemler.js';
 const SistemEkleTables = ({ systems = [], onRefresh }) => {
   const dispatch = useDispatch();
   const { projectId } = useParams();
