@@ -7,7 +7,7 @@ import * as actions_projeler from "@/redux/actions/actions_projeler.js";
 import { getProfilImageFromApi } from "@/redux/actions/actions_profiller.js";
 import { getPdfBrandByKey, getPdfTitleByKey } from "@/redux/actions/actionsPdf.js";
 import { generateProfileAccessoryPdf } from "./pdf/pdfProfileAccessory.js";
-
+import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
 // Basit spinner
 const Spinner = () => (
   <div className="flex justify-center items-center py-10 w-full h-full">
@@ -130,8 +130,8 @@ function buildRemotePlanRowsFromRequirements(requirements) {
       remaining -= 9;
     }
     if (remaining > 1 && capacityMap.has(5)) {
-      const i5 = capacityMap.get(5);
-      remotePlan.push({ cap: 5, count: 1, name: i5.name, unitPrice: i5.unitPrice, orderIndex: i5.minOrderIndex, orderIndex: info5.minOrderIndex });
+      const info5 = capacityMap.get(5);
+      remotePlan.push({ cap: 5, count: 1, name: info5.name, unitPrice: info5.unitPrice, orderIndex: info5.minOrderIndex, orderIndex: info5.minOrderIndex });
       remaining -= 5;
     }
 
@@ -208,19 +208,82 @@ function buildRemotePlanRowsFromRequirements(requirements) {
   return rows;
 }
 
+// (2) Ortak yardımcılar: optimizasyon için siparis objesi üret ve sonuçları map'e çevir
+//    - filterFn ile (painted/press) gruplarını ayırabiliyoruz
+function buildSiparisFromRequirements(requirements, filterFn) {
+  const systems = requirements?.systems || [];
+  const profiller = [];
+  systems.forEach(sys => {
+    (sys.profiles || [])
+      .filter(p => pdfAllow(p)) // sayfaya girecek profiller (ProfilAksesuar çıktısı)
+      .filter(p => (typeof filterFn === "function" ? filterFn(p) : true))
+      .forEach(p => {
+        profiller.push({
+          profil_id: p.profile_id,
+          profil: {
+            profil_isim: p.profile?.profil_isim,
+            boy_uzunluk: p.profile?.boy_uzunluk,       // stok boy (mm)
+            birim_agirlik: p.profile?.birim_agirlik,
+          },
+          hesaplanan_degerler: {
+            kesim_olcusu: p.cut_length_mm,             // kesim (mm)  // :contentReference[oaicite:7]{index=7}
+            kesim_adedi: p.cut_count,                  // kesim adedi  // :contentReference[oaicite:8]{index=8}
+          },
+        });
+      });
+  });
+  // optimizasyonYap beklediği format: { urunler: [ { hesaplananGereksinimler: { profiller } } ] }
+  return {
+    urunler: [{ hesaplananGereksinimler: { profiller } }],
+  };
+}
+
+function mapOptResultsByKey(optSonuclar, paintedKey) {
+  // Sonuç: Map< "pid|paintedKey", adet(toplamBoySayisi) >
+  const m = new Map();
+  (optSonuclar || []).forEach(r => {
+    const pid = r?.profilId;
+    const adet = Number(r?.toplamBoySayisi || 0);
+    if (pid != null) m.set(`${pid}|${paintedKey}`, adet);
+  });
+  return m;
+}
+
+
   // Başlangıç satırlarını hazırla (mevcut verilerden)
   useEffect(() => {
   if (!requirements) return;
-
+    // (3) Önce optimizasyonu çalıştırıp "adet" haritasını hazırlıyoruz
+    //     - mode === "painted" ise boyalı ve boyasız ayrı ayrı optimize
+    let adetMap = new Map(); // key: `${pid}|P1|boy_m|birimKg` değil, ana adet sadece `${pid}|P?`
+    try {
+      if (mode === "painted") {
+        const siparisP1 = buildSiparisFromRequirements(requirements, p => p?.is_painted === true);
+        const siparisP0 = buildSiparisFromRequirements(requirements, p => p?.is_painted !== true);
+        const optP1 = optimizasyonYap(siparisP1) || []; // boyalı  // :contentReference[oaicite:9]{index=9}
+        const optP0 = optimizasyonYap(siparisP0) || []; // boyasız // :contentReference[oaicite:10]{index=10}
+        const m1 = mapOptResultsByKey(optP1, "P1");
+        const m0 = mapOptResultsByKey(optP0, "P0");
+        // iki haritayı birleştir
+        adetMap = new Map([...m1, ...m0]);
+      } else {
+        const siparisAll = buildSiparisFromRequirements(requirements);
+        const optAll = optimizasyonYap(siparisAll) || []; // tek grup   // :contentReference[oaicite:11]{index=11}
+        adetMap = mapOptResultsByKey(optAll, "PX");
+      }
+    } catch (e) {
+      console.warn("optimizasyonYap çalıştırılamadı, adetler cut_count'a düşecek:", e);
+      adetMap = new Map();
+    }
     // === 2.a) PROFİLLERİ TOPLA (pdfAllow + min order_index + tekilleştirme) ===
     const profAgg = new Map(); // key: pid|paintedKey|boy_m|birimKg
+    const addedKeys = new Set(); // aynı pid|paintedKey için bir kez ekleyelim (adet optimizasyondan)
     const addProfile = (p) => {
       if (!pdfAllow(p)) return; // sadece pdf'e girecekler
       const pid = p.profile?.id || p.profile_id || p.id;
       if (!pid) return;
       const kod = p.profile?.profil_kodu || "-";
       const ad = p.profile?.profil_isim || "-";
-      const adet = Number(p.cut_count || 0);
       const boy_m = Number(p.profile?.boy_uzunluk / 1000 || 0);
       const birimKg = Number(p.profile?.birim_agirlik || 0);
       const isPainted = Boolean(p?.is_painted);
@@ -239,10 +302,21 @@ function buildRemotePlanRowsFromRequirements(requirements) {
       }
 
       const paintedKey = mode === "painted" ? (isPainted ? "P1" : "P0") : "PX";
-      const key = [pid, paintedKey, boy_m, birimKg].join("|");
+      const adetFromOpt = adetMap.get(`${pid}|${paintedKey}`);
+      // Optimizasyon sonucu yoksa (ör. hata), cut_count toplamına geri düşelim
+      const adetFallback = Number(p.cut_count || 0);
+      const adet = Number.isFinite(adetFromOpt) ? adetFromOpt : adetFallback;
+
+      // Aynı pid|paintedKey için yalnızca tek satırda adet kullanılsın:
+      // (boy_m / birimKg farklı varyantlar tek satıra düşsün istiyorsan burada anahtarı ona göre seçmelisin)
+      const mainKey = [pid, paintedKey].join("|");
+      if (addedKeys.has(mainKey)) return; // bu grup için satır zaten eklendi
+      addedKeys.add(mainKey);
+
+      // (Satır anahtarını sade tutuyoruz; boy_m ve birimKg görsel/tartı için tek varyant alınıyor)
+      const key = [pid, paintedKey].join("|");
       const prev = profAgg.get(key);
       if (prev) {
-        prev.adet += adet;
         if (oi < prev.minOrderIndex) prev.minOrderIndex = oi;
       } else {
         profAgg.set(key, { pid, kod, ad, adet, boy_m, birimKg, birimFiyat, minOrderIndex: oi });
