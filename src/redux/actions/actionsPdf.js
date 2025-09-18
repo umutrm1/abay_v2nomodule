@@ -123,7 +123,7 @@ export function updatePdfBrand({ key, config_json = {} }) {
     dispatch({ type: actionTypes.UPDATE_PDF_BRAND_REQUEST });
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/me/pdf/brands/488d6fe2-1002-4e66-be65-e2ef6e3d079c`,
+        `${API_BASE_URL}/me/pdf/brands/773363d4-56b6-42a5-9953-7b5339d92acc`,
         {
           method: "PUT",
           headers: {
@@ -137,7 +137,7 @@ export function updatePdfBrand({ key, config_json = {} }) {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(`PDF brand güncellenemedi: ${res.status} ${text}`);
+        throw new Error(`PDF brand güncellenemedi:  ${res.status} ${text}`);
       }
 
       const data = await res.json().catch(() => ({}));

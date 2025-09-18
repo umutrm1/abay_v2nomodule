@@ -208,7 +208,26 @@ export function addExtraProfileToApi(projectId, addedProfile) {
     return data;
   };
 }
-
+export function addExtraRemoteToApi(projectId, addedRemote) {
+  return async (dispatch) => {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/projects/extra-remotes`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(addedRemote),
+      },
+      dispatch
+    );
+    _assertOk(res, "Ekleme başarısız");
+    const data = await res.json();
+    await dispatch(getProjeRequirementsFromApi(projectId));
+    return data;
+  };
+}
 /* POST: Extra material */
 export function addExtraMaterialToApi(projectId, addedMaterial) {
   return async (dispatch) => {

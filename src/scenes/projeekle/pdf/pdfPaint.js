@@ -306,20 +306,57 @@ const filteredRequirements = {
     const birimKg = Number(entry?.profile?.birim_agirlik || 0);
     const adet = Number(res?.toplamBoySayisi || 0);
     const toplamKg = adet * boy / 1000 * birimKg;
-    return [kod, '', isim, adet, boy, birimKg.toFixed(3), toplamKg.toFixed(3)];
+    return [kod, '', isim, adet, boy, birimKg.toFixed(2), toplamKg.toFixed(2)];
   });
 
   // (2) satır yoksa tablo hiç çizme
   if (body.length > 0) {
-    // (6) tüm autotable row’ları center; (5) startY = cursorY
+    const IMG_MAX_W = 35;   // pt cinsinden maksimum genişlik (A4 pt: 595 x 842)
+    const IMG_PAD   = 2;    // hücre içi kenar boşluğu
+   
     autoTable(doc, {
       startY: cursorY,
       head,
       body,
       theme: 'grid',
-      styles: { font: 'Roboto', fontSize: 8, minCellHeight: 35, halign: 'center', valign: 'middle' },
-      headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11,fillColor: [120, 160, 210] }, // istersen { halign:'center' } da eklenir
-      columnStyles: { 1: { cellWidth: 40 } },
+        styles: {
+          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          halign: 'center', valign: 'middle',
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0]
+        },
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+  lineWidth: 0.5     },
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+  lineWidth: 0.5     },
+      columnStyles: {
+        // Profil Kesit kolonu = index 1
+        // Hücre genişliği, görüntünün max-width + padding olacak şekilde sabitleniyor
+        1: { cellWidth: (IMG_MAX_W + 2 * IMG_PAD), halign: 'center', valign: 'middle' }
+      },
+      // 1) satır yüksekliğini ÖNCEDEN görüntü boyuna göre ayarlıyoruz (sığdırma yok)
+      didParseCell: (data) => {
+        if (data.section !== 'body' || data.column.index !== 1) return;
+        const resObj = optimSonuclar[data.row.index];
+        const pid = resObj?.profilId;
+        const img = pid != null ? imageMap[pid] : null;
+        if (typeof img !== 'string' || !img.startsWith('data:image')) return;
+        try {
+          const props = doc.getImageProperties(img); // { width, height, ... } (px cinsinden; oran için kullanıyoruz)
+          const ratio = props.width / props.height;
+          const drawW = IMG_MAX_W;        // sadece max-width uyguluyoruz
+          const drawH = drawW / ratio;    // oran korunuyor
+
+          // Hücre minimum yüksekliğini görsel yüksekliğine göre büyüt
+          const needed = drawH + 2 * IMG_PAD;
+          data.cell.styles.minCellHeight = Math.max(data.cell.styles.minCellHeight || 0, needed);
+        } catch {}
+      },
+      // 2) çizimde ise hücreye sığdırma YOK — sadece max-width'e göre, merkezde çiz
       didDrawCell: data => {
     if (data.section !== 'body' || data.column.index !== 1) return;
     const resObj = optimSonuclar[data.row.index];
@@ -327,20 +364,20 @@ const filteredRequirements = {
     const img = pid != null ? imageMap[pid] : null;
     if (typeof img !== 'string' || !img.startsWith('data:image')) return;
 
-    const cellX = data.cell.x + 2;
-    const cellY = data.cell.y + 2;
-    const cellW = data.cell.width  - 4;
-    const cellH = data.cell.height - 4;
+    const cellX = data.cell.x + IMG_PAD;
+    const cellY = data.cell.y + IMG_PAD;
+    const cellW = data.cell.width  - 2 * IMG_PAD;
+    const cellH = data.cell.height - 2 * IMG_PAD;
 
     try {
-      // SENKRON: en-boy özelliklerini jsPDF'ten al
-      const props = doc.getImageProperties(img); // { width, height, fileType, ... }
+     // SENKRON: en-boy özelliklerini jsPDF'ten al
+      const props = doc.getImageProperties(img);
       const ratio = props.width / props.height;
-      let drawW = cellW;
-      let drawH = drawW / ratio;
-      if (drawH > cellH) { drawH = cellH; drawW = drawH * ratio; }
-      const dx = cellX + (cellW - drawW) / 2;
-      const dy = cellY + (cellH - drawH) / 2;
+      const drawW = Math.min(IMG_MAX_W, cellW); // güvenlik: hücre genişliğinden taşmasın
+      const drawH = drawW / ratio;
+      const dx = cellX + (cellW - drawW) / 2;  // yatay merkez
+      const dy = cellY + (cellH - drawH) / 2;  // dikey merkez (satır yüksekliği önceden artırıldı)
+
 
       // formatı data URL'den tespit et (PNG/JPEG); PNG'ye zorlamayalım
       const fmt = img.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
@@ -378,8 +415,17 @@ const filteredRequirements = {
       colX = pageWidth - rightMargin - colW;
     }
 
-    const genelToplamKg = body.reduce((sum, row) => sum + (parseFloat(row[6]) || 0), 0);
-    const label = `Toplam Kilo: ${genelToplamKg.toFixed(3)} kg`;
+    // Genel toplamı, satırlardaki ham verilerden yeniden ve tam hassasiyetle hesapla:
+    const genelToplamKg = optimSonuclar.reduce((sum, res) => {
+      const entry = (filteredRequirements.systems || []).flatMap(s => s.profiles).find(p => p.profile_id === res.profilId);
+      if (!entry) return sum;
+      const boy = Number(entry?.profile?.boy_uzunluk || 0);
+      const birimKg = Number(entry?.profile?.birim_agirlik || 0);
+      const adet = Number(res?.toplamBoySayisi || 0);
+      const toplam = adet * boy / 1000 * birimKg; // kg
+      return sum + toplam;
+    }, 0);
+    const label = `Toplam Kilo: ${genelToplamKg.toFixed(2)} kg`;
 
     const fontSize = 10;
     const lineFactor2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
@@ -393,11 +439,11 @@ const filteredRequirements = {
       at?.styles?.lineColor ??
       at?.settings?.styles?.lineColor ??
       at?.table?.styles?.lineColor ??
-      [189, 189, 189];
+      [0, 0, 0];
 
     if (Array.isArray(lineClr)) doc.setDrawColor(lineClr[0], lineClr[1], lineClr[2]);
     else if (typeof lineClr === "number") doc.setDrawColor(lineClr);
-    else doc.setDrawColor(189, 189, 189);
+    else doc.setDrawColor(0, 0, 0);
 
     doc.setLineWidth(0.8);
     doc.rect(colX, tableBottomY + 0, colW, boxH, "S"); // hemen altında (0 boşluk)

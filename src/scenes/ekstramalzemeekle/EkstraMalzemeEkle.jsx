@@ -7,12 +7,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getCamlarFromApi } from '@/redux/actions/actions_camlar.js';
 import { getDigerMalzemelerFromApi } from '@/redux/actions/actions_diger_malzemeler.js';
 import { getProfillerFromApi } from '@/redux/actions/actions_profiller.js';
-
+import { getKumandalarFromApi } from '@/redux/actions/actions_kumandalar.js';
 // Projeye ekstra ekleme aksiyonları
 import {
   addExtraGlassToApi,
   addExtraMaterialToApi,
-  addExtraProfileToApi
+  addExtraProfileToApi,
+  addExtraRemoteToApi
 } from '@/redux/actions/actions_projeler.js';
 
 const Spinner = () => (
@@ -59,11 +60,21 @@ const EkstraMalzemeEkle = () => {
   const [camInputs, setCamInputs] = useState({});
   const [malzemeInputs, setMalzemeInputs] = useState({});
 
+  // kumanda için arama/sayfa/loading
+  const [kumandaSearch, setKumandaSearch] = useState('');
+  const [kumandaPage, setKumandaPage] = useState(1);
+  const [loadingKumanda, setLoadingKumanda] = useState(false);
+  const [kumandaInputs, setKumandaInputs] = useState({});
+
+  const [profilUnitPrices, setProfilUnitPrices] = useState({});
+  const [camUnitPrices, setCamUnitPrices] = useState({});
+  const [malzemeUnitPrices, setMalzemeUnitPrices] = useState({});
+  const [kumandaUnitPrices, setKumandaUnitPrices] = useState({}); // Kumanda tablosu için
   // reducer’dan sayfalı objeleri al
   const profiller = useSelector(s => s.getProfillerFromApiReducer) || EMPTY_PAGE;
   const camlar = useSelector(s => s.getCamlarFromApiReducer) || EMPTY_PAGE;
   const digerMalzemeler = useSelector(s => s.getDigerMalzemerFromApiReducer || s.getDigerMalzemelerFromApiReducer) || EMPTY_PAGE;
-
+  const kumandalar = useSelector(s => s.getKumandalarFromApiReducer) || EMPTY_PAGE;
   // Seçilen moda göre veri çek (server-side)
   useEffect(() => {
     if (mode === 'profil') {
@@ -72,7 +83,14 @@ const EkstraMalzemeEkle = () => {
         .finally(() => setLoadingProfile(false));
     }
   }, [dispatch, mode, profilePage, profileSearch]);
-
+  useEffect(() => {
+    if (mode === 'kumanda') {
+      setLoadingKumanda(true);
+      Promise
+        .resolve(dispatch(getKumandalarFromApi({ page: kumandaPage, q: kumandaSearch, limit: 5 })))
+        .finally(() => setLoadingKumanda(false));
+    }
+  }, [dispatch, mode, kumandaPage, kumandaSearch]);
   useEffect(() => {
     if (mode === 'cam') {
       setLoadingGlass(true);
@@ -158,11 +176,15 @@ const EkstraMalzemeEkle = () => {
   // --- Ekleme handler’ları ---
   const onAddProfile = useCallback((profil) => {
     const data = profilInputs[profil.id] || {};
+    const chosenUnitPrice = Number(
+      (profilUnitPrices?.[profil.id] ?? getApiUnitPrice(profil)) || 0
+    );
     dispatch(addExtraProfileToApi(projectId, {
       project_id: projectId,
       profile_id: profil.id,
       cut_length_mm: Number(data.cut_length_mm || 0),
       cut_count: Number(data.cut_count || 0),
+      unit_price: chosenUnitPrice,
     }))
       .then(() => {
         showNotification('Profil başarıyla eklendi');
@@ -173,16 +195,20 @@ const EkstraMalzemeEkle = () => {
         });
       })
       .catch(() => showNotification('Profil eklenirken hata oluştu'));
-  }, [dispatch, profilInputs, projectId]);
+  }, [dispatch, profilInputs, projectId, profilUnitPrices]);
 
   const onAddGlass = useCallback((cam) => {
     const data = camInputs[cam.id] || {};
+    const chosenUnitPrice = Number(
+      (camUnitPrices?.[cam.id] ?? getApiUnitPrice(cam)) || 0
+    );
     dispatch(addExtraGlassToApi(projectId, {
       project_id: projectId,
       glass_type_id: cam.id,
       width_mm: Number(data.width_mm || 0),
       height_mm: Number(data.height_mm || 0),
       count: Number(data.count || 0),
+      unit_price: chosenUnitPrice,
     }))
       .then(() => {
         showNotification('Cam başarıyla eklendi');
@@ -193,24 +219,30 @@ const EkstraMalzemeEkle = () => {
         });
       })
       .catch(() => showNotification('Cam eklenirken hata oluştu'));
-  }, [dispatch, camInputs, projectId]);
+  }, [dispatch, camInputs, projectId, camUnitPrices]);
 
   const onAddOther = useCallback((m) => {
     const data = malzemeInputs[m.id] || {};
+    const chosenUnitPrice = Number(
+      ((malzemeInputs[m.id]?.unit_price) ?? getApiUnitPrice(m)) || 0
+    );
     dispatch(addExtraMaterialToApi(projectId, {
       project_id: projectId,
       material_id: m.id,
       count: Number(data.count || 0),
-      cut_length_mm: data.size_input_text || '',
-      unit_price:data.unit_price,
-        pdf: {
-    "camCiktisi": true,
-    "profilAksesuarCiktisi": true,
-    "boyaCiktisi": true,
-    "siparisCiktisi": true,
-    "optimizasyonDetayliCiktisi": true,
-    "optimizasyonDetaysizCiktisi": true
-  }
+      cut_length_mm: (m.hesaplama_turu === 'adetli')
+        ? 0
+        : Number(data.size_input_text || 0),
+      unit_price: data.unit_price,
+      unit_price: chosenUnitPrice,
+      pdf: {
+        "camCiktisi": true,
+        "profilAksesuarCiktisi": true,
+        "boyaCiktisi": true,
+        "siparisCiktisi": true,
+        "optimizasyonDetayliCiktisi": true,
+        "optimizasyonDetaysizCiktisi": true
+      }
     }))
       .then(() => {
         showNotification('Malzeme başarıyla eklendi');
@@ -223,13 +255,51 @@ const EkstraMalzemeEkle = () => {
       .catch(() => showNotification('Malzeme eklenirken hata oluştu'));
   }, [dispatch, malzemeInputs, projectId]);
 
+
+
+  const onAddRemote = useCallback((remote) => {
+    const data = kumandaInputs[remote.id] || {};
+    const adet = Number(data.count || 0);
+    const chosenUnitPrice = Number(
+      (kumandaUnitPrices[remote.id] ?? getApiUnitPrice(remote)) || 0
+    );
+    dispatch(addExtraRemoteToApi(projectId, {
+      project_id: projectId,
+      remote_id: remote.id,
+      count: adet,
+      unit_price: chosenUnitPrice, // örnekteki gibi sabit; istersen API'den gelen price'a bağlayabilirsin
+      pdf: {
+        camCiktisi: true,
+        profilAksesuarCiktisi: true,
+        boyaCiktisi: true,
+        siparisCiktisi: true,
+        optimizasyonDetayliCiktisi: true,
+        optimizasyonDetaysizCiktisi: true
+      }
+    }))
+      .then(() => {
+        showNotification('Kumanda başarıyla eklendi');
+        setKumandaInputs(prev => {
+          const next = { ...prev };
+          delete next[remote.id];
+          return next;
+        });
+      })
+      .catch(() => showNotification('Kumanda eklenirken hata oluştu'));
+  }, [dispatch, kumandaInputs, projectId]);
+
+
+
+
+  const getApiUnitPrice = (item) =>
+    item?.unit_price ?? item?.price ?? item?.unitPrice ?? item?.fiyat ?? 0;
   return (
     <div className="p-5">
       <div className="flex items-center mb-4">
         <h1 className="text-2xl font-bold">Ekstra Malzeme Ekle</h1>
         <button
           onClick={() => navigate(`/projeduzenle/${projectId}`)}
-            className="btn btn-sm ml-auto"
+          className="btn btn-sm ml-auto"
         >
           Projeye Dön
         </button>
@@ -242,15 +312,18 @@ const EkstraMalzemeEkle = () => {
       )}
 
       {/* seçim kartları — görünüş aynı */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <button onClick={() => { setMode('profil'); setProfilePage(1); }} className="card bg-base-100 shadow p-4 hover:bg-blue-100">
-          <h2 className="text-lg font-semibold">Profil Ekle</h2>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <button onClick={() => { setMode('profil'); setProfilePage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
+          <h2 className="text-lg  font-semibold">Profil Ekle</h2>
         </button>
-        <button onClick={() => { setMode('cam'); setGlassPage(1); }} className="card bg-base-100 shadow p-4 hover:bg-blue-100">
+        <button onClick={() => { setMode('cam'); setGlassPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
           <h2 className="text-lg font-semibold">Cam Ekle</h2>
         </button>
-        <button onClick={() => { setMode('malzeme'); setOtherPage(1); }} className="card bg-base-100 shadow p-4 hover:bg-blue-100">
+        <button onClick={() => { setMode('malzeme'); setOtherPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
           <h2 className="text-lg font-semibold">Malzeme Ekle</h2>
+        </button>
+        <button onClick={() => { setMode('kumanda'); setKumandaPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
+          <h2 className="text-lg font-semibold">Kumanda Ekle</h2>
         </button>
       </div>
 
@@ -285,6 +358,15 @@ const EkstraMalzemeEkle = () => {
                 className="input input-bordered w-full max-w-md"
               />
             )}
+            {mode === 'kumanda' && (
+              <input
+                type="text"
+                value={kumandaSearch}
+                onChange={(e) => { setKumandaSearch(e.target.value); setKumandaPage(1); }}
+                placeholder="Kumanda ara..."
+                className="input input-bordered w-full max-w-md"
+              />
+            )}
             <button onClick={() => setMode(null)} className="btn btn-sm ml-4">Geri</button>
           </div>
 
@@ -292,12 +374,13 @@ const EkstraMalzemeEkle = () => {
           {mode === 'profil' && (
             <div className="w-full">
               <table className="table w-full">
-                <thead>
+                <thead >
                   <tr>
                     <th>Profil Kodu</th>
                     <th>Profil Adı</th>
                     <th>Kesim Ölçüsü (mm)</th>
                     <th>Kesim Adedi</th>
+                    <th>Birim Fiyat</th>
                     <th className="text-right">Ekle</th>
                   </tr>
                 </thead>
@@ -306,7 +389,7 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(profiller.items ?? []).map(profil => (
-                      <tr key={profil.id}>
+                      <tr className="border border-gray-200" key={profil.id}>
                         <td>{profil.profil_kodu}</td>
                         <td>{profil.profil_isim}</td>
                         <td>
@@ -336,6 +419,34 @@ const EkstraMalzemeEkle = () => {
                               }))
                             }
                           />
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              className="input input-sm input-bordered w-24"
+                              value={
+                                profilUnitPrices[profil.id] ??
+                                getApiUnitPrice(profil) // açılışta API fiyatı
+                              }
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setProfilUnitPrices((prev) => ({ ...prev, [profil.id]: v }));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-xs"
+                              onClick={() =>
+                                setProfilUnitPrices((prev) => ({
+                                  ...prev,
+                                  [profil.id]: getApiUnitPrice(profil),
+                                }))
+                              }
+                            >
+                              Sıfırla
+                            </button>
+                          </div>
                         </td>
                         <td className="text-right">
                           <button
@@ -369,6 +480,7 @@ const EkstraMalzemeEkle = () => {
                     <th>Genişlik (mm)</th>
                     <th>Yükseklik (mm)</th>
                     <th>Adet</th>
+                    <th>Birim Fiyat</th>
                     <th className="text-right">Ekle</th>
                   </tr>
                 </thead>
@@ -377,11 +489,12 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(camlar.items ?? []).map(cam => (
-                      <tr key={cam.id}>
+                      <tr className="border border-gray-200" key={cam.id}>
                         <td>{cam.cam_isim}</td>
                         <td>
                           <input
                             type="number"
+                            placeholder='mm'
                             className="input input-sm input-bordered w-20"
                             value={camInputs[cam.id]?.width_mm || ''}
                             onChange={e =>
@@ -395,6 +508,7 @@ const EkstraMalzemeEkle = () => {
                         <td>
                           <input
                             type="number"
+                            placeholder='mm'
                             className="input input-sm input-bordered w-20"
                             value={camInputs[cam.id]?.height_mm || ''}
                             onChange={e =>
@@ -408,6 +522,7 @@ const EkstraMalzemeEkle = () => {
                         <td>
                           <input
                             type="number"
+                            placeholder='Adet'
                             className="input input-sm input-bordered w-16"
                             value={camInputs[cam.id]?.count || ''}
                             onChange={e =>
@@ -417,6 +532,34 @@ const EkstraMalzemeEkle = () => {
                               }))
                             }
                           />
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              className="input input-sm input-bordered w-24"
+                              value={
+                                camUnitPrices[cam.id] ??
+                                getApiUnitPrice(cam)
+                              }
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setCamUnitPrices((prev) => ({ ...prev, [cam.id]: v }));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-xs"
+                              onClick={() =>
+                                setCamUnitPrices((prev) => ({
+                                  ...prev,
+                                  [cam.id]: getApiUnitPrice(cam),
+                                }))
+                              }
+                            >
+                              Sıfırla
+                            </button>
+                          </div>
                         </td>
                         <td className="text-right">
                           <button
@@ -448,7 +591,8 @@ const EkstraMalzemeEkle = () => {
                   <tr>
                     <th>İsim</th>
                     <th>Adet</th>
-                    <th>Ölçü Metni</th>
+                    <th>Kesim Ölçüsü</th>
+                    <th>Birim Fiyat</th>
                     <th className="text-right">Ekle</th>
                   </tr>
                 </thead>
@@ -457,11 +601,12 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(digerMalzemeler.items ?? []).map(m => (
-                      <tr key={m.id}>
+                      <tr className="border border-gray-200" key={m.id}>
                         <td>{m.diger_malzeme_isim}</td>
                         <td>
                           <input
                             type="number"
+                            placeholder='Adet'
                             className="input input-sm input-bordered w-20"
                             value={malzemeInputs[m.id]?.count || ''}
                             onChange={e =>
@@ -473,18 +618,56 @@ const EkstraMalzemeEkle = () => {
                           />
                         </td>
                         <td>
-                          <input
-                            type="text"
-                            className="input input-sm input-bordered w-40"
-                            value={malzemeInputs[m.id]?.size_input_text || ''}
-                            onChange={e =>
-                              setMalzemeInputs(prev => ({
-                                ...prev,
-                                [m.id]: { ...(prev[m.id] || {}), size_input_text: e.target.value }
-                              }))
-                            }
-                          />
+                          {m.hesaplama_turu === 'olculu' ? (
+                            <input
+                              type="number"
+                              placeholder="mm"
+                              className="input input-sm input-bordered w-40"
+                              value={malzemeInputs[m.id]?.size_input_text || ''}
+                              onChange={(e) =>
+                                setMalzemeInputs((prev) => ({
+                                  ...prev,
+                                  [m.id]: { ...(prev[m.id] || {}), size_input_text: e.target.value }
+                                }))
+                              }
+                            />
+                          ) : (
+                            // 'adetli' ise input gizlenir; görsel olarak kısa bir ibare gösterilebilir
+                            <span className="text-gray-400">Adetli Malzeme</span>
+                          )}
                         </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+<input
+  type="number"
+  className="input input-sm input-bordered w-24"
+  value={
+    (malzemeInputs[m.id]?.unit_price) ?? getApiUnitPrice(m) // açılışta API fiyatı
+  }
+  onChange={(e) => {
+    const v = e.target.value; // string gelir
+    setMalzemeInputs(prev => ({
+      ...prev,
+      [m.id]: { ...(prev[m.id] || {}), unit_price: v }
+    }));
+  }}
+/>
+<button
+  type="button"
+  className="btn btn-xs"
+  onClick={() =>
+    setMalzemeInputs(prev => ({
+      ...prev,
+      [m.id]: { ...(prev[m.id] || {}), unit_price: getApiUnitPrice(m) }
+    }))
+  }
+>
+  Sıfırla
+</button>
+
+                          </div>
+                        </td>
+
                         <td className="text-right">
                           <button
                             className="btn btn-sm btn-primary"
@@ -506,8 +689,94 @@ const EkstraMalzemeEkle = () => {
               <Pager data={digerMalzemeler || EMPTY_PAGE} setPage={setOtherPage} />
             </div>
           )}
+          {mode === 'kumanda' && (
+            <div className="w-full">
+              <table className="table w-full">
+                <thead>
+                  <tr>
+                    <th>Kumanda İsmi</th>
+                    <th>Adet</th>
+                    <th>Birim Fiyat</th>
+                    <th className="text-right">Ekle</th>
+                  </tr>
+                </thead>
+
+                {loadingKumanda ? (
+                  <tbody><tr><td colSpan={3}><Spinner /></td></tr></tbody>
+                ) : (
+                  <tbody>
+                    {(kumandalar.items ?? []).map(remote => (
+                      <tr className="border border-gray-200" key={remote.id}>
+                        <td>{remote.kumanda_isim || remote.isim || remote.name}</td>
+                        <td>
+                          <input
+                            type="number"
+                            placeholder="Adet"
+                            className="input input-sm input-bordered w-20"
+                            value={kumandaInputs[remote.id]?.count || ''}
+                            onChange={e =>
+                              setKumandaInputs(prev => ({
+                                ...prev,
+                                [remote.id]: { ...(prev[remote.id] || {}), count: e.target.value }
+                              }))
+                            }
+                          />
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              className="input input-sm input-bordered w-24"
+                              value={
+                                kumandaUnitPrices[remote.id] ??
+                                getApiUnitPrice(remote)
+                              }
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setKumandaUnitPrices(prev => ({ ...prev, [remote.id]: v }));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-xs"
+                              onClick={() =>
+                                setKumandaUnitPrices(prev => ({
+                                  ...prev,
+                                  [remote.id]: getApiUnitPrice(remote)
+                                }))
+                              }
+                            >
+                              Sıfırla
+                            </button>
+                          </div>
+                        </td>
+
+                        <td className="text-right">
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => onAddRemote(remote)}
+                          >
+                            Ekle
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {(!kumandalar.items || kumandalar.items.length === 0) && (
+                      <tr><td colSpan={3} className="text-center text-gray-500 py-6">Kayıt yok</td></tr>
+                    )}
+                  </tbody>
+                )}
+              </table>
+
+              {/* sayfalama */}
+              <Pager data={kumandalar || EMPTY_PAGE} setPage={setKumandaPage} />
+            </div>
+          )}
+
         </div>
       )}
+
     </div>
   );
 };

@@ -91,7 +91,20 @@ setPaintedPrice(
   (proje?.painted_price) ? proje.painted_price : 0
 );
   }, [proje]);
+const handleNumberChange = (setter) => (e) => {
+  const v = e.target.value;
+  if (v === "") {
+    setter(0);
+  } else {
+    setter(parseFloat(v));
+  }
+};
 
+const handleNumberBlur = (val, setter) => {
+  if (val === 0 || val === "" || isNaN(val)) {
+    setter(0);
+  }
+};
   // Requirements seçili değerleri
   useEffect(() => {
     if (!requirements) return;
@@ -293,25 +306,29 @@ setPaintedPrice(
           <div className="w-1/2 font-semibold flex items-center justify-center p-4 ">
             Profil Press Fiyatı:
             <div className="flex items-stretch ml-2">
-              <input
-                type="number"
-                step="0.01"
-                value={pressPrice}
-                onChange={(e) => setPressPrice(Number(e.target.value))}
-                className="input input-bordered rounded-r w/full max-w-xs"
-              />
+<input
+  type="number"
+  step="0.01"
+  value={pressPrice === 0 ? "" : pressPrice}
+  onChange={handleNumberChange(setPressPrice)}
+  onBlur={() => handleNumberBlur(pressPrice, setPressPrice)}
+  placeholder="Press Profil Fiyatı Giriniz.."
+  className="input input-bordered rounded-r w/full max-w-xs"
+/>
             </div>
           </div>
 
           <div className="w-1/2 font-semibold flex justify-center items-center p-4">
             Profil Boyalı Fiyatı:
-            <input
-                type="number"
-                step="0.01"
-                value={paintedPrice}
-                onChange={(e) => setPaintedPrice(Number(e.target.value))}
-              className="input input-bordered ml-2 w-full max-w-xs"
-            />
+<input
+  type="number"
+  step="0.01"
+  value={paintedPrice === 0 ? "" : paintedPrice}
+  onChange={handleNumberChange(setPaintedPrice)}
+  onBlur={() => handleNumberBlur(paintedPrice, setPaintedPrice)}
+  placeholder="Boyalı Profil Fiyatı Giriniz.."
+  className="input input-bordered ml-2 w/full max-w-xs"
+/>
           </div>
 
         </div>

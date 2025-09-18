@@ -326,7 +326,7 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     { header: "Genişlik (mm)", field: "width_mm", align: "center", width: 90, format: "integer" },
     { header: "Yükseklik (mm)", field: "height_mm", align: "center", width: 100, format: "integer" },
     { header: "Adet", field: "count", align: "center", width: 60, format: "integer" },
-    { header: "Metrekare (m²)", field: "m2", align: "center", width: 110, format: "truncate(4)" }
+    { header: "Metrekare (m²)", field: "m2", align: "center", width: 110, format: "number(2)" }
   ];
 
   // ✨ PDF render'ından hemen önce: sadece pdf.camCiktisi === true olan camları bırak
@@ -341,16 +341,50 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
   };
 
   const rowsRaw = mapGlass(filteredRequirements);
-  if (rowsRaw.length > 0) {
+  // m2 her durumda float ve yuvarlamasız olsun: upstream'de yuvarlama varsa burada sıfırlıyoruz
+  const rows = rowsRaw.map(r => {
+    const w = Number(pick(r, "width_mm")) || 0;
+    const h = Number(pick(r, "height_mm")) || 0;
+    const c = Number(pick(r, "count")) || 0;
+    // mm * mm * adet => mm² * adet. m²'ye çevirmek için 1e6'ya böl.
+    const m2Float = (w * h * c) / 1e6;
+    return { ...r, m2: m2Float };
+  });
+
+  if (rows.length > 0) {
     const head = [columns.map(c => c.header)];
-    const body = rowsRaw.map(r => columns.map(c => formatCell(pick(r, c.field), c.format)));
+    const body = rows.map(r => columns.map(
+      c => formatCell(pick(r, c.field), c.format)
+    ));
 
     autoTable(doc, {
       startY: cursorY,
       head, body,
       theme: "grid",
-      styles: { font: fontName, fontSize: 10, minCellHeight: 22 },
-      headStyles: { font: fontName, fontStyle: "normal", fontSize: 11,fillColor: [120, 160, 210] },
+      // ✨ split header ile aynı görsel dil:
+      // - çizgiler siyah
+      // - metinler siyah
+      // - çizgi kalınlığı 0.8 (header kutularıyla uyumlu)
+      styles: {
+        font: fontName,
+        fontSize: 10,
+        minCellHeight: 22,
+        lineWidth: 0.8,
+        lineColor: [0, 0, 0],
+        textColor: [0, 0, 0],
+      },
+      headStyles: {
+        font: fontName,
+        fontStyle: "normal",
+        fontSize: 11,
+        fillColor: [120, 160, 210]
+      },
+      bodyStyles: {
+        textColor: [0, 0, 0]
+      },
+      // tablo çerçevesi ve iç ızgara siyah
+      tableLineColor: [0, 0, 0],
+      tableLineWidth: 0.8,
       columnStyles: buildColumnStyles(columns),
       margin: { left: 39.5, right: 39.5 }
     });
@@ -371,8 +405,8 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
       m2ColX = pageW - 40 - m2ColW; // rightMargin = 40
     }
 
-    const totalM2 = sumField(rowsRaw, "m2");
-    const label = `Toplam Metrekare: ${formatCell(totalM2, "truncate(4)")}`;
+    const totalM2 = sumField(rows, "m2");
+    const label = `Toplam Metrekare: ${formatCell(totalM2, "number(2)")}`;
     const fontSize = 10;
     const lineFactor2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
     const padX = 4, padY = 4;
@@ -380,14 +414,6 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     const contentH = lines.length * (fontSize * lineFactor2);
     const boxH = Math.max(22, contentH + 2 * padY);
 
-    const lineClr =
-      at?.styles?.lineColor ??
-      at?.settings?.styles?.lineColor ??
-      at?.table?.styles?.lineColor ??
-      [189, 189, 189];
-    if (Array.isArray(lineClr)) doc.setDrawColor(lineClr[0], lineClr[1], lineClr[2]);
-    else if (typeof lineClr === "number") doc.setDrawColor(lineClr);
-    else doc.setDrawColor(189, 189, 189);
 
     doc.setLineWidth(0.8);
     doc.rect(m2ColX, tableBottomY, m2ColW, boxH, "S");

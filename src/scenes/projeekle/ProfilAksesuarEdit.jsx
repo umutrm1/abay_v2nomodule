@@ -92,11 +92,11 @@ function buildRemotePlanRowsFromRequirements(requirements) {
   const capacityMap = new Map();
   filteredSystems.forEach((sys) => {
     (sys.remotes || []).forEach((r) => {
-      if (r?.pdf?.siparisCiktisi === false) return; // PDF mantığındaki kısıt
+      if (r?.pdf?.profilAksesuarCiktisi === false) return; // PDF mantığındaki kısıt
       const cap = Number(r?.remote?.kapasite ?? r?.kapasite ?? 0);
       if (!Number.isFinite(cap) || cap <= 0) return;
       const name = r?.remote?.kumanda_isim ? String(r.remote.kumanda_isim) : "Kumanda";
-      const unitPrice = Number(r?.remote?.unit_price ?? r?.unit_price ?? r?.remote?.price ?? 0);
+      const unitPrice = Number(r?.remote?.price ?? 0);
       const oi = safeIndex(r?.order_index);
       const prev = capacityMap.get(cap);
       if (!prev || unitPrice < prev.unitPrice) {
@@ -138,8 +138,9 @@ function buildRemotePlanRowsFromRequirements(requirements) {
     // kalan 0/1 için
     if (remaining > 0) {
       if (capacityMap.has(1)) {
-        const i1 = capacityMap.get(1);
-        remotePlan.push({ cap: 1, count: remaining, name: i1.name, unitPrice: i1.unitPrice, orderIndex: i1.minOrderIndex, orderIndex: info1.minOrderIndex });
+        const info1 = capacityMap.get(1);
+        console.log(info1)
+        remotePlan.push({ cap: 1, count: remaining, name: info1.name, unitPrice: info1.unitPrice, orderIndex: info1.minOrderIndex, orderIndex: info1.minOrderIndex });
         remaining = 0;
       } else {
         // 1 yoksa, remaining’i kapatan en küçük >= remaining kapasite; o da yoksa en küçük kapasite

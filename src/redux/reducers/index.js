@@ -1,31 +1,33 @@
 import {combineReducers} from "redux"
-import getBayilerFromApiReducer from "./getBayilerFromApiReducer";
-import editBayilerOnApiReducer from "./editBayilerOnApiReducer";
-import getMusterilerFromApiReducer from "./getMusterilerFromApiReducer";
-import getProfillerFromApiReducer from "./getProfillerFromApiReducer";
-import getDigerMalzemelerFromApiReducer from "./getDigerMalzemelerFromApiReducer";
-import getCamlarFromApiReducer from "./getCamlarFromApiReducer";
-import getSistemlerFromApiReducer from "./getSistemlerFromApiReducer";
-import getProjelerFromApiReducer from "./getProjelerFromApiReducer";
-import getSelectedFromProjelerTableReducer from "./getSelectedFromProjelerTableReducer";
-import getSiparislerFromApiReducer from "./getSiparislerFromApiReducer";
-import siparisDetayReducer from "./siparisDetayReducer";
-import siparislerTableReducer from "./siparislerTableReducer";
-import getSiparisDetayReducer from "./getSiparisDetayReducer";
-import systemVariantsOfSystem from "./systemvariantsofsystem";
-import getProjeFromApiReducer from "./getProjeFromApiReducer";
-import getSystemFullVariantsOfSystemFromApiReducer from "./getSystemFullVariantsOfSystemFromApiReducer";
-import getProjeRequirementsFromApiReducer from "./getProjeRequirementsFromApiReducer";
-import getProfilImageFromApiReducer from "./getProfilImageFromApiReducer";
-import getProfileColorsFromApiReducer from "./getProfileColorsFromApiReducer";
-import getGlassColorsFromApiReducer from "./getGlassColorsFromApiReducer";
-import getSystemVariantsFromApiReducer from "./getSystemVariantsFromApiReducer";
-import auth from "./authReducer";
-import getKumandalarFromApiReducer from "./getKumandalarFromApiReducer";
-import pdfConfigsReducer from "./pdfConfigsReducer";
+import getBayilerFromApiReducer from "./getBayilerFromApiReducer.js";
+import editBayilerOnApiReducer from "./editBayilerOnApiReducer.js";
+import getMusterilerFromApiReducer from "./getMusterilerFromApiReducer.js";
+import getProfillerFromApiReducer from "./getProfillerFromApiReducer.js";
+import getDigerMalzemelerFromApiReducer from "./getDigerMalzemelerFromApiReducer.js";
+import getCamlarFromApiReducer from "./getCamlarFromApiReducer.js";
+import getSistemlerFromApiReducer from "./getSistemlerFromApiReducer.js";
+import getProjelerFromApiReducer from "./getProjelerFromApiReducer.js";
+import getSelectedFromProjelerTableReducer from "./getSelectedFromProjelerTableReducer.js";
+import getSiparislerFromApiReducer from "./getSiparislerFromApiReducer.js";
+import siparisDetayReducer from "./siparisDetayReducer.js";
+import siparislerTableReducer from "./siparislerTableReducer.js";
+import getSiparisDetayReducer from "./getSiparisDetayReducer.js";
+import systemVariantsOfSystem from "./systemVariantsOfSystem.js";
+import getProjeFromApiReducer from "./getProjeFromApiReducer.js";
+import getSystemFullVariantsOfSystemFromApiReducer from "./getSystemFullVariantsOfSystemFromApiReducer.js";
+import getProjeRequirementsFromApiReducer from "./getProjeRequirementsFromApiReducer.js";
+import getProfilImageFromApiReducer from "./getProfilImageFromApiReducer.js";
+import getProfileColorsFromApiReducer from "./getProfileColorsFromApiReducer.js";
+import getGlassColorsFromApiReducer from "./getGlassColorsFromApiReducer.js";
+import getSystemVariantsFromApiReducer from "./getSystemVariantsFromApiReducer.js";
+import auth from "./authReducer.js";
+import getKumandalarFromApiReducer from "./getKumandalarFromApiReducer.js";
+import pdfConfigsReducer from "./pdfConfigsReducer.js";
 import getPdfTitleByKeyReducer from "./getPdfTitleByKeyReducer.js";
-import getPdfBrandByKeyReducer from "./getPdfBrandByKeyReducer";
-import getBrandImageReducer from "./getBrandImageReducer";
+import getPdfBrandByKeyReducer from "./getPdfBrandByKeyReducer.js";
+import getBrandImageReducer from "./getBrandImageReducer.js";
+import getSystemImageFromApiReducer from "./getSystemImageFromApiReducer.js";
+import getSystemVariantImageFromApiReducer from "./getSystemVariantImageFromApiReducer.js";
 
 
 const rootReducer = combineReducers({
@@ -55,7 +57,9 @@ const rootReducer = combineReducers({
     pdfConfigsReducer,
     getPdfTitleByKeyReducer,
     getPdfBrandByKeyReducer,
-    getBrandImageReducer
+    getBrandImageReducer,
+    getSystemImageFromApiReducer,
+    getSystemVariantImageFromApiReducer
 })
 
 export default rootReducer;

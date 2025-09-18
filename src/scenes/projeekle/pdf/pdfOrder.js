@@ -338,45 +338,70 @@ doc.text(summary, midX, centerY, { align: "center" });
           profil_isim || "",
           p.cut_length_mm,
           p.cut_count,
-          (Number(birim_agirlik) || 0).toFixed(3),
-          toplamAgirlikKg.toFixed(3)
+          (Number(birim_agirlik) || 0).toFixed(2),
+          toplamAgirlikKg.toFixed(2)
         ];
       });
 
-      autoTable(doc, {
-        startY: cursorY,
-        head, body,
-        theme: "grid",
-        styles: { font: fontName, fontSize: 10, halign: "center", valign: "middle" }, // tüm row'lar center
-        headStyles: { font: fontName, fontStyle: "normal", fontSize: 10, halign: "center", fillColor: [120, 161, 209] },
-        columnStyles: { 1: { cellWidth: 40, halign: "center" } },
-        didDrawCell: data => {
-          if (data.section === "body" && data.column.index === 1) {
-            const pid = profilesSorted[data.row.index]?.profile_id;
-            const img = imageMap[pid];
-            if (img) {
-  const pad = 2;
-  const cellX = data.cell.x + pad;
-  const cellY = data.cell.y + pad;
-  const cellW = data.cell.width  - pad * 2;
-  const cellH = data.cell.height - pad * 2;
-                try {
-    const props = doc.getImageProperties(img);
-    const ratio = props.width / props.height;
-    let w = cellW, h = w / ratio;
-    if (h > cellH) { h = cellH; w = h * ratio; }
-    const dx = cellX + (cellW - w) / 2;
-    const dy = cellY + (cellH - h) / 2;
-    const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-    doc.addImage(img, fmt, dx, dy, w, h);
-  } catch (e) {
-    console.warn("Profil kesit resmi çizilemedi:", e);
-  }
-            }
-          }
-        },
-        margin: { left: 40, right: 40 }
-      });
+const IMG_PAD = 2;
+const IMG_MAX_W = 35;
+
+autoTable(doc, {
+  startY: cursorY,
+  head, body,
+  theme: "grid",
+  styles: {
+    font: 'Roboto', fontSize: 10, halign: 'center', valign: 'middle',
+    textColor: [0, 0, 0], lineColor: [0, 0, 0]
+  },
+  tableLineColor: [0, 0, 0],
+  tableLineWidth: 0.5,
+  headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
+
+  // Profil Kesit sütunu genişliği = IMG_MAX_W + 2*IMG_PAD
+  columnStyles: { 1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } },
+
+  // Satır yüksekliği görsele göre
+  didParseCell: (data) => {
+    if (data.section !== "body" || data.column.index !== 1) return;
+    const pid = profilesSorted[data.row.index]?.profile_id;
+    const img = imageMap[pid];
+    if (!img) return;
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawH = IMG_MAX_W / ratio;
+      const needMinH = drawH + 2 * IMG_PAD;
+      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+        data.cell.styles.minCellHeight = needMinH;
+      }
+    } catch {}
+  },
+
+  // Çizim: sabit max genişlik, ortalanmış
+  didDrawCell: (data) => {
+    if (data.section !== "body" || data.column.index !== 1) return;
+    const pid = profilesSorted[data.row.index]?.profile_id;
+    const img = imageMap[pid];
+    if (!img) return;
+
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawW = IMG_MAX_W;
+      const drawH = drawW / ratio;
+
+      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+      const dy = data.cell.y + (data.cell.height - drawH) / 2;
+      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+      doc.addImage(img, fmt, dx, dy, drawW, drawH);
+    } catch (e) {
+      console.warn("Profil kesit resmi çizilemedi:", e);
+    }
+  },
+
+  margin: { left: 40, right: 40 }
+});
       cursorY = doc.lastAutoTable?.finalY || cursorY;
     }
 
@@ -390,8 +415,16 @@ doc.text(summary, midX, centerY, { align: "center" });
         head: [['Malzeme Adı','Kesim Ölçüsü (mm)','Adet']],
         body: olculu.map(m => [m.material?.diger_malzeme_isim || m.material?.name || "-", m.cut_length_mm, m.count]),
         theme: "grid",
-        styles: { font: fontName, fontSize: 10, halign: "center", valign: "middle" }, // center
-        headStyles: { font: fontName, fontStyle: "normal", fontSize: 10, halign: "center", fillColor: [120, 161, 209] },
+        styles: {
+          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          halign: 'center', valign: 'middle',
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0]
+        },
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+  lineWidth: 0.5     },
         margin: { left: leftMargin, right: rightMargin }
       });
       cursorY = doc.lastAutoTable?.finalY || cursorY;
@@ -403,8 +436,16 @@ doc.text(summary, midX, centerY, { align: "center" });
         head: [['Malzeme Adı','Adet']],
         body: adetli.map(m => [m.material?.diger_malzeme_isim || m.material?.name || "-", m.count]),
         theme: "grid",
-        styles: { font: fontName, fontSize: 10, halign: "center", valign: "middle" }, // center
-        headStyles: { font: fontName, fontStyle: "normal", fontSize: 10, halign: "center", fillColor: [120, 161, 209] },
+        styles: {
+          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          halign: 'center', valign: 'middle',
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0]
+        },
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+  lineWidth: 0.5     },
         margin: { left: leftMargin, right: rightMargin }
       });
       cursorY = doc.lastAutoTable?.finalY || cursorY;
@@ -425,7 +466,7 @@ doc.text(summary, midX, centerY, { align: "center" });
     doc.rect(rx, ry, rightBoxW, rightBoxH, "S");
     setFontSafe(doc, fontName, "bold");
     doc.setFontSize(10);
-    doc.text(`Toplam Profil Kg: ${toplamProfilKg.toFixed(3)}`, rx + rightBoxW / 2, ry + rightBoxH / 2 + 3, { align: "center" });
+    doc.text(`Toplam Profil Kg: ${toplamProfilKg.toFixed(2)}`, rx + rightBoxW / 2, ry + rightBoxH / 2 + 3, { align: "center" });
 
     cursorY += rightBoxH; // (ileride başka öğe eklemek istersen)
   }

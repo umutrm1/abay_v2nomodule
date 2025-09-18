@@ -14,6 +14,7 @@ import DialogProfilSec from "./DialogProfilSec.jsx";
 import DialogCamSec from "./DialogCamSec.jsx";
 import DialogMalzemeSec from "./DialogMalzemeSec.jsx";
 import DialogKumandaSec from "./DialogKumandaSec.jsx";
+import DialogSystemVariantFoto from "./DialogSystemVariantFoto.jsx";
 
 const SistemVaryantDuzenle = () => {
   const dispatch = useDispatch();
@@ -21,7 +22,7 @@ const SistemVaryantDuzenle = () => {
   const { variantId } = useParams();
 
   const seciliVaryant = useSelector(s => s.getSystemFullVariantsOfSystemFromApiReducer) || {};
-
+  const [openVariantPhotoDlg, setOpenVariantPhotoDlg] = useState(false);
   const [openPdfDlg, setOpenPdfDlg] = useState(false);
   const [pdfTarget, setPdfTarget] = useState({ type: null, rowKey: null });
   const [pdfDraft, setPdfDraft] = useState(null);
@@ -320,6 +321,12 @@ const SistemVaryantDuzenle = () => {
             onChange={e => setVariantName(e.target.value)}
           />
         </div>
+        <button
+  onClick={() => setOpenVariantPhotoDlg(true)}
+  className="btn bg-sky-600 ml-5 hover:bg-sky-700 text-white"
+>
+  Fotoğraf
+</button>
         <button
           onClick={handleSave}
           className="btn ml-auto bg-green-600 hover:bg-green-700 text-white"
@@ -625,6 +632,11 @@ const SistemVaryantDuzenle = () => {
           }
         }}
       />
+      <DialogSystemVariantFoto
+  open={openVariantPhotoDlg}
+  onOpenChange={setOpenVariantPhotoDlg}
+  variantId={variantId}
+/>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import {
   editSystemOnApi,
   getSystemVariantsFromApi,
   deleteSystemVariantOnApi,
+  AddOrUpdateSystemImageFromApi
 } from '@/redux/actions/actions_sistemler.js';
 import Header from '@/components/mycomponents/Header.jsx';
 import DialogSistemEkle from './DialogSistemEkle.jsx';
@@ -76,17 +77,32 @@ const Sistemler = () => {
   };
 
   // Ekle
-  const handleAddSystem = useCallback(async ({ name, description }) => {
-    await dispatch(addSystemToApi({ name, description }));
-    await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
-  }, [dispatch, sysPage, sysSearch]);
+// Ekle
+const handleAddSystem = useCallback(async ({ name, description, photoFile }) => {
+  // 1) Sistemi oluştur
+  const created = await dispatch(addSystemToApi({ name, description }));
+  const newId = created?.id;
+
+  // 2) Foto dosyası varsa hemen yükle
+  if (photoFile && newId) {
+    await dispatch(AddOrUpdateSystemImageFromApi(newId, photoFile));
+  }
+
+  // 3) Listeyi tazele
+  await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
+}, [dispatch, sysPage, sysSearch]);
 
   // Düzenle
-  const handleEditSystem = useCallback(async ({ id, name, description }) => {
-    await dispatch(editSystemOnApi(id, { name, description }));
-    await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
-  }, [dispatch, sysPage, sysSearch]);
+const handleEditSystem = useCallback(async ({ id, name, description, photoFile }) => {
+  await dispatch(editSystemOnApi(id, { name, description }));
 
+  // Kullanıcı dialog içinde "Yükle"ye basmamış ama foto dosyası seçip "Güncelle" demiş olabilir:
+  if (photoFile && id) {
+    await dispatch(AddOrUpdateSystemImageFromApi(id, photoFile));
+  }
+
+  await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
+}, [dispatch, sysPage, sysSearch]);
   // Sistem sil → modal
   const askDeleteSystem = (sys) => {
     setPendingSystem(sys);

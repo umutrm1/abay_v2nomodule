@@ -548,45 +548,62 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
       });
   } // !usedExternalRows
 
-  // ---- 4) Tabloyu çiz
-  autoTable(doc, {
-    startY: cursorY,
-    head,
-    body,
-    theme: "grid",
-    styles: { font: fontName, fontSize: 8, minCellHeight: 18, halign: "center", valign: "middle" },
-    headStyles: { font: fontName, fontStyle: "normal", fontSize: 8, halign: "center", fillColor: [120, 160, 210] },
-    columnStyles: { 1: { cellWidth: 40, minCellHeight: 35 } },
-    didDrawCell: (data) => {
-      if (data.section !== "body" || data.column.index !== 1) return;
+const IMG_PAD = 2;
+const IMG_MAX_W = 35;
 
-      // 1. kolondaki hücre "ham" raw → imageData var mı bak
-      const cellRaw = data.row?.raw?.[1]?.raw || {};
-      const img = cellRaw.imageData;
-      if (typeof img !== "string" || !img.startsWith("data:image")) return;
+autoTable(doc, {
+  startY: cursorY,
+  head,
+  body,
+  theme: "grid",
+  styles: { font: fontName, fontSize: 8, halign: "center", valign: "middle" },
+  headStyles: { font: fontName, fontStyle: "normal", fontSize: 8, halign: "center", fillColor: [120, 160, 210] },
 
-      const pad = 2;
-      const cellX = data.cell.x + pad;
-      const cellY = data.cell.y + pad;
-      const cellW = data.cell.width  - pad * 2;
-      const cellH = data.cell.height - pad * 2;
+  // Profil Kesit sütunu: genişliği görsel + padding kadar sabitle
+  columnStyles: { 1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } },
 
-      try {
-        const props = doc.getImageProperties(img);
-        const ratio = props.width / props.height;
-        let w = cellW, h = w / ratio;
-        if (h > cellH) { h = cellH; w = h * ratio; }
-        const dx = cellX + (cellW - w) / 2;
-        const dy = cellY + (cellH - h) / 2;
-        const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-        doc.addImage(img, fmt, dx, dy, w, h);
-      } catch (e) {
-        console.warn("Profil kesit resmi çizilemedi:", e);
+  // 1) Satır yüksekliğini resmin hedef yüksekliğine göre büyüt
+  didParseCell: (data) => {
+    if (data.section !== "body" || data.column.index !== 1) return;
+    const cellRaw = data.row?.raw?.[1]?.raw || {};
+    const img = cellRaw.imageData;
+    if (typeof img !== "string" || !img.startsWith("data:image")) return;
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawH = IMG_MAX_W / ratio; // en-boy oranı koru
+      const needMinH = drawH + 2 * IMG_PAD;
+      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+        data.cell.styles.minCellHeight = needMinH;
       }
-    },
-    margin: { left: 40, right: 40 }
-  });
+    } catch {}
+  },
 
+  // 2) Çizim: artık 'fit to cell' yok; sabit max genişlikte, ortalanmış
+  didDrawCell: (data) => {
+    if (data.section !== "body" || data.column.index !== 1) return;
+    const cellRaw = data.row?.raw?.[1]?.raw || {};
+    const img = cellRaw.imageData;
+    if (typeof img !== "string" || !img.startsWith("data:image")) return;
+
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawW = IMG_MAX_W;
+      const drawH = drawW / ratio;
+
+      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+      const dy = data.cell.y + (data.cell.height - drawH) / 2;
+
+      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+      doc.addImage(img, fmt, dx, dy, drawW, drawH);
+    } catch (e) {
+      console.warn("Profil kesit resmi çizilemedi:", e);
+    }
+  },
+
+  margin: { left: 40, right: 40 }
+});
   // ---- 5) Sağda toplam kutuları + solda açıklama + uyarı
   const at = doc.lastAutoTable;
   const y0 = at?.finalY || cursorY;

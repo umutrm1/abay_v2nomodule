@@ -211,16 +211,16 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
       : (f.optimizasyonDetaysizCiktisi === true);
   };
 
-const filteredRequirements = {
-  ...requirements,
-  systems: (requirements?.systems || []).map(sys => ({
-    ...sys,
-    profiles: (sys?.profiles || [])
-      .filter(shouldIncludeProfile)
-      .slice()
-      .sort((a, b) => (a?.order_index ?? 0) - (b?.order_index ?? 0))
-  }))
-};
+  const filteredRequirements = {
+    ...requirements,
+    systems: (requirements?.systems || []).map(sys => ({
+      ...sys,
+      profiles: (sys?.profiles || [])
+        .filter(shouldIncludeProfile)
+        .slice()
+        .sort((a, b) => (a?.order_index ?? 0) - (b?.order_index ?? 0))
+    }))
+  };
 
   // optimizasyon girdisi (yalnız filtrelenmiş profiller)
   const siparis = {
@@ -268,44 +268,68 @@ const filteredRequirements = {
 
     // (2) satır yoksa tabloyu hiç çizme
     if (body.length > 0) {
+      const IMG_PAD = 2;
+const IMG_MAX_W = 35;
       autoTable(doc, {
         head, body, startY: cursorY, theme: 'grid',
-        styles: { font: 'Roboto', fontSize: 10, minCellHeight: 22, halign: 'center', valign: 'middle' },
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11,fillColor: [120, 160, 210] },
+        styles: {
+          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          halign: 'center', valign: 'middle',
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0]
+        },
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+  lineWidth: 0.5     },
         // 0: Profil Kodu (yarıya indir), 1: Profil Kesit (arttır), 3: Boy Sayısı (yarıya indir)
         // Not: Bu değerler pt cinsinden. Önceden Kesit 40pt idi; Kodu ve Boy Sayısı'ndan kısarak Kesit’e alan aktarıyoruz.
-        columnStyles: {
-          0: { cellWidth: 65 },  // Profil Kodu  -> daraltıldı (~yarı)
-          1: { cellWidth: 70 },  // Profil Kesit -> genişletildi
-          2: {cellWidth:316},
-          3: { cellWidth: 65 }   // Boy Sayısı   -> daraltıldı (~yarı)
-        },
-        didDrawCell: (data) => {
-          if (data.section !== 'body' || data.column.index !== 1) return;
-          const pid = results[data.row.index]?.profilId;
-          const img = imageMap[pid];
-            if (img) {
-  const pad = 2;
-  const cellX = data.cell.x + pad;
-  const cellY = data.cell.y + pad;
-  const cellW = data.cell.width  - pad * 2;
-  const cellH = data.cell.height - pad * 2;
-                try {
-    const props = doc.getImageProperties(img);
-    const ratio = props.width / props.height;
-    let w = cellW, h = w / ratio;
-    if (h > cellH) { h = cellH; w = h * ratio; }
-    const dx = cellX + (cellW - w) / 2;
-    const dy = cellY + (cellH - h) / 2;
-    const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-    doc.addImage(img, fmt, dx, dy, w, h);
-  } catch (e) {
-    console.warn("Profil kesit resmi çizilemedi:", e);
-  }
-            }
-        },
-        margin: { left: 40, right: 40 }
-      });
+       columnStyles: {
+    0: { cellWidth: 80 },
+    1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" }, // <<< değişti
+    2: { cellWidth: 316 },
+    3: { cellWidth: 80 }
+  },
+
+  didParseCell: (data) => {
+    if (data.section !== 'body' || data.column.index !== 1) return;
+    const pid = results[data.row.index]?.profilId;
+    const img = imageMap[pid];
+    if (!img) return;
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawH = IMG_MAX_W / ratio;
+      const needMinH = drawH + 2 * IMG_PAD;
+      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+        data.cell.styles.minCellHeight = needMinH;
+      }
+    } catch {}
+  },
+
+  didDrawCell: (data) => {
+    if (data.section !== 'body' || data.column.index !== 1) return;
+    const pid = results[data.row.index]?.profilId;
+    const img = imageMap[pid];
+    if (!img) return;
+
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawW = IMG_MAX_W;
+      const drawH = drawW / ratio;
+
+      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+      const dy = data.cell.y + (data.cell.height - drawH) / 2;
+      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+      doc.addImage(img, fmt, dx, dy, drawW, drawH);
+    } catch (e) {
+      console.warn("Profil kesit resmi çizilemedi:", e);
+    }
+  },
+
+  margin: { left: 40, right: 40 }
+});
     }
 
   } else {
@@ -330,40 +354,64 @@ const filteredRequirements = {
 
     // (2) satır yoksa tabloyu hiç çizme
     if (body.length > 0) {
+      const IMG_PAD = 2;
+const IMG_MAX_W = 35;
       autoTable(doc, {
         head, body, startY: cursorY, theme: 'grid',
-        styles: { font: 'Roboto', fontSize: 10, minCellHeight: 22, halign: 'center', valign: 'middle' },
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11,fillColor: [120, 160, 210] },
-        columnStyles: {
-          0: { cellWidth: 50 }, // Profil Kodu  -> daraltıldı (~yarı)
-          1: { cellWidth: 70 }  // Profil Kesit -> genişletildi
+        styles: {
+          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          halign: 'center', valign: 'middle',
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0]
         },
-        didDrawCell: (data) => {
-          if (data.section !== 'body' || data.column.index !== 1) return;
-          const pid = rowProfileIds[data.row.index];
-          const img = imageMap[pid];
-            if (img) {
-  const pad = 2;
-  const cellX = data.cell.x + pad;
-  const cellY = data.cell.y + pad;
-  const cellW = data.cell.width  - pad * 2;
-  const cellH = data.cell.height - pad * 2;
-                try {
-    const props = doc.getImageProperties(img);
-    const ratio = props.width / props.height;
-    let w = cellW, h = w / ratio;
-    if (h > cellH) { h = cellH; w = h * ratio; }
-    const dx = cellX + (cellW - w) / 2;
-    const dy = cellY + (cellH - h) / 2;
-    const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-    doc.addImage(img, fmt, dx, dy, w, h);
-  } catch (e) {
-    console.warn("Profil kesit resmi çizilemedi:", e);
-  }
-            }
-        },
-        margin: { left: 40, right: 40 }
-      });
+        tableLineColor: [0, 0, 0],
+        tableLineWidth: 0.5,
+        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+  lineWidth: 0.5     },
+         columnStyles: {
+    0: { cellWidth: 50 },
+    1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } // <<< değişti
+  },
+
+  didParseCell: (data) => {
+    if (data.section !== 'body' || data.column.index !== 1) return;
+    const pid = rowProfileIds[data.row.index];
+    const img = imageMap[pid];
+    if (!img) return;
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawH = IMG_MAX_W / ratio;
+      const needMinH = drawH + 2 * IMG_PAD;
+      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+        data.cell.styles.minCellHeight = needMinH;
+      }
+    } catch {}
+  },
+
+  didDrawCell: (data) => {
+    if (data.section !== 'body' || data.column.index !== 1) return;
+    const pid = rowProfileIds[data.row.index];
+    const img = imageMap[pid];
+    if (!img) return;
+
+    try {
+      const props = doc.getImageProperties(img);
+      const ratio = props.width / props.height;
+      const drawW = IMG_MAX_W;
+      const drawH = drawW / ratio;
+
+      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+      const dy = data.cell.y + (data.cell.height - drawH) / 2;
+      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+      doc.addImage(img, fmt, dx, dy, drawW, drawH);
+    } catch (e) {
+      console.warn("Profil kesit resmi çizilemedi:", e);
+    }
+  },
+
+  margin: { left: 40, right: 40 }
+});
     }
   }
 

@@ -16,6 +16,283 @@ export function getSystemFullVariantsOfSystemFromApiToReducer(payload) {
 export function getSystemVariantsFromApiToReducer(payload) {
   return { type: actionTypes.GET_SYSTEM_VARIANTS_FROM_API, payload };
 }
+/**
+ * System foto ekle/güncelle (multipart/form-data)
+ * @param {string} systemId  - örn: "20a810d8-5612-48ed-9daa-3efea0f51cd0"
+ * @param {File|Blob} file   - input[type=file] veya Blob nesnesi
+ * @returns {Function}
+ *
+ * Notlar:
+ * - Content-Type'ı elle set etme. FormData kendi boundary'sini ekler.
+ * - Accept'i "application/json" bıraktım; backend JSON döndürüyorsa yakalarız.
+ * - Başarı durumunda ETag/Last-Modified alınır; UI bu bilgiyi cache kontrolünde kullanabilir.
+ */
+
+export function postSystemVariantImageToApi(variantId, file) {
+  return async (dispatch) => {
+    dispatch({
+      type: actionTypes.ADD_OR_UPDATE_SYSTEM_VARIANT_IMAGE_REQUEST,
+      payload: { variantId },
+    });
+
+    try {
+      const form = new FormData();
+      form.append("file", file); // alan adı: 'file' (curl ile aynı)
+
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${variantId}/photo`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            // DİKKAT: Content-Type set ETME! (FormData boundary’yi kendi ekler)
+          },
+          body: form,
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Variant foto yükleme başarısız (HTTP ${res.status}) ${text}`);
+      }
+
+      // bazı backend’ler boş body döner; güvenli parse
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+
+      const etag         = res.headers.get("etag");
+      const lastModified = res.headers.get("last-modified");
+      const contentType  = res.headers.get("content-type");
+
+      dispatch({
+        type: actionTypes.ADD_OR_UPDATE_SYSTEM_VARIANT_IMAGE_SUCCESS,
+        payload: { variantId, etag, lastModified, contentType, data },
+      });
+
+      return { etag, lastModified, contentType, ...data };
+    } catch (error) {
+      dispatch({
+        type: actionTypes.ADD_OR_UPDATE_SYSTEM_VARIANT_IMAGE_FAILURE,
+        payload: { variantId, error: String(error) },
+      });
+      throw error;
+    }
+  };
+}
+
+/**
+ * Variant foto SİL
+ * curl eşleniği: DELETE /api/system-variants/:variantId/photo
+ * @param {string} variantId
+ */
+export function deleteSystemVariantImageFromApi(variantId) {
+  return async (dispatch) => {
+    dispatch({
+      type: actionTypes.DELETE_SYSTEM_VARIANT_IMAGE_REQUEST,
+      payload: { variantId },
+    });
+
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${variantId}/photo`,
+        { method: "DELETE", headers: { Accept: "application/json" } },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Variant foto silme başarısız (HTTP ${res.status}) ${text}`);
+      }
+
+      dispatch({
+        type: actionTypes.DELETE_SYSTEM_VARIANT_IMAGE_SUCCESS,
+        payload: { variantId },
+      });
+
+      return true;
+    } catch (error) {
+      dispatch({
+        type: actionTypes.DELETE_SYSTEM_VARIANT_IMAGE_FAILURE,
+        payload: { variantId, error: String(error) },
+      });
+      throw error;
+    }
+  };
+}
+
+/**
+ * Variant foto GET (Blob + ObjectURL)
+ * curl eşleniği: GET /api/system-variants/:variantId/photo (image/jpeg döner)
+ * @param {string} variantId
+ */
+export function getSystemVariantImageFromApi(variantId) {
+  return async (dispatch) => {
+    dispatch({
+      type: actionTypes.GET_SYSTEM_VARIANT_IMAGE_FROM_API,
+      payload: { variantId },
+    });
+
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${variantId}/photo`,
+        { method: "GET", headers: { Accept: "image/*" } },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Variant foto çekme başarısız (HTTP ${res.status}) ${text}`);
+      }
+
+      const contentType  = res.headers.get("content-type") || "application/octet-stream";
+      const etag         = res.headers.get("etag");
+      const lastModified = res.headers.get("last-modified");
+
+      const blob = await res.blob();
+      const imageUrl = URL.createObjectURL(blob);
+
+      dispatch({
+        type: actionTypes.GET_SYSTEM_VARIANT_IMAGE_SUCCESS,
+        payload: { variantId, imageUrl, contentType, etag, lastModified, blob },
+      });
+
+      return { imageUrl, contentType, etag, lastModified, blob };
+    } catch (error) {
+      dispatch({
+        type: actionTypes.GET_SYSTEM_VARIANT_IMAGE_FAILURE,
+        payload: { variantId, error: String(error) },
+      });
+      throw error;
+    }
+  };
+}
+
+
+
+
+export function AddOrUpdateSystemImageFromApi(systemId, file) {
+  return async (dispatch) => {
+    dispatch({ type: actionTypes.ADD_OR_UPDATE_SYSTEM_IMAGE_REQUEST, payload: { systemId } });
+
+    try {
+      const form = new FormData();
+      // Sunucunun beklediği alan adı 'file' — curl örneğin ile aynı
+      // type ipucu için file.name veya { type: "image/jpeg" } Blob kullanılabilir.
+      form.append("file", file);
+
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/systems/${systemId}/photo`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            // DİKKAT: 'Content-Type' YAZMA!
+          },
+          body: form,
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Görsel yükleme başarısız (HTTP ${res.status}) ${text}`);
+      }
+
+      // Backend JSON döndürebilir; dönmüyorsa boş nesne olur
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+
+      const etag          = res.headers.get("etag");
+      const lastModified  = res.headers.get("last-modified");
+      const contentType   = res.headers.get("content-type");
+
+      dispatch({
+        type: actionTypes.ADD_OR_UPDATE_SYSTEM_IMAGE_SUCCESS,
+        payload: { systemId, etag, lastModified, contentType, data },
+      });
+
+      return { etag, lastModified, contentType, ...data };
+    } catch (error) {
+      dispatch({
+        type: actionTypes.ADD_OR_UPDATE_SYSTEM_IMAGE_FAILURE,
+        payload: { systemId, error: String(error) },
+      });
+      throw error;
+    }
+  };
+}
+
+export function getSystemImageFromApi(systemId) {
+  return async (dispatch) => {
+    dispatch({ type: actionTypes.GET_SYSTEM_IMAGE_FROM_API, payload: { systemId } });
+
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/systems/${systemId}/photo`,
+        {
+          method: "GET",
+          headers: {
+            // Sunucu 'image/jpeg' dönüyor; Accept'i geniş tuttum.
+            Accept: "image/*",
+          },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Görsel çekme başarısız (HTTP ${res.status}) ${text}`);
+      }
+
+      const contentType  = res.headers.get("content-type") || "application/octet-stream";
+      const etag         = res.headers.get("etag");
+      const lastModified = res.headers.get("last-modified");
+
+      const blob = await res.blob();
+      const imageUrl = URL.createObjectURL(blob);
+
+      dispatch({
+        type: actionTypes.GET_SYSTEM_IMAGE_SUCCESS,
+        payload: { systemId, imageUrl, contentType, etag, lastModified, blob },
+      });
+
+      return { imageUrl, contentType, etag, lastModified, blob };
+    } catch (error) {
+      dispatch({
+        type: actionTypes.GET_SYSTEM_IMAGE_FAILURE,
+        payload: { systemId, error: String(error) },
+      });
+      throw error;
+    }
+  };
+}
+export function deleteSystemImageOnApi(systemId) {
+  return async (dispatch) => {
+    dispatch({ type: actionTypes.DELETE_SYSTEM_IMAGE_REQUEST, payload: { systemId } });
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/systems/${systemId}/photo`,
+        { method: "DELETE", headers: { Accept: "application/json" } },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Fotoğraf silme başarısız (HTTP ${res.status}) ${text}`);
+      }
+
+      dispatch({ type: actionTypes.DELETE_SYSTEM_IMAGE_SUCCESS, payload: { systemId } });
+      return true;
+    } catch (error) {
+      dispatch({
+        type: actionTypes.DELETE_SYSTEM_IMAGE_FAILURE,
+        payload: { systemId, error: String(error) },
+      });
+      throw error;
+    }
+  };
+}
 
 export function getSystemVariantsFromApi(page = 1, q = "", limit = 5) {
   return async (dispatch) => {

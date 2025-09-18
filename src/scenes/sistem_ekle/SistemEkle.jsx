@@ -19,6 +19,7 @@ const SistemEkle = () => {
   const [sistemGenislik, setSistemGenislik] = useState(0);
   const [sistemYukseklik, setSistemYukseklik] = useState(0);
   const [sistemAdet, setSistemAdet] = useState(0);
+  
   const requirements = useSelector(
     state => state.getProjeRequirementsFromApiReducer
   ) || { systems: [], extra_requirements: [] };
@@ -26,7 +27,25 @@ const SistemEkle = () => {
   const seciliSistemTam = useSelector(
     state => state.getSystemFullVariantsOfSystemFromApiReducer
   ) || {};
+const handleNumberFocus = (val) => {
+  return val === 0 ? "" : val;
+};
 
+const handleNumberChange = (setter) => (e) => {
+  const v = e.target.value;
+  // boşsa state'i 0 yapma, sadece "" gösterilsin
+  if (v === "") {
+    setter(0);
+  } else {
+    setter(Number(v));
+  }
+};
+
+const handleNumberBlur = (val, setter) => {
+  if (val === 0 || val === "" || isNaN(val)) {
+    setter(0);
+  }
+};
   useEffect(() => {
     dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
     dispatch(getProjeRequirementsFromApi(projectId));
@@ -171,27 +190,32 @@ const handleSistemKaydet = async () => {
       <div className="border border-gray-200 rounded-2xl w-full p-4 flex gap-4 mb-5 items-center">
         <PencilRuler className="w-10 mr-2" />
         <div className="flex-1 flex gap-2">
-          <input
-            type="number"
-            value={sistemGenislik}
-            onChange={e => setSistemGenislik(+e.target.value)}
-            placeholder="En (mm)"
-            className="input input-bordered w-full max-w-xs"
-          />
-          <input
-            type="number"
-            value={sistemYukseklik}
-            onChange={e => setSistemYukseklik(+e.target.value)}
-            placeholder="Boy (mm)"
-            className="input input-bordered w-full max-w-xs"
-          />
-          <input
-            type="number"
-            value={sistemAdet}
-            onChange={e => setSistemAdet(+e.target.value)}
-            placeholder="Adet"
-            className="input input-bordered w-full max-w-xs"
-          />
+<input
+  type="number"
+  value={sistemGenislik === 0 ? "" : sistemGenislik}
+  onChange={handleNumberChange(setSistemGenislik)}
+  onBlur={() => handleNumberBlur(sistemGenislik, setSistemGenislik)}
+  placeholder="En (mm)"
+  className="input input-bordered w-full max-w-xs"
+/>
+
+<input
+  type="number"
+  value={sistemYukseklik === 0 ? "" : sistemYukseklik}
+  onChange={handleNumberChange(setSistemYukseklik)}
+  onBlur={() => handleNumberBlur(sistemYukseklik, setSistemYukseklik)}
+  placeholder="Boy (mm)"
+  className="input input-bordered w-full max-w-xs"
+/>
+
+<input
+  type="number"
+  value={sistemAdet === 0 ? "" : sistemAdet}
+  onChange={handleNumberChange(setSistemAdet)}
+  onBlur={() => handleNumberBlur(sistemAdet, setSistemAdet)}
+  placeholder="Adet"
+  className="input input-bordered w-full max-w-xs"
+/>
         </div>
         <button
           className="btn ml-auto rounded-xl w-40 bg-blue-700 hover:bg-blue-800 text-white text-lg font-roboto"
