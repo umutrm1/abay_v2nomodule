@@ -390,11 +390,12 @@ const handleNumberBlur = (val, setter) => {
         <div className="mb-5">
           <SistemTable systems={requirements.systems} />
         </div>
-        <MalzemeTable
-          extraProfiles={requirements.extra_profiles}
-          extraGlasses={requirements.extra_glasses}
-          extraRequirements={requirements.extra_requirements}
-        />
+<MalzemeTable
+  extraProfiles={requirements.extra_profiles}
+  extraGlasses={requirements.extra_glasses}
+  extraRequirements={requirements.extra_requirements}
+  extraRemotes={requirements.extra_remotes}
+/>
 
         {/* Alt Butonlar */}
         <div className="flex justify-end mt-4 space-x-4">

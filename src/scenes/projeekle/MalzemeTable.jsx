@@ -4,7 +4,8 @@ import React from 'react';
 const MalzemeTable = ({
   extraProfiles = [],
   extraGlasses = [],
-  extraRequirements = []
+  extraRequirements = [],
+  extraRemotes = [] // 👈 YENİ
 }) => {
   // Sadece malzemelerden, ölçülü ve adetli olarak ayırıyoruz
   const olculu = extraRequirements.filter(
@@ -27,6 +28,8 @@ const MalzemeTable = ({
                 <th>Profil İsim</th>
                 <th>Kesim Ölçüsü (mm)</th>
                 <th>Kesim Adedi</th>
+                          <th>Birim Fiyat</th>
+
                 <th className="text-right">İşlemler</th>
               </tr>
             </thead>
@@ -37,11 +40,13 @@ const MalzemeTable = ({
                   <td>{p.profile.profil_isim}</td>
                   <td>{p.cut_length_mm}</td>
                   <td>{p.cut_count}</td>
+                  <td>eklenecek</td>
+
                   <td className="text-right space-x-2">
-                    <button className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+                    <button className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
                       Düzenle
                     </button>
-                    <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                    <button className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
                       Sil
                     </button>
                   </td>
@@ -63,6 +68,8 @@ const MalzemeTable = ({
                 <th>Yükseklik (mm)</th>
                 <th>Genişlik (mm)</th>
                 <th>Adet</th>
+                          <th>Birim Fiyat</th>
+
                 <th className="text-right">İşlemler</th>
               </tr>
             </thead>
@@ -73,11 +80,13 @@ const MalzemeTable = ({
                   <td>{g.height_mm}</td>
                   <td>{g.width_mm}</td>
                   <td>{g.count}</td>
+                  <td>eklenecek</td>
+
                   <td className="text-right space-x-2">
-                    <button className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+                    <button className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
                       Düzenle
                     </button>
-                    <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                    <button className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
                       Sil
                     </button>
                   </td>
@@ -99,6 +108,8 @@ const MalzemeTable = ({
                 <th>Birim</th>
                 <th>Kesim Ölçüsü (mm)</th>
                 <th>Kesim Adedi</th>
+                          <th>Birim Fiyat</th>
+
                 <th className="text-right">İşlemler</th>
               </tr>
             </thead>
@@ -109,11 +120,13 @@ const MalzemeTable = ({
                   <td>{m.material.birim}</td>
                   <td>{m.cut_length_mm}</td>
                   <td>{m.count}</td>
+                  <td>{m.unit_price}</td>
+
                   <td className="text-right space-x-2">
-                    <button className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+                    <button className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
                       Düzenle
                     </button>
-                    <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                    <button className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
                       Sil
                     </button>
                   </td>
@@ -134,6 +147,8 @@ const MalzemeTable = ({
                 <th>Malzeme İsim</th>
                 <th>Birim</th>
                 <th>Adet</th>
+                          <th>Birim Fiyat</th>
+
                 <th className="text-right">İşlemler</th>
               </tr>
             </thead>
@@ -143,11 +158,13 @@ const MalzemeTable = ({
                   <td>{m.material.diger_malzeme_isim}</td>
                   <td>{m.material.birim}</td>
                   <td>{m.count}</td>
+                  <td>{m.unit_price}</td>
+
                   <td className="text-right space-x-2">
-                    <button className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+                    <button className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
                       Düzenle
                     </button>
-                    <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                    <button className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
                       Sil
                     </button>
                   </td>
@@ -157,6 +174,58 @@ const MalzemeTable = ({
           </table>
         </div>
       )}
+      {/* Ekstra Kumandalar */} 
+{Array.isArray(extraRemotes) && (
+  <div className="overflow-auto border border-gray-200 rounded-2xl p-4">
+    <div className="font-semibold mb-2">Ekstra Kumandalar</div>
+    <table className="table w-full">
+      <thead>
+        <tr>
+          <th>Kumanda İsim</th>
+          <th className="text-right">Adet</th>
+          <th className="text-right">Birim Fiyat</th>
+          <th className="text-right">İşlemler</th>
+
+        </tr>
+      </thead>
+      <tbody>
+        {extraRemotes.length > 0 ? (
+          extraRemotes.map((row, i) => {
+            const name = row?.remote?.kumanda_isim || '—';
+            const count = Number(row?.count) || 0;
+            const unitPrice = row?.remote?.price || 0;
+            return (
+              <tr key={`${row.remote_id || 'remote'}_${i}`}>
+                <td>{name}</td>
+                <td className="text-right">{count}</td>
+                <td className="text-right">
+                  {unitPrice.toLocaleString('tr-TR', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                  })} ₺
+                </td>
+                                  <td className="text-right space-x-2">
+                    <button className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+                      Düzenle
+                    </button>
+                    <button className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                      Sil
+                    </button>
+                  </td>
+              </tr>
+            );
+          })
+        ) : (
+          <tr>
+            <td colSpan={3} className="text-center text-gray-500 py-6">
+              Ekstra kumanda bulunmuyor.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+)}
     </div>
   );
 };
