@@ -5,6 +5,7 @@ import { mapGlass } from "./mappers/glass.mapper.js";
 
 /* ===================== ortak yardımcılar ===================== */
 function arrayBufferToBase64(buf) {
+
   return new Promise((resolve, reject) => {
     const blob = new Blob([buf], { type: "font/ttf" });
     const reader = new FileReader();
@@ -311,7 +312,6 @@ try {
 
 /* ===================== ANA: Cam Çıktısı ===================== */
 export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
-  
   const { requirements } = ctx;
   const doc = await createPdfDoc();
   const fontName = (doc.getFontList?.()["Roboto"] ? "Roboto" : "helvetica");
