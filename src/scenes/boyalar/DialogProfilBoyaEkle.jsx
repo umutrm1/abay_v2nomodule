@@ -30,7 +30,7 @@ const DialogProfilBoyaEkle = ({ onSave }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button className="btn ml-auto bg-blue-700 text-white">+ Ekle</button>
+        <button className="btn ml-auto btn-primary">+ Ekle</button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>Yeni Profil Boyası Ekle</DialogTitle></DialogHeader>

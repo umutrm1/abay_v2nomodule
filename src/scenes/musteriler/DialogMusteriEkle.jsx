@@ -1,3 +1,4 @@
+// src/scenes/musteriler/DialogMusteriEkle.jsx
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
 
@@ -28,7 +29,7 @@ const DialogMusteriEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn max-w-40 ml-auto w-40 bg-blue-700 text-white">+ Müşteri Ekle</button>
+        <button className="btn btn-primary max-w-40 ml-auto w-40">+ Müşteri Ekle</button>
       </DialogTrigger>
       <DialogContent className={"max-w-200"}>
         <DialogHeader><DialogTitle>Yeni Müşteri Ekle</DialogTitle></DialogHeader>

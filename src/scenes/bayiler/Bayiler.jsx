@@ -16,7 +16,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 // Müşteriler ekranındaki spinner ve sayfalama yapısını koruyoruz. :contentReference[oaicite:3]{index=3}
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -104,7 +104,7 @@ const Bayiler = () => {
     <div className="grid grid-rows-[60px_1fr]">
       <Header title="Bayiler" />
 
-      <div className="bg-white w-full border rounded-2xl p-5 flex flex-col gap-y-4">
+      <div className="bg-card w-full border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama & Ekle — müşterilerle aynı layout */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <input
@@ -172,7 +172,7 @@ const Bayiler = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center text-gray-500 py-10">
+                    <td colSpan={7} className="text-center text-muted-foreground py-10">
                       Gösterilecek bayi bulunamadı.
                     </td>
                   </tr>

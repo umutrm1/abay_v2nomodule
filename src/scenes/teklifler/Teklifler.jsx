@@ -33,7 +33,7 @@ const EMPTY_PAGE = {
   has_prev: false,
 };
 
-const Projeler = () => {
+const Teklifler = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -55,7 +55,7 @@ const Projeler = () => {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // 🟦 Tekliflere Taşı modal state
+  // 🟦 Taşıma (teklif → proje) modal state
   const [moveOpen, setMoveOpen] = useState(false);
   const [pendingMove, setPendingMove] = useState(null);
   const [moving, setMoving] = useState(false);
@@ -70,7 +70,7 @@ const Projeler = () => {
           limit: 10,
           name: debouncedName || "",
           code: debouncedCode || "",
-          is_teklif: false,            // ✨ sadece projeler
+          is_teklif: true,            // ✨ sadece teklifler
         })
       )
     ).finally(() => setListLoading(false));
@@ -92,7 +92,7 @@ const Projeler = () => {
       customer_id: newProje.customer_id ?? "8a9c492c-08be-4426-919b-0c1b334b139c",
       project_name: newProje.project_name,
       created_by: newProje.created_by ?? "23691d1d-7545-46b1-bcc3-141a96a7ad3b",
-      is_teklif:false
+      is_teklif: true
     };
 
     try {
@@ -103,7 +103,7 @@ const Projeler = () => {
         limit: 10,
         name: debouncedName || "",
         code: debouncedCode || "",
-        is_teklif: false,
+        is_teklif: true,
       }));
       const newId = created?.id || created?.data?.id;
       if (newId) navigate(`/sistemsec/${newId}`);
@@ -128,7 +128,7 @@ const Projeler = () => {
         limit: 10,
         name: debouncedName || "",
         code: debouncedCode || "",
-        is_teklif: false,
+        is_teklif: true,
       }));
     } finally {
       setDeleting(false);
@@ -137,7 +137,7 @@ const Projeler = () => {
     }
   };
 
-  // 🟦 Projeyi Tekliflere Taşı
+  // 🟦 Teklifi Projeye Taşı
   const askMove = (proje) => {
     setPendingMove(proje);
     setMoveOpen(true);
@@ -148,7 +148,7 @@ const Projeler = () => {
     try {
       setMoving(true);
 
-      // Kullanıcının verdiği şemaya sadık payload: sadece is_teklif true, diğerleri aynı.
+      // Kullanıcının verdiği şemaya sadık payload: sadece is_teklif false, diğerleri aynı.
       const p = pendingMove;
 
       const payload = {
@@ -159,23 +159,23 @@ const Projeler = () => {
         created_at: p.created_at,
         press_price: p.press_price ?? 0,
         painted_price: p.painted_price ?? 0,
-        is_teklif: true, // 🔴 sadece bu değişiyor
+        is_teklif: false, // 🔴 sadece bu değişiyor
         paint_status: p.paint_status,
         glass_status: p.glass_status,
         production_status: p.production_status,
       };
-      console.log(payload)
+
       // Not: editProjeOnApi imzası projene göre (id, payload) ya da (payload) olabilir.
       // Aşağıdaki satır (id, payload) varsayımıyla yazıldı.
       await dispatch(actions_projeler.editProjeOnApi(p.id, payload));
 
-      // Listeyi (sadece projeler) tazele — taşınan kayıt artık burada görünmemeli
+      // Listeyi (hala teklifler) tazele — taşınan kayıt artık teklifte görünmemeli
       await dispatch(actions_projeler.getProjelerFromApi({
         page,
         limit: 10,
         name: debouncedName || "",
         code: debouncedCode || "",
-        is_teklif: false,
+        is_teklif: true,
       }));
     } finally {
       setMoving(false);
@@ -194,7 +194,7 @@ const Projeler = () => {
         </div>
       )}
 
-      <Header title="Projeler" />
+      <Header title="Teklifler" />
 
       <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama + Ekle */}
@@ -241,14 +241,13 @@ const Projeler = () => {
                     <td>{proje.project_kodu}</td>
                     <td>{proje.project_name}</td>
                     <td className="text-center space-x-2">
-                     
-                      {/* 🟦 Tekliflere Taşı — Düzenle'nin yanında */}
+                      {/* 🟦 Projelere Taşı (solda) */}
                       <button
                         onClick={() => askMove(proje)}
                         className="btn btn-primary btn-sm"
-                        title="Projeyi tekliflere taşı"
+                        title="Teklifi projeye taşı"
                       >
-                        Tekliflere Taşı
+                        Projelere Taşı
                       </button>
 
                       {/* ✏️ Düzenle */}
@@ -259,7 +258,6 @@ const Projeler = () => {
                       >
                         Düzenle
                       </button>
-
 
                       {/* 🗑️ Sil */}
                       <button
@@ -361,12 +359,12 @@ const Projeler = () => {
         loading={deleting}
       />
 
-      {/* 🟦 Tekliflere Taşı modali — ConfirmDeleteModal yapısı ile */}
+      {/* 🟦 Teklifi Projeye Taşı modali — ConfirmDeleteModal yapısı ile */}
       <ConfirmDeleteModal
         open={moveOpen}
         onOpenChange={setMoveOpen}
-        title="Projeyi Tekliflere Taşımaya Emin misiniz?"
-        description={pendingMove ? `'${pendingMove.project_name}' projeden tekliflere taşınacak.` : ""}
+        title="Teklifi Projeye Taşımaya Emin Misiniz?"
+        description={pendingMove ? `'${pendingMove.project_name}' tekliften projeye taşınacak.` : ""}
         confirmText="Evet, Taşı"
         cancelText="Vazgeç"
         onConfirm={handleConfirmMove}
@@ -376,4 +374,4 @@ const Projeler = () => {
   );
 };
 
-export default Projeler;
+export default Teklifler;

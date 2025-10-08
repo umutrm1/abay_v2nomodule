@@ -18,7 +18,7 @@ import {
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -233,7 +233,6 @@ const EkstraMalzemeEkle = () => {
       cut_length_mm: (m.hesaplama_turu === 'adetli')
         ? 0
         : Number(data.size_input_text || 0),
-      unit_price: data.unit_price,
       unit_price: chosenUnitPrice,
       pdf: {
         "camCiktisi": true,
@@ -294,7 +293,7 @@ const EkstraMalzemeEkle = () => {
   const getApiUnitPrice = (item) =>
     item?.unit_price ?? item?.price ?? item?.unitPrice ?? item?.fiyat ?? 0;
   return (
-    <div className="p-5">
+    <div className="p-5 text-foreground">
       <div className="flex items-center mb-4">
         <h1 className="text-2xl font-bold">Ekstra Malzeme Ekle</h1>
         <button
@@ -313,16 +312,16 @@ const EkstraMalzemeEkle = () => {
 
       {/* seçim kartları — görünüş aynı */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <button onClick={() => { setMode('profil'); setProfilePage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
+        <button onClick={() => { setMode('profil'); setProfilePage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
           <h2 className="text-lg  font-semibold">Profil Ekle</h2>
         </button>
-        <button onClick={() => { setMode('cam'); setGlassPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
+        <button onClick={() => { setMode('cam'); setGlassPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
           <h2 className="text-lg font-semibold">Cam Ekle</h2>
         </button>
-        <button onClick={() => { setMode('malzeme'); setOtherPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
+        <button onClick={() => { setMode('malzeme'); setOtherPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
           <h2 className="text-lg font-semibold">Malzeme Ekle</h2>
         </button>
-        <button onClick={() => { setMode('kumanda'); setKumandaPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-blue-100">
+        <button onClick={() => { setMode('kumanda'); setKumandaPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
           <h2 className="text-lg font-semibold">Kumanda Ekle</h2>
         </button>
       </div>
@@ -389,7 +388,7 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(profiller.items ?? []).map(profil => (
-                      <tr className="border border-gray-200" key={profil.id}>
+                      <tr className="border border-border" key={profil.id}>
                         <td>{profil.profil_kodu}</td>
                         <td>{profil.profil_isim}</td>
                         <td>
@@ -459,7 +458,7 @@ const EkstraMalzemeEkle = () => {
                       </tr>
                     ))}
                     {(!profiller.items || profiller.items.length === 0) && (
-                      <tr><td colSpan={5} className="text-center text-gray-500 py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={5} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
@@ -489,7 +488,7 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(camlar.items ?? []).map(cam => (
-                      <tr className="border border-gray-200" key={cam.id}>
+                      <tr className="border border-border" key={cam.id}>
                         <td>{cam.cam_isim}</td>
                         <td>
                           <input
@@ -572,7 +571,7 @@ const EkstraMalzemeEkle = () => {
                       </tr>
                     ))}
                     {(!camlar.items || camlar.items.length === 0) && (
-                      <tr><td colSpan={5} className="text-center text-gray-500 py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={5} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
@@ -601,7 +600,7 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(digerMalzemeler.items ?? []).map(m => (
-                      <tr className="border border-gray-200" key={m.id}>
+                      <tr className="border border-border" key={m.id}>
                         <td>{m.diger_malzeme_isim}</td>
                         <td>
                           <input
@@ -633,37 +632,37 @@ const EkstraMalzemeEkle = () => {
                             />
                           ) : (
                             // 'adetli' ise input gizlenir; görsel olarak kısa bir ibare gösterilebilir
-                            <span className="text-gray-400">Adetli Malzeme</span>
+                            <span className="text-muted-foreground">Adetli Malzeme</span>
                           )}
                         </td>
                         <td>
                           <div className="flex items-center gap-2">
-<input
-  type="number"
-  className="input input-sm input-bordered w-24"
-  value={
-    (malzemeInputs[m.id]?.unit_price) ?? getApiUnitPrice(m) // açılışta API fiyatı
-  }
-  onChange={(e) => {
-    const v = e.target.value; // string gelir
-    setMalzemeInputs(prev => ({
-      ...prev,
-      [m.id]: { ...(prev[m.id] || {}), unit_price: v }
-    }));
-  }}
-/>
-<button
-  type="button"
-  className="btn btn-xs"
-  onClick={() =>
-    setMalzemeInputs(prev => ({
-      ...prev,
-      [m.id]: { ...(prev[m.id] || {}), unit_price: getApiUnitPrice(m) }
-    }))
-  }
->
-  Sıfırla
-</button>
+                            <input
+                              type="number"
+                              className="input input-sm input-bordered w-24"
+                              value={
+                                (malzemeInputs[m.id]?.unit_price) ?? getApiUnitPrice(m) // açılışta API fiyatı
+                              }
+                              onChange={(e) => {
+                                const v = e.target.value; // string gelir
+                                setMalzemeInputs(prev => ({
+                                  ...prev,
+                                  [m.id]: { ...(prev[m.id] || {}), unit_price: v }
+                                }));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-xs"
+                              onClick={() =>
+                                setMalzemeInputs(prev => ({
+                                  ...prev,
+                                  [m.id]: { ...(prev[m.id] || {}), unit_price: getApiUnitPrice(m) }
+                                }))
+                              }
+                            >
+                              Sıfırla
+                            </button>
 
                           </div>
                         </td>
@@ -679,7 +678,7 @@ const EkstraMalzemeEkle = () => {
                       </tr>
                     ))}
                     {(!digerMalzemeler.items || digerMalzemeler.items.length === 0) && (
-                      <tr><td colSpan={4} className="text-center text-gray-500 py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={4} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
@@ -706,7 +705,7 @@ const EkstraMalzemeEkle = () => {
                 ) : (
                   <tbody>
                     {(kumandalar.items ?? []).map(remote => (
-                      <tr className="border border-gray-200" key={remote.id}>
+                      <tr className="border border-border" key={remote.id}>
                         <td>{remote.kumanda_isim || remote.isim || remote.name}</td>
                         <td>
                           <input
@@ -763,7 +762,7 @@ const EkstraMalzemeEkle = () => {
                     ))}
 
                     {(!kumandalar.items || kumandalar.items.length === 0) && (
-                      <tr><td colSpan={3} className="text-center text-gray-500 py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={3} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}

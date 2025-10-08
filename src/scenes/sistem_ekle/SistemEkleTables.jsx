@@ -11,18 +11,15 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
   const dispatch = useDispatch();
   const { projectId } = useParams();
 
-  // Variant şablonları store'dan
   const seciliSistemTam = useSelector(
     state => state.getSystemFullVariantsOfSystemFromApiReducer
   ) || {};
 
-  // UI state
-  const [dialogOpen, setDialogOpen] = useState(false);     // dialog görünürlük
-  const [dialogLoading, setDialogLoading] = useState(false); // dialog içi spinner (variant fetch)
-  const [savingEdit, setSavingEdit] = useState(false);       // Kaydet butonu spinner
-  const [selectedSys, setSelectedSys] = useState(null);      // düzenlenen satır
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogLoading, setDialogLoading] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [selectedSys, setSelectedSys] = useState(null);
 
-  // Düzenle tıklandığında: dialogu hemen aç, variant fetch bitene kadar dialogda spinner göster
   const handleEdit = async (sys) => {
     setSelectedSys(sys);
     setDialogOpen(true);
@@ -34,13 +31,11 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
     }
   };
 
-  // Dialog Kaydet: form değerleri ile hesapla → dispatch → refresh
   const handleDialogSave = async ({ width_mm, height_mm, quantity }) => {
     if (!selectedSys) return;
     try {
       setSavingEdit(true);
 
-      // --- PROFILLER ---
       const profiles = (seciliSistemTam.profile_templates || []).map(tpl => {
         const cut_length_mm = math.evaluate(tpl.formula_cut_length, {
           sistem_genislik: width_mm,
@@ -52,7 +47,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
           sistem_yukseklik: height_mm,
           sistem_adet: quantity
         });
-        const total_weight_kg = cut_length_mm * cut_count * (tpl.profile?.birim_agirlik || 0) / 1000;
+        const total_weight_kg = (cut_length_mm * cut_count * (tpl.profile?.birim_agirlik || 0)) / 1000;
         return {
           profile_id: tpl.profile_id,
           cut_length_mm,
@@ -61,7 +56,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         };
       });
 
-      // --- CAMLAR ---
       const glasses = (seciliSistemTam.glass_templates || []).map(tpl => {
         const g_width_mm = math.evaluate(tpl.formula_width, {
           sistem_genislik: width_mm,
@@ -88,7 +82,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         };
       });
 
-      // --- MALZEMELER ---
       const materials = (seciliSistemTam.material_templates || []).map(tpl => {
         const count = math.evaluate(tpl.formula_quantity, {
           sistem_genislik: width_mm,
@@ -102,7 +95,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         };
       });
 
-      // --- PAYLOAD ---
       const editedSystem = {
         project_system_id: selectedSys.project_system_id,
         system_variant_id: selectedSys.system_variant_id,
@@ -115,8 +107,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
       };
 
       await dispatch(editProjeSystemOnApi(projectId, selectedSys.project_system_id, editedSystem));
-
-      // Başarılı → tabloyu yenile ve dialogu kapat
       onRefresh?.();
       setDialogOpen(false);
       setSelectedSys(null);
@@ -125,7 +115,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
     }
   };
 
-  // Sistemleri ada göre sırala (mevcut mantık korunur)
   const sorted = [...systems].sort((a, b) => {
     const nameA = `${a.system?.name || ''} ${a.name || ''}`.toLowerCase();
     const nameB = `${b.system?.name || ''} ${b.name || ''}`.toLowerCase();
@@ -133,9 +122,9 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
   });
 
   return (
-    <div className="overflow-auto mt-5 border border-gray-200 rounded-2xl">
+    <div className="overflow-auto mt-5 rounded-2xl border bg-card text-foreground border-border">
       <table className="table w-full">
-        <thead>
+        <thead className="bg-muted/50 text-foreground">
           <tr>
             <th>Sistem İsmi</th>
             <th>En (mm)</th>
@@ -149,7 +138,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
             sorted.map(sys => {
               const fullName = `${sys.system?.name || ''} ${sys.name || ''}`;
               return (
-                <tr key={sys.project_system_id}>
+                <tr key={sys.project_system_id} className="hover:bg-muted/40">
                   <td>{fullName}</td>
                   <td>{sys.width_mm}</td>
                   <td>{sys.height_mm}</td>
@@ -158,11 +147,16 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
                     <button
                       onClick={() => handleEdit(sys)}
                       disabled={savingEdit}
-                      className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"
+                      className="btn btn-warning btn-sm"
+                      title="Sistemi düzenle"
                     >
-                      Düzenle
+                      {savingEdit ? "Kaydediliyor…" : "Düzenle"}
                     </button>
-                    <button className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600" disabled={savingEdit}>
+                    <button
+                      className="btn btn-error btn-sm"
+                      disabled={savingEdit}
+                      title="Sistemi sil"
+                    >
                       Sil
                     </button>
                   </td>
@@ -171,7 +165,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
             })
           ) : (
             <tr>
-              <td colSpan={5} className="text-center text-gray-500">
+              <td colSpan={5} className="text-center text-muted-foreground">
                 Sistem bulunamadı
               </td>
             </tr>
@@ -179,7 +173,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         </tbody>
       </table>
 
-      {/* Dialog: Sistem Düzenle (spinner dialog içinde) */}
       <DialogSistemDuzenleOnProject
         open={dialogOpen}
         onOpenChange={(v) => {

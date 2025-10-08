@@ -19,8 +19,8 @@ const DEFAULT_PDF = {
 };
 
 const Row = ({ label, checked, onChange }) => (
-  <label className="flex items-center justify-between py-2 border-b last:border-b-0">
-    <span className="text-sm">{label}</span>
+  <label className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
+    <span className="text-sm text-muted-foreground">{label}</span>
     <input
       type="checkbox"
       className="checkbox checkbox-primary"
@@ -63,13 +63,13 @@ const DialogPdfAyar = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
         {/* İçerik */}
-        <div className="mt-2 divide-y">
+        <div className="mt-2 divide-y divide-border">
           <Row
             label="Optimizasyon Detaylı Çıktısı"
             checked={form.optimizasyonDetayliCiktisi}
@@ -106,13 +106,13 @@ const DialogPdfAyar = ({
         <div className="mt-6 flex justify-end gap-2">
           {/* DialogClose ile anında kapanış (kaydetmeden) */}
           <DialogClose asChild>
-            <button className="btn btn-sm bg-gray-200 hover:bg-gray-300 text-gray-700">
+            <button className="btn btn-sm">
               Vazgeç
             </button>
           </DialogClose>
 
           <button
-            className="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white"
+            className="btn btn-sm btn-primary"
             onClick={handleSave}
           >
             Kaydet
@@ -123,7 +123,7 @@ const DialogPdfAyar = ({
         <DialogClose asChild>
           <button
             aria-label="Close"
-            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
           >
             ✕
           </button>

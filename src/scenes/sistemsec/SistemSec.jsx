@@ -1,3 +1,4 @@
+// src/scenes/sistemler/SistemSec.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,17 +11,18 @@ import {
   getSystemVariantImageFromApi,
 } from '@/redux/actions/actions_sistemler.js';
 
-/** Spinner (senin verdiğin) */
+/** Spinner (temalı) */
 const Spinner = () => (
   <div className="flex justify-center items-center py-10 w-full h-full">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 const MiniSpinner = () => (
   <div className="flex justify-center items-center w-full h-40">
-    <div className="w-6 h-6 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-6 h-6 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
+
 const SistemSec = () => {
   const dispatch = useDispatch();
   const { projectId } = useParams();
@@ -31,15 +33,12 @@ const SistemSec = () => {
   const systemVariants = useSelector(state => state.systemVariantsOfSystem); // { items: [...] }
 
   // --- FOTOĞRAF CACHE (sadece component içinde) ---
-  // Ekranın kullanacağı "id -> imageUrl" haritaları:
   const [sysImageUrls, setSysImageUrls] = useState({});      // systemId -> ObjectURL
   const [varImageUrls, setVarImageUrls] = useState({});      // variantId -> ObjectURL
 
-  // Aynı id için ikinci kez GET atılmaması için promise cache:
   const sysImgPromisesRef = useRef(new Map());   // systemId -> Promise
   const varImgPromisesRef = useRef(new Map());   // variantId -> Promise
 
-  // Oluşturulan ObjectURL'leri unmount'ta revoke etmek için:
   const sysObjUrlsRef = useRef(new Set());       // Set<string>
   const varObjUrlsRef = useRef(new Set());       // Set<string>
 
@@ -48,8 +47,9 @@ const SistemSec = () => {
   const [selectedVariantId, setSelectedVariantId] = useState(null);
   const [loadingSystems, setLoadingSystems] = useState(false);
   const [loadingVariants, setLoadingVariants] = useState(false);
-const [sysImgLoading, setSysImgLoading] = useState({}); // systemId -> bool
-const [varImgLoading, setVarImgLoading] = useState({}); // variantId -> boo
+  const [sysImgLoading, setSysImgLoading] = useState({}); // systemId -> bool
+  const [varImgLoading, setVarImgLoading] = useState({}); // variantId -> bool
+
   // 1) İlk yüklemede tüm sistemleri getir
   useEffect(() => {
     let mounted = true;
@@ -65,40 +65,40 @@ const [varImgLoading, setVarImgLoading] = useState({}); // variantId -> boo
   }, [dispatch]);
 
   // --- Sistem foto GET: her id için sadece 1 kez ---
-const fetchSystemImageOnce = useCallback(async (systemId) => {
-  if (sysImgPromisesRef.current.has(systemId)) {
-    return sysImgPromisesRef.current.get(systemId);
-  }
-  if (sysImageUrls[systemId]) return;
-
-  // BAŞLANGIÇ: Yükleniyor işaretini aç
-  setSysImgLoading(prev => ({ ...prev, [systemId]: true }));
-
-  const p = (async () => {
-    try {
-      const res = await dispatch(getSystemImageFromApi(systemId));
-      if (res?.imageUrl) {
-        sysObjUrlsRef.current.add(res.imageUrl);
-        setSysImageUrls(prev => ({ ...prev, [systemId]: res.imageUrl }));
-      }
-    } catch {
-      // foto yoksa sessiz geçiyoruz
-    } finally {
-      // BİTİŞ: Yükleniyor işaretini kapat + promise’ı sil
-      setSysImgLoading(prev => ({ ...prev, [systemId]: false }));
-      sysImgPromisesRef.current.delete(systemId);
+  const fetchSystemImageOnce = useCallback(async (systemId) => {
+    if (sysImgPromisesRef.current.has(systemId)) {
+      return sysImgPromisesRef.current.get(systemId);
     }
-  })();
+    if (sysImageUrls[systemId]) return;
 
-  sysImgPromisesRef.current.set(systemId, p);
-  return p;
-}, [dispatch, sysImageUrls]);
-  // Sistemler değişince hepsi için (sadece eksik olanlar) GET tetikle
+    // BAŞLANGIÇ: Yükleniyor işaretini aç
+    setSysImgLoading(prev => ({ ...prev, [systemId]: true }));
+
+    const p = (async () => {
+      try {
+        const res = await dispatch(getSystemImageFromApi(systemId));
+        if (res?.imageUrl) {
+          sysObjUrlsRef.current.add(res.imageUrl);
+          setSysImageUrls(prev => ({ ...prev, [systemId]: res.imageUrl }));
+        }
+      } catch {
+        // foto yoksa sessiz geçiyoruz
+      } finally {
+        // BİTİŞ
+        setSysImgLoading(prev => ({ ...prev, [systemId]: false }));
+        sysImgPromisesRef.current.delete(systemId);
+      }
+    })();
+
+    sysImgPromisesRef.current.set(systemId, p);
+    return p;
+  }, [dispatch, sysImageUrls]);
+
+  // Sistemler değişince eksik görselleri getir
   useEffect(() => {
     const items = sistemler?.items || [];
     if (!items.length) return;
     items.forEach(s => {
-      // state'te yoksa/yüklenmemişse getir
       if (!sysImageUrls[s.id]) fetchSystemImageOnce(s.id);
     });
   }, [sistemler?.items, sysImageUrls, fetchSystemImageOnce]);
@@ -115,34 +115,34 @@ const fetchSystemImageOnce = useCallback(async (systemId) => {
     }
   }, [dispatch]);
 
-const fetchVariantImageOnce = useCallback(async (variantId) => {
-  if (varImgPromisesRef.current.has(variantId)) {
-    return varImgPromisesRef.current.get(variantId);
-  }
-  if (varImageUrls[variantId]) return;
-
-  setVarImgLoading(prev => ({ ...prev, [variantId]: true }));
-
-  const p = (async () => {
-    try {
-      const res = await dispatch(getSystemVariantImageFromApi(variantId));
-      if (res?.imageUrl) {
-        varObjUrlsRef.current.add(res.imageUrl);
-        setVarImageUrls(prev => ({ ...prev, [variantId]: res.imageUrl }));
-      }
-    } catch {
-      // foto yoksa sessiz geç
-    } finally {
-      setVarImgLoading(prev => ({ ...prev, [variantId]: false }));
-      varImgPromisesRef.current.delete(variantId);
+  const fetchVariantImageOnce = useCallback(async (variantId) => {
+    if (varImgPromisesRef.current.has(variantId)) {
+      return varImgPromisesRef.current.get(variantId);
     }
-  })();
+    if (varImageUrls[variantId]) return;
 
-  varImgPromisesRef.current.set(variantId, p);
-  return p;
-}, [dispatch, varImageUrls]);
+    setVarImgLoading(prev => ({ ...prev, [variantId]: true }));
 
-  // Varyant listesi değişince hepsi için (sadece eksikler) GET tetikle
+    const p = (async () => {
+      try {
+        const res = await dispatch(getSystemVariantImageFromApi(variantId));
+        if (res?.imageUrl) {
+          varObjUrlsRef.current.add(res.imageUrl);
+          setVarImageUrls(prev => ({ ...prev, [variantId]: res.imageUrl }));
+        }
+      } catch {
+        // foto yoksa sessiz geç
+      } finally {
+        setVarImgLoading(prev => ({ ...prev, [variantId]: false }));
+        varImgPromisesRef.current.delete(variantId);
+      }
+    })();
+
+    varImgPromisesRef.current.set(variantId, p);
+    return p;
+  }, [dispatch, varImageUrls]);
+
+  // Varyant listesi değişince eksik görselleri getir
   useEffect(() => {
     const vItems = systemVariants?.items || [];
     if (!vItems.length) return;
@@ -168,53 +168,52 @@ const fetchVariantImageOnce = useCallback(async (variantId) => {
   }, []);
 
   return (
-    <div className="p-5">
-      <div className="w-full flex">
+    <div className="min-h-screen bg-background text-foreground p-5">
+      <div className="w-full flex items-center gap-3">
         <h1 className="text-3xl font-bold mb-4">Sistem Seç</h1>
         <button className="btn ml-auto" onClick={() => navigate(`/projeduzenle/${projectId}`)}>
           Projeye Dön
         </button>
       </div>
 
-      <div className="border border-gray-200 rounded-2xl w-full min-h-300 h-full p-5 overflow-auto">
-
+      <div className="bg-card border border-border rounded-2xl w-full min-h-300 h-full p-5 overflow-auto">
         {/* Sistemler Bölümü */}
         <section>
           {loadingSystems ? (
             <Spinner />
           ) : !sistemler?.items?.length ? (
-            <div className="text-gray-600">Hiç Sistem Bulunmuyor</div>
+            <div className="text-muted-foreground">Hiç Sistem Bulunmuyor</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {sistemler.items.map((sistem) => {
                 const imgUrl = sysImageUrls[sistem.id] || '/placeholder-system.png';
                 const isSysLoading = !!sysImgLoading[sistem.id];
+                const selected = selectedSistemId === sistem.id;
                 return (
                   <div
                     key={sistem.id}
-                    className={`bg-white w-80 h-70 rounded-2xl border p-4 flex flex-col items-center ${
-                      selectedSistemId === sistem.id ? 'border-blue-500 shadow-lg' : 'border-gray-200'
+                    className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${
+                      selected ? 'border-primary shadow-lg' : 'border-border'
                     }`}
                   >
-                    {/* Sistem Fotoğrafı — oran korunur, max width */}
-<div className="mb-4 flex justify-center w-full">
-  {isSysLoading ? (
-    <MiniSpinner />
-  ) : (
-    <img
-      src={imgUrl}
-      alt={sistem.name}
-      className="w-full max-w-70 max-h-40 h-auto object-contain rounded"
-
-    />
-  )}
-</div>
+                    {/* Sistem Fotoğrafı */}
+                    <div className="mb-4 flex justify-center w-full">
+                      {isSysLoading ? (
+                        <MiniSpinner />
+                      ) : (
+                        <img
+                          src={imgUrl}
+                          alt={sistem.name}
+                          className="w-full max-w-70 max-h-40 h-auto object-contain rounded"
+                        />
+                      )}
+                    </div>
 
                     <h3 className="text-xl font-semibold mb-2 mt-auto text-center">{sistem.name}</h3>
 
                     <button
                       onClick={() => handleSystemSelect(sistem.id)}
-                      className="mt-auto bg-blue-500 text-white px-4 py-2 rounded-2xl hover:bg-blue-600 focus:outline-none"
+                      className="mt-auto btn btn-primary"
                     >
                       Seç
                     </button>
@@ -237,32 +236,32 @@ const fetchVariantImageOnce = useCallback(async (variantId) => {
                 {systemVariants.items.map((variant) => {
                   const vImgUrl = varImageUrls[variant.id] || '/placeholder-variant.png';
                   const isVarLoading = !!varImgLoading[variant.id];
+                  const selected = selectedVariantId === variant.id;
                   return (
                     <div
                       key={variant.id}
-                      className={`bg-white w-80 h-70 rounded-2xl border p-4 flex flex-col items-center ${
-                        selectedVariantId === variant.id ? 'border-green-500 shadow-lg' : 'border-gray-200'
+                      className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${
+                        selected ? 'border-success shadow-lg' : 'border-border'
                       }`}
                     >
-                      {/* Variant Fotoğrafı — oran korunur, max width */}
-<div className="mb-4 flex justify-center w-full">
-  {isVarLoading ? (
-    <MiniSpinner />
-  ) : (
-    <img
-      src={vImgUrl}
-      alt={variant.name}
-      className="w-full max-w-70 max-h-40 h-auto object-contain rounded"
-
-    />
-  )}
-</div>
+                      {/* Variant Fotoğrafı */}
+                      <div className="mb-4 flex justify-center w-full">
+                        {isVarLoading ? (
+                          <MiniSpinner />
+                        ) : (
+                          <img
+                            src={vImgUrl}
+                            alt={variant.name}
+                            className="w-full max-w-70 max-h-40 h-auto object-contain rounded"
+                          />
+                        )}
+                      </div>
 
                       <h3 className="text-lg mt-auto font-medium mb-2 text-center">{variant.name}</h3>
 
                       <button
                         onClick={() => handleVariantSelect(variant.id)}
-                        className="mt-auto bg-green-500 text-white px-4 py-2 rounded-2xl hover:bg-green-600 focus:outline-none"
+                        className="mt-auto btn btn-success"
                       >
                         Seç
                       </button>
@@ -271,7 +270,7 @@ const fetchVariantImageOnce = useCallback(async (variantId) => {
                 })}
               </div>
             ) : (
-              <p className="text-gray-500">Bu sisteme ait hiç alt sistem bulunmuyor.</p>
+              <p className="text-muted-foreground">Bu sisteme ait hiç alt sistem bulunmuyor.</p>
             )}
           </section>
         )}

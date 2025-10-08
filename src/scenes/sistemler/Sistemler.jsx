@@ -17,7 +17,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -77,32 +77,32 @@ const Sistemler = () => {
   };
 
   // Ekle
-// Ekle
-const handleAddSystem = useCallback(async ({ name, description, photoFile }) => {
-  // 1) Sistemi oluştur
-  const created = await dispatch(addSystemToApi({ name, description }));
-  const newId = created?.id;
+  const handleAddSystem = useCallback(async ({ name, description, photoFile }) => {
+    // 1) Sistemi oluştur
+    const created = await dispatch(addSystemToApi({ name, description }));
+    const newId = created?.id;
 
-  // 2) Foto dosyası varsa hemen yükle
-  if (photoFile && newId) {
-    await dispatch(AddOrUpdateSystemImageFromApi(newId, photoFile));
-  }
+    // 2) Foto dosyası varsa hemen yükle
+    if (photoFile && newId) {
+      await dispatch(AddOrUpdateSystemImageFromApi(newId, photoFile));
+    }
 
-  // 3) Listeyi tazele
-  await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
-}, [dispatch, sysPage, sysSearch]);
+    // 3) Listeyi tazele
+    await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
+  }, [dispatch, sysPage, sysSearch]);
 
   // Düzenle
-const handleEditSystem = useCallback(async ({ id, name, description, photoFile }) => {
-  await dispatch(editSystemOnApi(id, { name, description }));
+  const handleEditSystem = useCallback(async ({ id, name, description, photoFile }) => {
+    await dispatch(editSystemOnApi(id, { name, description }));
 
-  // Kullanıcı dialog içinde "Yükle"ye basmamış ama foto dosyası seçip "Güncelle" demiş olabilir:
-  if (photoFile && id) {
-    await dispatch(AddOrUpdateSystemImageFromApi(id, photoFile));
-  }
+    // Kullanıcı dialog içinde "Yükle"ye basmamış ama foto dosyası seçip "Güncelle" demiş olabilir:
+    if (photoFile && id) {
+      await dispatch(AddOrUpdateSystemImageFromApi(id, photoFile));
+    }
 
-  await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
-}, [dispatch, sysPage, sysSearch]);
+    await dispatch(getSistemlerFromApi(sysPage, sysSearch, 5));
+  }, [dispatch, sysPage, sysSearch]);
+
   // Sistem sil → modal
   const askDeleteSystem = (sys) => {
     setPendingSystem(sys);
@@ -139,12 +139,15 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
     }
   };
 
+  const totalSysPages = systems.total_pages || 1;
+  const totalVarPages = variants.total_pages || 1;
+
   return (
-    <div className="grid grid-rows-[60px_1fr] min-h-screen">
+    <div className="grid grid-rows-[60px_1fr] min-h-screen bg-background text-foreground">
       <Header title="Sistemler" />
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-y-6">
-        {/* Arama ve Sistem Ekle (tasarımı bozma) */}
+      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-6">
+        {/* Arama ve Sistem Ekle */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <input
             type="text"
@@ -174,7 +177,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
             ) : (
               <tbody>
                 {(systems.items ?? []).map(sys => (
-                  <tr key={sys.id}>
+                  <tr key={sys.id} className="hover:bg-muted/40">
                     <td>{sys.name}</td>
                     <td>{sys.description}</td>
                     <td className="text-right space-x-2">
@@ -190,7 +193,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
                 ))}
                 {(!systems.items || systems.items.length === 0) && (
                   <tr>
-                    <td colSpan={3} className="text-center text-gray-500 py-4">Veri bulunamadı</td>
+                    <td colSpan={3} className="text-center text-muted-foreground py-4">Veri bulunamadı</td>
                   </tr>
                 )}
               </tbody>
@@ -198,7 +201,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
           </table>
         </div>
 
-        {/* Sistemler Sayfalama — boyalardakiyle aynı */}
+        {/* Sistemler Sayfalama */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
           <button className="btn btn-sm" onClick={() => setSysPage(1)} disabled={systems.page === 1}>« İlk</button>
           <button className="btn btn-sm" onClick={() => setSysPage(p => Math.max(p - 1, 1))} disabled={!systems.has_prev}>‹ Önceki</button>
@@ -206,7 +209,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
             onSubmit={(e) => {
               e.preventDefault();
               const val = parseInt(e.target.elements.sysPageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= systems.total_pages) setSysPage(val);
+              if (!isNaN(val) && val >= 1 && val <= totalSysPages) setSysPage(val);
             }}
             className="flex items-center gap-1"
           >
@@ -214,23 +217,27 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
               type="number"
               name="sysPageNum"
               min={1}
-              max={systems.total_pages}
-              defaultValue={systems.page}
+              max={totalSysPages}
+              value={sysPage}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                setSysPage(isNaN(val) ? 1 : Math.max(1, Math.min(totalSysPages, val)));
+              }}
               className="input input-bordered input-sm w-16 text-center"
             />
-            <span className="text-sm">/ {systems.total_pages}</span>
+            <span className="text-sm">/ {totalSysPages}</span>
           </form>
-          <button className="btn btn-sm" onClick={() => setSysPage(p => p + 1)} disabled={!systems.has_next}>Sonraki ›</button>
-          <button className="btn btn-sm" onClick={() => setSysPage(systems.total_pages)} disabled={systems.page === systems.total_pages || systems.total_pages <= 1}>Son »</button>
+          <button className="btn btn-sm" onClick={() => setSysPage(p => Math.min(totalSysPages, p + 1))} disabled={!systems.has_next}>Sonraki ›</button>
+          <button className="btn btn-sm" onClick={() => setSysPage(totalSysPages)} disabled={systems.page === totalSysPages || totalSysPages <= 1}>Son »</button>
         </div>
 
-        {/* Sistem Varyantları Bölümü (tasarım korunur) */}
+        {/* Sistem Varyantları Bölümü */}
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Sistem Varyantları</h2>
             <button
               onClick={() => navigate('/sistemvaryantolustur')}
-              className="btn bg-green-600 hover:bg-green-700 text-white"
+              className="btn btn-success"
             >
               Varyant Oluştur
             </button>
@@ -252,12 +259,12 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
               ) : (
                 <tbody>
                   {(variants.items ?? []).map(variant => (
-                    <tr key={variant.id}>
+                    <tr key={variant.id} className="hover:bg-muted/40">
                       <td>{variant.name}</td>
                       <td className="text-right space-x-2">
                         <button
                           onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}
-                          className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"
+                          className="btn btn-warning btn-sm"
                         >
                           Düzenle
                         </button>
@@ -272,7 +279,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
                   ))}
                   {(!variants.items || variants.items.length === 0) && (
                     <tr>
-                      <td colSpan={2} className="text-center text-gray-500 py-4">Veri bulunamadı</td>
+                      <td colSpan={2} className="text-center text-muted-foreground py-4">Veri bulunamadı</td>
                     </tr>
                   )}
                 </tbody>
@@ -280,7 +287,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
             </table>
           </div>
 
-          {/* Varyantlar Sayfalama — boyalardakiyle aynı */}
+          {/* Varyantlar Sayfalama */}
           <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
             <button className="btn btn-sm" onClick={() => setVarPage(1)} disabled={variants.page === 1}>« İlk</button>
             <button className="btn btn-sm" onClick={() => setVarPage(p => Math.max(p - 1, 1))} disabled={!variants.has_prev}>‹ Önceki</button>
@@ -288,7 +295,7 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
               onSubmit={(e) => {
                 e.preventDefault();
                 const val = parseInt(e.target.elements.varPageNum.value, 10);
-                if (!isNaN(val) && val >= 1 && val <= variants.total_pages) setVarPage(val);
+                if (!isNaN(val) && val >= 1 && val <= totalVarPages) setVarPage(val);
               }}
               className="flex items-center gap-1"
             >
@@ -296,14 +303,18 @@ const handleEditSystem = useCallback(async ({ id, name, description, photoFile }
                 type="number"
                 name="varPageNum"
                 min={1}
-                max={variants.total_pages}
-                defaultValue={variants.page}
+                max={totalVarPages}
+                value={varPage}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setVarPage(isNaN(val) ? 1 : Math.max(1, Math.min(totalVarPages, val)));
+                }}
                 className="input input-bordered input-sm w-16 text-center"
               />
-              <span className="text-sm">/ {variants.total_pages}</span>
+              <span className="text-sm">/ {totalVarPages}</span>
             </form>
-            <button className="btn btn-sm" onClick={() => setVarPage(p => p + 1)} disabled={!variants.has_next}>Sonraki ›</button>
-            <button className="btn btn-sm" onClick={() => setVarPage(variants.total_pages)} disabled={variants.page === variants.total_pages || variants.total_pages <= 1}>Son »</button>
+            <button className="btn btn-sm" onClick={() => setVarPage(p => Math.min(totalVarPages, p + 1))} disabled={!variants.has_next}>Sonraki ›</button>
+            <button className="btn btn-sm" onClick={() => setVarPage(totalVarPages)} disabled={variants.page === totalVarPages || totalVarPages <= 1}>Son »</button>
           </div>
         </div>
       </div>

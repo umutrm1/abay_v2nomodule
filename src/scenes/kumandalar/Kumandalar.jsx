@@ -15,7 +15,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 // DigerMalzemeler.jsx'deki ile aynı görsel spinner
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -115,7 +115,7 @@ const Kumandalar = () => {
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Kumandalar" />
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-y-4">
+      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama + Ekle (aynı düzen) */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <input
@@ -159,7 +159,7 @@ const Kumandalar = () => {
                       <DialogKumandaDuzenle kumanda={kumanda} onSave={handleEdit} />
                       <button
                         onClick={() => askDelete(kumanda)}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        className="btn btn-outline btn-error"
                       >
                         Sil
                       </button>
@@ -167,7 +167,7 @@ const Kumandalar = () => {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={4} className="text-center text-gray-500 py-4">
+                    <td colSpan={4} className="text-center text-muted-foreground py-4">
                       Veri bulunamadı
                     </td>
                   </tr>

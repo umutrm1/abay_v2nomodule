@@ -83,12 +83,12 @@ export function getPdfTitleByKey(key) {
  * KEY İLE PDF BRAND GETİR (GET /me/pdf/brands/by-key/:key)
  * - Ör: by-key/selam
  */
-export function getPdfBrandByKey(key) {
+export function getPdfBrandByKey() {
   return async (dispatch) => {
     dispatch({ type: actionTypes.GET_PDF_BRAND_BY_KEY_REQUEST });
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/me/pdf/brands/by-key/${"brand.default0"}`,
+        `${API_BASE_URL}/me/pdf/brand`,
         {
           method: "GET",
           headers: { accept: "application/json" },

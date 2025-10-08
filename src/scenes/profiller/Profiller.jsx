@@ -1,3 +1,4 @@
+// src/scenes/profiller/Profiller.jsx
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -16,7 +17,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -146,6 +147,7 @@ const Profiller = () => {
       setDeleteOpen(false);
     }
   };
+
   const handleClickUpload = (profilId) => {
     if (!fileInputRefs.current[profilId]) return;
     fileInputRefs.current[profilId].click(); // gizli input'u tetikle
@@ -174,11 +176,12 @@ const Profiller = () => {
       });
     }
   };
+
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Profiller" />
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-y-4">
+      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama ve Ekle (tasarımı bozma) */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <input
@@ -227,19 +230,16 @@ const Profiller = () => {
                           <img
                             src={imgSrc}
                             alt={`${profil.profil_isim} kesit`}
-                            className="h-10 w-16 object-contain border rounded"
+                            className="h-10 w-16 object-contain border border-border rounded"
                             loading="lazy"
                           />
-                        )
-                          : failed ? (
-                            <span className="opacity-60">—</span>
-                          )
-                            : isLoadingImg ? (
-                              <CellSpinner />
-
-                            )
-                              :
-                              (<span className="opacity-60">—</span>)}
+                        ) : failed ? (
+                          <span className="opacity-60">—</span>
+                        ) : isLoadingImg ? (
+                          <CellSpinner />
+                        ) : (
+                          <span className="opacity-60">—</span>
+                        )}
                       </td>
                       <td>{profil.birim_agirlik}</td>
                       <td>{profil.boy_uzunluk}</td>
@@ -248,7 +248,6 @@ const Profiller = () => {
                           onClick={async () => {
                             try {
                               await dispatch(deleteProfilImageFromApi(profil.id));
-                              
                             } catch (err) {
                               console.error("Fotoğraf silme hatası", err);
                             }
@@ -286,7 +285,7 @@ const Profiller = () => {
                   );
                 }) : (
                   <tr>
-                    <td colSpan={6} className="text-center text-gray-500 py-4">
+                    <td colSpan={6} className="text-center text-muted-foreground py-4">
                       Veri bulunamadı
                     </td>
                   </tr>

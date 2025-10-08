@@ -1,3 +1,4 @@
+// src/scenes/musteriler/DialogMusteriDuzenle.jsx
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
 
@@ -27,7 +28,7 @@ const DialogMusteriDuzenle = ({ musteri, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline btn-info">Düzenle</button>
+        <button className="btn btn-sm btn-outline">Düzenle</button>
       </DialogTrigger>
       <DialogContent className={"max-w-200"}>
         <DialogHeader>

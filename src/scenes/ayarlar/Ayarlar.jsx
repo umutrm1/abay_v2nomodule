@@ -165,36 +165,35 @@ export default function Ayarlar() {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-y-4">
+    <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
       {/* 1) PDF ÜST BAŞLIK */}
-      <section className="border border-gray-200 rounded-2xl p-4">
+      <section className="border border-border rounded-2xl p-4">
         <header className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">1) PDF Üst Başlık Değiştirme</h2>
           <button
             disabled={brandSaving || brandLoading}
             onClick={saveBrand}
-            className="px-3 py-1.5 rounded-xl border border-gray-300 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl border border-border disabled:opacity-50"
           >{brandSaving ? "Kaydediliyor..." : "Kaydet"}</button>
         </header>
 
         {brandLoading ? (
-          <p className="text-sm text-gray-500">Yükleniyor...</p>
+          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* config_json.title */}
             <div className="flex flex-col gap-1">
-
-              <p className="text-xs text-gray-500">Brand içi global başlık. PDF tasarımınız bu alanı kullanıyorsa güncellenir.</p>
+              <p className="text-xs text-muted-foreground">Brand içi global başlık. PDF tasarımınız bu alanı kullanıyorsa güncellenir.</p>
             </div>
 
             {/* rightBox.title */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600">Sağ Kutu Başlık (rightBox.title)</label>
+              <label className="text-sm text-muted-foreground">Sağ Kutu Başlık (rightBox.title)</label>
               <input
                 type="text"
                 value={brandCfg?.rightBox?.title ?? ""}
                 onChange={(e) => handleBrandChange(["rightBox", "title"], e.target.value)}
-                className="border border-gray-300 rounded-xl px-3 py-2"
+                className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
                 placeholder="Örn: TÜMEN ALÜMİNYUM"
               />
             </div>
@@ -204,20 +203,20 @@ export default function Ayarlar() {
               <h3 className="text-sm font-medium mb-2">Sağ Kutu Satırları (rightBox.lines)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {brandLines.map((ln, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+                  <div key={idx} className="border border-border rounded-xl p-3 flex flex-col gap-2">
                     <div className="grid grid-cols-3 gap-2 items-center">
-                      <span className="text-xs text-gray-500 col-span-3 md:col-span-1">Label</span>
+                      <span className="text-xs text-muted-foreground col-span-3 md:col-span-1">Label</span>
                       <input
-                        className="col-span-3 md:col-span-2 border border-gray-300 rounded-lg px-3 py-2"
+                        className="col-span-3 md:col-span-2 border border-border rounded-lg px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
                         type="text"
                         value={ln.label ?? ""}
                         onChange={(e) => handleBrandChange(["rightBox", "lines", idx, "label"], e.target.value)}
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-2 items-center">
-                      <span className="text-xs text-gray-500 col-span-3 md:col-span-1">Value</span>
+                      <span className="text-xs text-muted-foreground col-span-3 md:col-span-1">Value</span>
                       <textarea
-                        className="col-span-3 md:col-span-2 border border-gray-300 rounded-lg px-3 py-2"
+                        className="col-span-3 md:col-span-2 border border-border rounded-lg px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
                         rows={2}
                         value={ln.value ?? ""}
                         onChange={(e) => handleBrandChange(["rightBox", "lines", idx, "value"], e.target.value)}
@@ -226,28 +225,28 @@ export default function Ayarlar() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-2">Satır sayısı sabit tutulur; ekleme/çıkarma yok, sadece label & value düzenlenir.</p>
+              <p className="text-xs text-muted-foreground mt-2">Satır sayısı sabit tutulur; ekleme/çıkarma yok, sadece label & value düzenlenir.</p>
             </div>
           </div>
         )}
       </section>
 
       {/* 2) PDF TITLE (infoRows görünürlük) */}
-      <section className="border border-gray-200 rounded-2xl p-4">
+      <section className="border border-border rounded-2xl p-4">
         <header className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">2) PDF Başlık (Title) Alanları</h2>
           <button
             disabled={titleSaving || titleLoading}
             onClick={saveTitle}
-            className="px-3 py-1.5 rounded-xl border border-gray-300 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl border border-border disabled:opacity-50"
           >{titleSaving ? "Kaydediliyor..." : "Kaydet"}</button>
         </header>
 
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">PDF Türü</span>
+            <span className="text-sm text-muted-foreground">PDF Türü</span>
             <select
-              className="border border-gray-300 rounded-xl px-3 py-2"
+              className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={selectedTitleKey}
               onChange={(e) => setSelectedTitleKey(e.target.value)}
             >
@@ -256,7 +255,7 @@ export default function Ayarlar() {
               ))}
             </select>
           </div>
-          {titleLoading && <span className="text-xs text-gray-500">Yükleniyor...</span>}
+          {titleLoading && <span className="text-xs text-muted-foreground">Yükleniyor...</span>}
         </div>
 
         {titleDoc?.config_json?.infoRows?.length ? (
@@ -264,11 +263,11 @@ export default function Ayarlar() {
             {titleDoc.config_json.infoRows.map((row, idx) => (
               <label
                 key={idx}
-                className="border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-3"
+                className="border border-border rounded-xl p-3 flex items-center justify-between gap-3"
               >
                 <div className="flex-1">
                   <div className="text-sm font-medium">{row.label}</div>
-                  <div className="text-xs text-gray-500">{`\u201C${row.label}\u201D görünsün mü?`}</div>
+                  <div className="text-xs text-muted-foreground">{`\u201C${row.label}\u201D görünsün mü?`}</div>
                 </div>
                 <input
                   type="checkbox"
@@ -280,56 +279,56 @@ export default function Ayarlar() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">Seçilen PDF için infoRows bulunamadı.</p>
+          <p className="text-sm text-muted-foreground">Seçilen PDF için infoRows bulunamadı.</p>
         )}
       </section>
 
       {/* 3) PROFORMA (Project Code) KURALI */}
-      <section className="border border-gray-200 rounded-2xl p-4">
+      <section className="border border-border rounded-2xl p-4">
         <header className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">3) Proforma No (Project Code) Kuralı</h2>
           <button
             disabled={ruleSaving}
             onClick={saveRule}
-            className="px-3 py-1.5 rounded-xl border border-gray-300 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl border border-border disabled:opacity-50"
           >{ruleSaving ? "Kaydediliyor..." : "Kaydet"}</button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">Önek (prefix)</label>
+            <label className="text-sm text-muted-foreground">Önek (prefix)</label>
             <input
               type="text"
-              className="border border-gray-300 rounded-xl px-3 py-2"
+              className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={rule.prefix}
               onChange={(e) => setRule((r) => ({ ...r, prefix: e.target.value }))}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">Ayırıcı (separator)</label>
+            <label className="text-sm text-muted-foreground">Ayırıcı (separator)</label>
             <input
               type="text"
-              className="border border-gray-300 rounded-xl px-3 py-2"
+              className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={rule.separator}
               onChange={(e) => setRule((r) => ({ ...r, separator: e.target.value }))}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">Basamak (padding)</label>
+            <label className="text-sm text-muted-foreground">Basamak (padding)</label>
             <input
               type="number"
               min={1}
-              className="border border-gray-300 rounded-xl px-3 py-2"
+              className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={rule.padding}
               onChange={(e) => setRule((r) => ({ ...r, padding: Number(e.target.value || 0) }))}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">Başlangıç No (start_number)</label>
+            <label className="text-sm text-muted-foreground">Başlangıç No (start_number)</label>
             <input
               type="number"
               min={0}
-              className="border border-gray-300 rounded-xl px-3 py-2"
+              className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={rule.start_number}
               onChange={(e) => setRule((r) => ({ ...r, start_number: Number(e.target.value || 0) }))}
             />
@@ -337,9 +336,9 @@ export default function Ayarlar() {
         </div>
 
         {/* Örnek önizleme */}
-        <div className="mt-3 text-sm text-gray-700">
-          <span className="text-gray-500">Örnek:</span>{" "}
-          <code className="px-2 py-1 border border-gray-300 rounded-lg">
+        <div className="mt-3 text-sm text-foreground">
+          <span className="text-muted-foreground">Örnek:</span>{" "}
+          <code className="px-2 py-1 border border-border rounded-lg">
             {rule.prefix}{rule.separator}{String(rule.start_number).padStart(rule.padding, "0")}
           </code>
         </div>

@@ -1,5 +1,5 @@
 // src/scenes/sistemler/DialogKumandaSec.jsx
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import PagedSelectDialog from "./PagedSelectDialog.jsx";
 import { getKumandalarFromApi } from "@/redux/actions/actions_kumandalar.js";
@@ -25,6 +25,13 @@ const DialogKumandaSec = ({ open, onOpenChange, onSelect }) => {
     (page, q) => dispatch(getKumandalarFromApi({ page, q, limit: LIMIT })),
     [dispatch]
   );
+
+  // Dialog açıldığında ilk sayfayı otomatik yükle (boş arama ile)
+  useEffect(() => {
+    if (open) {
+      fetchPage(1, "");
+    }
+  }, [open, fetchPage]);
 
   return (
     <PagedSelectDialog

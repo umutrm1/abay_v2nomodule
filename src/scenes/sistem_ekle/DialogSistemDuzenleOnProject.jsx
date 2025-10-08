@@ -1,5 +1,5 @@
 // src/scenes/sistemekle/DialogSistemDuzenleOnProject.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,17 +8,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog.jsx";
 
-/**
- * DialogSistemDuzenleOnProject
- * - DialogPdfAyar.jsx ile aynı shadcn Dialog katmanını kullanır.
- * - Props:
- *   open, onOpenChange: üstten kontrol
- *   title: başlık (default: "Sistem Düzenle")
- *   initial: { width_mm, height_mm, quantity }
- *   onSave(values): Kaydet tetikleyicisi
- *   loading: variant fetch aşaması (form yerine spinner)
- *   saving: dispatch (Kaydet butonunda spinner)
- */
+const initialState = { width_mm: "", height_mm: "", quantity: "" };
+
 const DialogSistemDuzenleOnProject = ({
   open,
   onOpenChange,
@@ -28,109 +19,148 @@ const DialogSistemDuzenleOnProject = ({
   loading = false,
   saving = false,
 }) => {
-  const [form, setForm] = useState({
-    width_mm: 0,
-    height_mm: 0,
-    quantity: 0,
-  });
+  const [form, setForm] = useState(initialState);
+  const firstInputRef = useRef(null);
 
+  // open olduğunda initial değerleri string olarak yükle (boş değerleri de destekler)
   useEffect(() => {
     if (!open) return;
     setForm({
-      width_mm: Number(initial.width_mm || 0),
-      height_mm: Number(initial.height_mm || 0),
-      quantity: Number(initial.quantity || 0),
+      width_mm: String(initial?.width_mm ?? ""),
+      height_mm: String(initial?.height_mm ?? ""),
+      quantity: String(initial?.quantity ?? ""),
     });
+    // ilk inputa odak
+    setTimeout(() => firstInputRef.current?.focus(), 0);
   }, [open, initial]);
 
+  // kapandıysa local formu temizle
+  const handleOpenChange = (v) => {
+    onOpenChange?.(v);
+    if (!v) setForm(initialState);
+  };
+
   const setField = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-  const handleSave = () => {
-    if (!onSave) return;
-    onSave({
-      width_mm: Number(form.width_mm || 0),
-      height_mm: Number(form.height_mm || 0),
-      quantity: Number(form.quantity || 0),
+
+  // parse helper’ları
+  const toNumber = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const width = toNumber(form.width_mm);
+  const height = toNumber(form.height_mm);
+  const qtyRaw = toNumber(form.quantity);
+  const qty = Number.isInteger(qtyRaw) ? qtyRaw : qtyRaw; // tam sayı bekleniyorsa istersek Math.round edebiliriz
+
+  // basit validasyonlar
+  const errors = {
+    width: width <= 0,
+    height: height <= 0,
+    qty: qty <= 0 || !Number.isInteger(qty),
+  };
+  const hasError = errors.width || errors.height || errors.qty;
+  const canSave = !loading && !saving && !hasError;
+
+  const submit = (e) => {
+    e?.preventDefault?.();
+    if (!canSave) return;
+    onSave?.({
+      width_mm: width,
+      height_mm: height,
+      quantity: qty,
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        {/* İçerik */}
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <span className="loading loading-spinner loading-lg" />
           </div>
         ) : (
-          <div className="mt-2 space-y-3">
+          <form className="mt-2 space-y-3" onSubmit={submit}>
             <label className="form-control w-full">
-              <span className="label-text">En (mm)</span>
+              <span className="label-text text-muted-foreground">En (mm)</span>
               <input
+                ref={firstInputRef}
                 type="number"
-                className="input input-bordered w-full"
+                inputMode="numeric"
+                min={1}
+                step="1"
+                className={`input input-bordered w-full ${errors.width ? "input-error" : ""}`}
                 value={form.width_mm}
                 onChange={(e) => setField("width_mm", e.target.value)}
                 disabled={saving}
+                placeholder="Örn: 1200"
               />
+              {errors.width && (
+                <span className="text-xs text-destructive mt-1">En 0’dan büyük olmalı.</span>
+              )}
             </label>
 
             <label className="form-control w-full">
-              <span className="label-text">Boy (mm)</span>
+              <span className="label-text text-muted-foreground">Boy (mm)</span>
               <input
                 type="number"
-                className="input input-bordered w-full"
+                inputMode="numeric"
+                min={1}
+                step="1"
+                className={`input input-bordered w-full ${errors.height ? "input-error" : ""}`}
                 value={form.height_mm}
                 onChange={(e) => setField("height_mm", e.target.value)}
                 disabled={saving}
+                placeholder="Örn: 2400"
               />
+              {errors.height && (
+                <span className="text-xs text-destructive mt-1">Boy 0’dan büyük olmalı.</span>
+              )}
             </label>
 
             <label className="form-control w-full">
-              <span className="label-text">Adet</span>
+              <span className="label-text text-muted-foreground">Adet</span>
               <input
                 type="number"
-                className="input input-bordered w-full"
+                inputMode="numeric"
+                min={1}
+                step="1"
+                className={`input input-bordered w-full ${errors.qty ? "input-error" : ""}`}
                 value={form.quantity}
                 onChange={(e) => setField("quantity", e.target.value)}
                 disabled={saving}
+                placeholder="Örn: 3"
               />
+              {errors.qty && (
+                <span className="text-xs text-destructive mt-1">Adet pozitif tam sayı olmalı.</span>
+              )}
             </label>
-          </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <DialogClose asChild>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  disabled={saving}
+                >
+                  Vazgeç
+                </button>
+              </DialogClose>
+
+              <button
+                type="submit"
+                className="btn btn-sm btn-primary inline-flex items-center gap-2"
+                disabled={!canSave}
+              >
+                {saving && <span className="loading loading-spinner loading-xs" />}
+                Kaydet
+              </button>
+            </div>
+          </form>
         )}
-
-        <div className="mt-6 flex justify-end gap-2">
-          <DialogClose asChild>
-            <button
-              className="btn btn-sm bg-gray-200 hover:bg-gray-300 text-gray-700"
-              disabled={saving}
-            >
-              Vazgeç
-            </button>
-          </DialogClose>
-
-          <button
-            className="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2"
-            onClick={handleSave}
-            disabled={saving || loading}
-          >
-            {saving && <span className="loading loading-spinner loading-xs" />}
-            Kaydet
-          </button>
-        </div>
-
-        <DialogClose asChild>
-          {/* <button
-            aria-label="Close"
-            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-            disabled={saving}
-          >
-            
-          </button> */}
-        </DialogClose>
       </DialogContent>
     </Dialog>
   );

@@ -40,7 +40,14 @@ export default function ProtectedRoute() {
     return () => { mounted = false }
   }, [token, dispatch])
 
-  if (!checked) return null // küçük bir loading yerleştirebilirsin
+  if (!checked) {
+    return (
+      <div className="min-h-[40vh] grid place-items-center bg-background text-foreground">
+        <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
 
   if (!ok) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />

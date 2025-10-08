@@ -13,7 +13,7 @@ const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
   const [form, setForm] = useState({
     kumanda_isim: '',
     kapasite: 0,
-    price:0
+    price: 0
   });
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline btn-info">
+        <button className="btn btn-sm btn-outline">
           Düzenle
         </button>
       </DialogTrigger>
@@ -78,7 +78,6 @@ const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
             className="input input-bordered"
           />
         </div>
-
 
         <DialogClose asChild>
           <button onClick={handleSave} className="btn btn-success">

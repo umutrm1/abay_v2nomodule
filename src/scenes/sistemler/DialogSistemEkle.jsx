@@ -85,7 +85,6 @@ const DialogSistemEkle = ({ system, onSave }) => {
     try {
       setDeleting(true);
       await dispatch(deleteSystemImageOnApi(sysId));
-      // store’dan silindi; ek güvence için (önizleme kaybolsun)
       // local seçili dosya da sıfırlansın
       setPhotoFile(null);
     } finally {
@@ -98,26 +97,26 @@ const DialogSistemEkle = ({ system, onSave }) => {
       {/* Trigger */}
       <DialogTrigger asChild>
         {system ? (
-          <button className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+          <button className="btn btn-warning btn-sm">
             Düzenle
           </button>
         ) : (
-          <button className="btn w-40 ml-auto bg-blue-700 hover:bg-blue-800 text-white text-lg">
+          <button className="btn btn-primary w-40 ml-auto text-lg">
             + Sistem Ekle
           </button>
         )}
       </DialogTrigger>
 
       {/* İçerik */}
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
           <DialogTitle>
             {system ? 'Sistem Düzenle' : 'Yeni Sistem Ekle'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <label>Sistem İsmi</label>
+        <div className="grid gap-3 py-4">
+          <label className="text-sm text-muted-foreground">Sistem İsmi</label>
           <input
             name="name"
             value={form.name}
@@ -126,21 +125,21 @@ const DialogSistemEkle = ({ system, onSave }) => {
             className="input input-bordered"
           />
 
-          <label>Açıklama</label>
+          <label className="text-sm text-muted-foreground">Açıklama</label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             placeholder="Açıklama"
-            className="input input-bordered"
+            className="textarea textarea-bordered"
           />
 
           {/* --- Sistem Fotoğraf Alanı --- */}
           <div className="mt-2">
-            <label className="block mb-2 font-medium">Sistem Fotoğraf</label>
+            <label className="block mb-2 text-sm text-muted-foreground">Sistem Fotoğraf</label>
 
             {/* Önizleme kutusu */}
-            <div className="w-full aspect-video bg-gray-100 rounded flex items-center justify-center overflow-hidden border">
+            <div className="w-full aspect-video bg-muted/20 rounded flex items-center justify-center overflow-hidden border border-border">
               {(localPreview || existingUrl) ? (
                 <img
                   src={localPreview || existingUrl}
@@ -148,7 +147,7 @@ const DialogSistemEkle = ({ system, onSave }) => {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <span className="text-gray-400 text-sm">Görsel yok</span>
+                <span className="text-muted-foreground text-sm">Görsel yok</span>
               )}
             </div>
 
@@ -184,7 +183,7 @@ const DialogSistemEkle = ({ system, onSave }) => {
 
             {/* Bilgi notu */}
             {!sysId && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 * Yeni sistem eklemede fotoğraf, <b>Kaydet</b>’e bastıktan sonra otomatik yüklenecektir.
               </p>
             )}

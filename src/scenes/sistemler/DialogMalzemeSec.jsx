@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import PagedSelectDialog from "./PagedSelectDialog.jsx";
 import { getDigerMalzemelerFromApi } from "@/redux/actions/actions_diger_malzemeler.js";
@@ -10,7 +10,18 @@ const DialogMalzemeSec = ({ open, onOpenChange, onSelect }) => {
   const dispatch = useDispatch();
   const data = useSelector((s) => s.getDigerMalzemelerFromApiReducer) || EMPTY_PAGE;
 
-  const fetchPage = useCallback((page, q) => dispatch(getDigerMalzemelerFromApi(page, q, LIMIT)), [dispatch]);
+  // PagedSelectDialog, page & query ile bu fonksiyonu çağıracak
+  const fetchPage = useCallback(
+    (page, q) => dispatch(getDigerMalzemelerFromApi(page, q, LIMIT)),
+    [dispatch]
+  );
+
+  // Dialog açıldığında ilk sayfayı otomatik yükle (boş arama ile)
+  useEffect(() => {
+    if (open) {
+      fetchPage(1, "");
+    }
+  }, [open, fetchPage]);
 
   return (
     <PagedSelectDialog

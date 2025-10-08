@@ -85,14 +85,14 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
           <DialogTitle>Varyant Fotoğraf</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           {/* Önizleme kutusu */}
-          <div className="w-full aspect-video bg-gray-100 rounded flex items-center justify-center overflow-hidden border">
+          <div className="w-full aspect-video bg-muted/20 rounded flex items-center justify-center overflow-hidden border border-border">
             {localPreview || existingUrl ? (
               <img
                 src={localPreview || existingUrl}
@@ -100,7 +100,7 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <span className="text-gray-400 text-sm">Görsel yok</span>
+              <span className="text-muted-foreground text-sm">Görsel yok</span>
             )}
           </div>
 
@@ -125,13 +125,14 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
             <button
               className="btn btn-sm btn-error"
               onClick={handleDelete}
-              disabled={deleting}
+              disabled={deleting || !existingUrl}
+              title={!existingUrl ? "Silinecek görsel yok" : ""}
             >
               {deleting ? "Siliniyor..." : "Sil"}
             </button>
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             * Dosya seçip <b>Yükle</b>’ye bastığınızda görsel hemen güncellenir.
           </p>
         </div>

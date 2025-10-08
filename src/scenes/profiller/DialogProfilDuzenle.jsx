@@ -1,3 +1,4 @@
+// src/scenes/profiller/DialogProfilDuzenle.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -16,8 +17,7 @@ const DialogProfilDuzenle = ({ profil, onSave }) => {
     birim_agirlik: 0,
     boy_uzunluk: 0,
     unit_price: 0,
-        profil_kesit_fotograf: 'string',
-
+    profil_kesit_fotograf: 'string',
   });
 
   // 2) Props değişince formu güncelle
@@ -28,9 +28,8 @@ const DialogProfilDuzenle = ({ profil, onSave }) => {
         profil_isim: profil.profil_isim || '',
         birim_agirlik: profil.birim_agirlik || 0,
         boy_uzunluk: profil.boy_uzunluk || 0,
-        unit_price:0,
+        unit_price: 0,
         profil_kesit_fotograf: profil.profil_kesit_fotograf || 'string',
-
       });
     }
   }, [profil]);
@@ -51,7 +50,7 @@ const DialogProfilDuzenle = ({ profil, onSave }) => {
     <Dialog>
       {/* 3) Düzenle butonu */}
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline btn-info">
+        <button className="btn btn-sm btn-outline">
           Düzenle
         </button>
       </DialogTrigger>
@@ -95,7 +94,6 @@ const DialogProfilDuzenle = ({ profil, onSave }) => {
             onChange={handleChange}
             className="input input-bordered"
           />
-          
         </div>
 
         {/* 4) Güncelle: modal kapanır, handleSave çağrılır */}

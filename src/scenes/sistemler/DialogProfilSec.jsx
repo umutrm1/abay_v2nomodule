@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import PagedSelectDialog from "./PagedSelectDialog.jsx";
 import { getProfillerFromApi } from "@/redux/actions/actions_profiller.js";
@@ -10,8 +10,18 @@ const DialogProfilSec = ({ open, onOpenChange, onSelect }) => {
   const dispatch = useDispatch();
   const data = useSelector((s) => s.getProfillerFromApiReducer) || EMPTY_PAGE;
 
-  // 🔒 Sabit fonksiyon
-  const fetchPage = useCallback((page, q) => dispatch(getProfillerFromApi(page, q, LIMIT)), [dispatch]);
+  // Stabil sayfa getirici
+  const fetchPage = useCallback(
+    (page, q) => dispatch(getProfillerFromApi(page, q, LIMIT)),
+    [dispatch]
+  );
+
+  // Dialog açıldığında ilk sayfayı otomatik yükle (boş arama ile)
+  useEffect(() => {
+    if (open) {
+      fetchPage(1, "");
+    }
+  }, [open, fetchPage]);
 
   return (
     <PagedSelectDialog

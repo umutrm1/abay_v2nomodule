@@ -21,7 +21,7 @@ const DialogCamBoyaDuzenle = ({ color, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">
+        <button className="btn btn-warning">
           Düzenle
         </button>
       </DialogTrigger>

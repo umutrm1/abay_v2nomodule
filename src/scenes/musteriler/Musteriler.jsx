@@ -14,7 +14,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -97,7 +97,7 @@ const Musteriler = () => {
     <div className="grid grid-rows-[60px_1fr]">
       <Header title="Müşteriler" />
 
-      <div className="bg-white w-full border rounded-2xl p-5 flex flex-col gap-y-4">
+      <div className="bg-card w-full border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama & Ekle — (tasarım korunur) */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <input
@@ -149,7 +149,7 @@ const Musteriler = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-500 py-10">
+                    <td colSpan={5} className="text-center text-muted-foreground py-10">
                       Gösterilecek müşteri bulunamadı.
                     </td>
                   </tr>

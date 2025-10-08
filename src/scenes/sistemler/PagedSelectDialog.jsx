@@ -10,7 +10,7 @@ import {
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-8">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -80,7 +80,7 @@ const PagedSelectDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -119,7 +119,7 @@ const PagedSelectDialog = ({
                 <tbody>
                   {(data.items ?? []).length > 0 ? (
                     data.items.map((item) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} className="hover:bg-muted/40">
                         {columns.map((c) => (
                           <td key={c.key}>{item[c.key]}</td>
                         ))}
@@ -128,7 +128,7 @@ const PagedSelectDialog = ({
                           <DialogClose asChild>
                             <button
                               onClick={() => onSelect(item)}
-                              className="btn btn-xs bg-blue-600 hover:bg-blue-700 text-white"
+                              className="btn btn-xs btn-primary"
                             >
                               Seç
                             </button>
@@ -140,7 +140,7 @@ const PagedSelectDialog = ({
                     <tr>
                       <td
                         colSpan={columns.length + 1}
-                        className="text-center text-gray-500 py-4"
+                        className="text-center text-muted-foreground py-4"
                       >
                         Veri bulunamadı
                       </td>
@@ -180,7 +180,7 @@ const PagedSelectDialog = ({
               }}
               className="flex items-center gap-1"
             >
-              {/* 👇 Artık controlled; defaultValue yerine value=page */}
+              {/* 👇 controlled */}
               <input
                 type="number"
                 name="pageNum"

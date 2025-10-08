@@ -46,18 +46,18 @@ const DialogProjeEkle = ({ onSave }) => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button className="btn btn-primary w-40 ml-auto">
-          + Proje Ekle
+          + Teklif Ekle
         </button>
       </DialogTrigger>
 
       <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Yeni Proje Ekle</DialogTitle>
+          <DialogTitle>Yeni Teklif Ekle</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-2 py-4">
           <label htmlFor="project_name" className="text-sm text-muted-foreground">
-            Proje Adı
+            Teklif Adı
           </label>
           <input
             id="project_name"
@@ -65,7 +65,7 @@ const DialogProjeEkle = ({ onSave }) => {
             value={form.project_name}
             onChange={handleChange}
             onKeyDown={submitOnEnter}
-            placeholder="Proje Adı"
+            placeholder="Teklif Adı"
             className="input input-bordered w-full"
             autoFocus
           />

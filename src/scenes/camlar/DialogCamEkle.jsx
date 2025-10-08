@@ -33,7 +33,7 @@ const DialogCamEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn w-40 ml-auto bg-blue-700 text-white">
+        <button className="btn w-40 ml-auto btn-primary">
           + Cam Ekle
         </button>
       </DialogTrigger>

@@ -11,9 +11,10 @@ import {
 } from '@/redux/actions/actions_diger_malzemeler.js';
 import Header from '@/components/mycomponents/Header.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
+
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -40,6 +41,7 @@ const DigerMalzemeler = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
   // Veri çekme (page/search değiştikçe)
   useEffect(() => {
     setIsLoading(true);
@@ -103,7 +105,7 @@ const DigerMalzemeler = () => {
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Diğer Malzemeler" />
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-y-4">
+      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama ve Ekle (tasarım aynı) */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <input
@@ -154,7 +156,7 @@ const DigerMalzemeler = () => {
                       />
                       <button
                         onClick={() => askDelete(item)}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        className="btn btn-outline btn-error"
                       >
                         Sil
                       </button>
@@ -162,7 +164,7 @@ const DigerMalzemeler = () => {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={5} className="text-center text-gray-500 py-4">
+                    <td colSpan={5} className="text-center text-muted-foreground py-4">
                       Veri bulunamadı
                     </td>
                   </tr>

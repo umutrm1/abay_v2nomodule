@@ -1,3 +1,4 @@
+// src/scenes/profiller/DialogProfilEkle.jsx
 import React, { useState } from 'react';
 // Müşterilerde olduğu gibi ui/dialog parçalarını alıyoruz
 import {
@@ -39,7 +40,7 @@ const DialogProfilEkle = ({ onSave }) => {
     <Dialog>
       {/* 4) Butona tıklayınca modal açılır */}
       <DialogTrigger asChild>
-        <button className="btn w-40 ml-auto bg-blue-700 text-white">
+        <button className="btn btn-primary w-40 ml-auto">
           + Profil Ekle
         </button>
       </DialogTrigger>

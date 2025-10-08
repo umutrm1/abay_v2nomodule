@@ -1,8 +1,9 @@
 // src/scenes/login_screen/LoginScreen.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '@/redux/actions/authActions.js';
+import { useTheme } from '@/global/useTheme';
 
 export default function LoginScreen() {
   const dispatch = useDispatch();
@@ -12,6 +13,10 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+
+  // Tema durumu (TopBar’daki ile aynı kanca)
+  const { isDark, toggleTheme } = useTheme();
+
   // Başarılı login sonrası anasayfaya yönlendir
   useEffect(() => {
     if (token) {
@@ -25,50 +30,85 @@ export default function LoginScreen() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="username">Kullanıcı Adı</label>
-        <input
-          id="username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          className="block w-full border rounded px-2 py-1"
-        />
+    <Fragment>
+      {/* SAĞ ÜST: TopBar ile aynı tema butonu (swap-rotate sun/moon) */}
+      <div className="fixed top-3 right-3 z-50">
+        <label
+          className="btn btn-ghost btn-sm swap swap-rotate"
+          aria-label="Temayı değiştir"
+          title="Tema"
+        >
+          <input type="checkbox" checked={isDark} onChange={toggleTheme} />
+          {/* Gündüz (açık tema) ikonu */}
+          <svg
+            className="swap-off w-5 h-5"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24" fill="currentColor"
+          >
+            <path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.48 0l1.79-1.8 1.41 1.41-1.8 1.79-1.4-1.4zM12 4V1h-0v3h0zm0 19v-3h0v3h0zM4 13H1v-0h3v0zm22 0h-3v0h3v0zM6.76 19.16l-1.42 1.42-1.79-1.8 1.41-1.41 1.8 1.79zM19.16 17.24l1.4 1.4-1.79 1.8-1.41-1.41 1.8-1.79zM12 8a4 4 0 100 8 4 4 0 000-8z"/>
+          </svg>
+          {/* Gece (koyu tema) ikonu */}
+          <svg
+            className="swap-on w-5 h-5"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24" fill="currentColor"
+          >
+            <path d="M21.64 13a9 9 0 01-11.31-11.31A1 1 0 008.05.05 11 11 0 1023.95 15.95a1 1 0 00-1.64-0.95 8.94 8.94 0 01-0.67-.99z"/>
+          </svg>
+        </label>
       </div>
 
-      <div>
-        <label htmlFor="password">Şifre</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="block w-full border rounded px-2 py-1"
-        />
-      </div>
-      <div className="flex items-center">
-        <input
-          id="remember"
-          type="checkbox"
-          checked={rememberMe}
-          onChange={e => setRememberMe(e.target.checked)}
-          className="mr-2"
-        />
-        <label htmlFor="remember">Oturumu açık tut</label>
-      </div>
-      {loading && <p>Giriş yapılıyor…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+      {/* Form — önceki hali korunarak tema-friendly sınıflarla */}
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 bg-card border border-border rounded-2xl p-6 text-foreground"
       >
-        Giriş Yap
-      </button>
-    </form>
+        <div>
+          <label htmlFor="username" className="block mb-1">Kullanıcı Adı</label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="input input-bordered w-full"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block mb-1">Şifre</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="input input-bordered w-full"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            id="remember"
+            type="checkbox"
+            checked={rememberMe}
+            onChange={e => setRememberMe(e.target.checked)}
+            className="checkbox"
+          />
+          <label htmlFor="remember">Oturumu açık tut</label>
+        </div>
+
+        {loading && <p className="text-sm text-muted-foreground">Giriş yapılıyor…</p>}
+        {error && <p className="text-error">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn btn-primary w-full"
+        >
+          Giriş Yap
+        </button>
+      </form>
+    </Fragment>
   );
 }

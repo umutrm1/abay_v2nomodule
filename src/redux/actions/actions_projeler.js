@@ -65,21 +65,44 @@ export function getProjeRequirementsFromApi(id) {
   };
 }
 
-/* GET: Proje listesi */
-export function getProjelerFromApi(page = 1, q = "", limit = 10) {
+/* GET: Proje listesi — yeni endpoint sözleşmesi */
+export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
   return async (dispatch) => {
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(limit),
-      });
-      if (q) params.append("q", q);
+      // ---- Parametreleri normalize et (yeni + eski imzaya uyum) ----
+      let page, limit, name, code, is_teklif;
+
+      if (typeof arg1 === "object" && arg1 !== null) {
+        // Yeni kullanım: getProjelerFromApi({ page, limit, name, code, is_teklif })
+        ({ page = 1, limit = 10, name = "", code = "", is_teklif } = arg1);
+      } else {
+        // Eski kullanım: getProjelerFromApi(page=1, q="", limit=10)
+        page = arg1 ?? 1;
+        limit = arg3 ?? 10;
+        // Yeni API'de "q" yok; geriye dönük uyumluluk için q'yu "name" olarak kullanıyoruz.
+        name = arg2 || "";
+        code = "";
+        is_teklif = undefined; // Eski çağrıda bu yoktu; URL'e koymayacağız.
+      }
+
+      // ---- URLSearchParams inşası ----
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(limit));
+
+      if (name) params.set("name", name);
+      if (code) params.set("code", code);
+      if (typeof is_teklif === "boolean") {
+        // Backend "true"/"false" bekliyor
+        params.set("is_teklif", String(is_teklif));
+      }
 
       const res = await fetchWithAuth(
         `${API_BASE_URL}/projects/?${params.toString()}`,
         { method: "GET", headers: { Accept: "application/json" } },
         dispatch
       );
+
       _assertOk(res, "Projeler çekilemedi");
       const data = await res.json();
       dispatch(getProjelerFromApiToReducer(data));
@@ -362,3 +385,84 @@ export function editProjectPricesOnApi(projectId, prices) {
     }
   };
 }
+
+
+/**
+ * Tek bir system-glass kaydının cam rengini güncelle.
+ * @param {string} projectId           Proje ID
+ * @param {string} psgId               Project System Glass ID
+ * @param {string} glassColorId        Yeni cam rengi ID'si
+ * @returns {Function} thunk -> Promise<any> (API yanıtı)
+ *
+ * Örnek:
+ * await dispatch(updateSystemGlassColorInProject(projectId, psgId, selectedColorId));
+ */
+export const updateSystemGlassColorInProject = (projectId, psgId, glassColorId) => {
+  return async (dispatch) => {
+    const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/${psgId}/color`;
+    const res = await fetchWithAuth(
+      url,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ glass_color_id: glassColorId }), // ✅ sadece bu obje
+      },
+      dispatch
+    );
+    _assertOk(res, "Cam rengi güncellenemedi");
+    // Body olmayabilir; çağıran tarafta zaten requirements refresh var.
+    try { return await res.json(); } catch { return { ok: true }; }
+  };
+};
+
+/**
+ * Aynı camları toplu güncelle (bulk).
+ * @param {string} projectId           Proje ID
+ * @param {{project_system_glass_id: string, glass_color_id: string}[]} items
+ * @returns {Function} thunk -> Promise<any> (API yanıtı)
+ *
+ * Örnek:
+ * const items = rows.map(r => ({ project_system_glass_id: r.id, glass_color_id: colorId }));
+ * await dispatch(updateSameGlassesInProject(projectId, items));
+ */
+export const updateSameGlassesInProject = (projectId, system_variant_id, glass_type_id, glass_color_id) => {
+  return async (dispatch) => {
+    const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/colors/bulk`;
+    const res = await fetchWithAuth(
+      url,
+      {
+        method: "PUT",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_variant_id,   // ✅ senin istediğin payload
+          glass_type_id,
+          glass_color_id,
+        }),
+      },
+      dispatch
+    );
+    _assertOk(res, "Toplu cam rengi güncellenemedi");
+    try { return await res.json(); } catch { return { ok: true }; }
+  };
+};
+
+// Tüm camların rengini tek seferde güncelle
+export const updateAllGlassesColorInProject = (projectId, glassColorId) => {
+  return async (dispatch) => {
+    const url = `${API_BASE_URL}/projects/${projectId}/glasses/colors/all`;
+    const res = await fetchWithAuth(
+      url,
+      {
+        method: "PUT",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ glass_color_id: glassColorId }),
+      },
+      dispatch
+    );
+    _assertOk(res, "Tüm cam renkleri güncellenemedi");
+    try { return await res.json(); } catch { return { ok: true }; }
+  };
+};

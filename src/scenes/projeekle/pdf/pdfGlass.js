@@ -322,7 +322,7 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
 
   // 2) Camlar tablosu (sections DB’de yok; biz çiziyoruz)
   const columns = [
-    { header: "Cam İsmi", field: "cam_isim", align: "center", grow: 1 },
+    { header: "Cam İsmi", field: "cam_full_name", align: "center", grow: 1 },
     { header: "Genişlik (mm)", field: "width_mm", align: "center", width: 90, format: "integer" },
     { header: "Yükseklik (mm)", field: "height_mm", align: "center", width: 100, format: "integer" },
     { header: "Adet", field: "count", align: "center", width: 60, format: "integer" },
@@ -348,7 +348,12 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     const c = Number(pick(r, "count")) || 0;
     // mm * mm * adet => mm² * adet. m²'ye çevirmek için 1e6'ya böl.
     const m2Float = (w * h * c) / 1e6;
-    return { ...r, m2: m2Float };
+    // cam_isim + (varsa) glass_color.name
+    const camIsim   = String(pick(r, "cam_isim") ?? "").trim();
+    const color_name   = String(pick(r, "color_name") ?? "").trim();
+    const colorName = String(pick(r, "glass_color.name") ?? "").trim();
+    const camFull   = color_name ? `${camIsim} - ${color_name}` : camIsim;
+    return { ...r, m2: m2Float, cam_full_name: camFull };
   });
 
   if (rows.length > 0) {

@@ -13,7 +13,7 @@ const DialogKumandaEkle = ({ onSave }) => {
   const [form, setForm] = useState({
     kumanda_isim: '',
     kapasite: 0,
-    price:0
+    price: 0
   });
 
   const handleChange = e => {
@@ -31,7 +31,7 @@ const DialogKumandaEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn w-40 ml-auto bg-blue-700 text-white">
+        <button className="btn w-40 ml-auto btn-primary">
           + Kumanda Ekle
         </button>
       </DialogTrigger>

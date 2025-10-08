@@ -2,11 +2,9 @@
 import React, { useContext } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { SidebarContext } from "./SideBarContext.jsx";
-
 import SideBar from "./SideBar.jsx";
 import TopBar from "./TopBar.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-
 import LoginScreen from "@/scenes/login_screen/LoginScreen.jsx";
 import Profiller from "../scenes/profiller/Profiller.jsx";
 import AnaSayfa from "../scenes/ana_sayfa/AnaSayfa.jsx";
@@ -34,12 +32,13 @@ import Kumandalar from "@/scenes/kumandalar/Kumandalar.jsx";
 import SetPasswordPage from "@/scenes/setpassword/SetPasswordPage.jsx";
 import ProfilAksesuarEdit from "@/scenes/projeekle/ProfilAksesuarEdit.jsx";
 import Ayarlar from "@/scenes/ayarlar/Ayarlar.jsx";
+import Teklifler from "@/scenes/teklifler/Teklifler.jsx";
 
 const ContentArea = () => {
   const { expanded } = useContext(SidebarContext);
   const location = useLocation();
-  const isLogin = location.pathname === "/login"||location.pathname==="/set-password";
-  
+  const isLogin = location.pathname === "/login" || location.pathname === "/set-password";
+
   return (
     <div className="flex">
       {/* /login değilse göster */}
@@ -48,13 +47,12 @@ const ContentArea = () => {
         {!isLogin && <TopBar />}
         <main
           className={`
-            mt-auto font-roboto bg-gray-50
-            ${!isLogin
-              ? (expanded ? "ml-64" : "ml-20")
-              : "mx-auto w-full max-w-md"}
-            transition-all p-6
-          `}
+    mt-auto font-roboto bg-background text-foreground
+    ${!isLogin ? (expanded ? "ml-64" : "ml-20") : "mx-auto w-full max-w-md"}
+    transition-all p-6
+  `}
         >
+
           <Routes>
             {/* Login sayfası her zaman açık */}
             <Route path="/login" element={<LoginScreen />} />
@@ -66,6 +64,7 @@ const ContentArea = () => {
               <Route path="/bayiler" element={<Bayiler />} />
               <Route path="/musteriler" element={<Musteriler />} />
               <Route path="/projeler" element={<Projeler />} />
+              <Route path="/teklifler" element={<Teklifler />} />
               <Route path="/sistemler" element={<Sistemler />} />
               <Route path="/profiller" element={<Profiller />} />
               <Route path="/camlar" element={<Camlar />} />

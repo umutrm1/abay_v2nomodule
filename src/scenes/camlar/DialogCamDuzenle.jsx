@@ -42,7 +42,7 @@ const DialogCamDuzenle = ({ cam, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline btn-info">
+        <button className="btn btn-sm btn-outline">
           Düzenle
         </button>
       </DialogTrigger>

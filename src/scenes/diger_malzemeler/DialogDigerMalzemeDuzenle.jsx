@@ -44,7 +44,7 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline btn-info">
+        <button className="btn btn-sm btn-outline">
           Düzenle
         </button>
       </DialogTrigger>
@@ -89,7 +89,7 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave }) => {
             name="hesaplama_turu"
             value={form.hesaplama_turu}
             onChange={handleChange}
-            className="input input-bordered"
+            className="select select-bordered"
           >
             <option value="olculu">ölçülü</option>
             <option value="adetli">adetli</option>

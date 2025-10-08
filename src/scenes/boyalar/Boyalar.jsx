@@ -13,9 +13,10 @@ import DialogProfilBoyaDuzenle from './DialogProfilBoyaDuzenle.jsx';
 import DialogCamBoyaEkle from './DialogCamBoyaEkle.jsx';
 import DialogCamBoyaDuzenle from './DialogCamBoyaDuzenle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
+
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
@@ -137,7 +138,7 @@ const Boyalar = () => {
 
       <div className="space-y-8">
         {/* Profil Boyaları */}
-        <div className="p-5 bg-white border border-gray-200 rounded-2xl space-y-6">
+        <div className="p-5 bg-card border border-border rounded-2xl space-y-6 text-foreground">
           <div className="flex flex-row items-center gap-4">
             <h2 className="text-2xl font-semibold whitespace-nowrap">Profil Boyaları</h2>
             <input
@@ -173,7 +174,7 @@ const Boyalar = () => {
                           />
                           <button
                             onClick={() => askDeleteProfile(color)}
-                            className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                            className="btn btn-outline btn-error"
                           >
                             Sil
                           </button>
@@ -181,7 +182,7 @@ const Boyalar = () => {
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-gray-500 py-4">
+                        <td colSpan={3} className="text-center text-muted-foreground py-4">
                           Veri bulunamadı
                         </td>
                       </tr>
@@ -191,71 +192,71 @@ const Boyalar = () => {
               </div>
 
               {/* Server-side pagination controls */}
-<div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-  {/* İlk */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setProfilePage(1)}
-    disabled={profileData.page === 1}
-  >
-    « İlk
-  </button>
+              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
+                {/* İlk */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setProfilePage(1)}
+                  disabled={profileData.page === 1}
+                >
+                  « İlk
+                </button>
 
-  {/* Önceki */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setProfilePage(p => Math.max(p - 1, 1))}
-    disabled={!profileData.has_prev}
-  >
-    ‹ Önceki
-  </button>
+                {/* Önceki */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setProfilePage(p => Math.max(p - 1, 1))}
+                  disabled={!profileData.has_prev}
+                >
+                  ‹ Önceki
+                </button>
 
-  {/* Input ile sayfa seçimi */}
-  <form
-    onSubmit={e => {
-      e.preventDefault();
-      const val = parseInt(e.target.elements.pageNum.value, 10);
-      if (!isNaN(val) && val >= 1 && val <= profileData.total_pages) {
-        setProfilePage(val);
-      }
-    }}
-    className="flex items-center gap-1"
-  >
-    <input
-      type="number"
-      name="pageNum"
-      min={1}
-      max={profileData.total_pages}
-      defaultValue={profileData.page}
-      className="input input-bordered input-sm w-16 text-center"
-    />
-    <span className="text-sm">/ {profileData.total_pages}</span>
-  </form>
+                {/* Input ile sayfa seçimi */}
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const val = parseInt(e.target.elements.pageNum.value, 10);
+                    if (!isNaN(val) && val >= 1 && val <= profileData.total_pages) {
+                      setProfilePage(val);
+                    }
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <input
+                    type="number"
+                    name="pageNum"
+                    min={1}
+                    max={profileData.total_pages}
+                    defaultValue={profileData.page}
+                    className="input input-bordered input-sm w-16 text-center"
+                  />
+                  <span className="text-sm">/ {profileData.total_pages}</span>
+                </form>
 
-  {/* Sonraki */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setProfilePage(p => p + 1)}
-    disabled={!profileData.has_next}
-  >
-    Sonraki ›
-  </button>
+                {/* Sonraki */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setProfilePage(p => p + 1)}
+                  disabled={!profileData.has_next}
+                >
+                  Sonraki ›
+                </button>
 
-  {/* Son */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setProfilePage(profileData.total_pages)}
-    disabled={profileData.page === profileData.total_pages || profileData.total_pages <= 1}
-  >
-    Son »
-  </button>
-</div>
+                {/* Son */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setProfilePage(profileData.total_pages)}
+                  disabled={profileData.page === profileData.total_pages || profileData.total_pages <= 1}
+                >
+                  Son »
+                </button>
+              </div>
             </>
           )}
         </div>
 
         {/* Cam Boyaları */}
-        <div className="p-5 bg-white border border-gray-200 rounded-2xl space-y-6">
+        <div className="p-5 bg-card border border-border rounded-2xl space-y-6 text-foreground">
           <div className="flex flex-row items-center gap-4">
             <h2 className="text-2xl font-semibold whitespace-nowrap">Cam Boyaları</h2>
             <input
@@ -291,7 +292,7 @@ const Boyalar = () => {
                           />
                           <button
                             onClick={() => askDeleteGlass(color)}
-                            className="btn px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                            className="btn btn-outline btn-error"
                           >
                             Sil
                           </button>
@@ -299,7 +300,7 @@ const Boyalar = () => {
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-gray-500 py-4">
+                        <td colSpan={3} className="text-center text-muted-foreground py-4">
                           Veri bulunamadı
                         </td>
                       </tr>
@@ -309,65 +310,65 @@ const Boyalar = () => {
               </div>
 
               {/* Server-side pagination controls */}
-<div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-  {/* İlk */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setGlassPage(1)}
-    disabled={glassData.page === 1}
-  >
-    « İlk
-  </button>
+              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
+                {/* İlk */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setGlassPage(1)}
+                  disabled={glassData.page === 1}
+                >
+                  « İlk
+                </button>
 
-  {/* Önceki */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setGlassPage(p => Math.max(p - 1, 1))}
-    disabled={!glassData.has_prev}
-  >
-    ‹ Önceki
-  </button>
+                {/* Önceki */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setGlassPage(p => Math.max(p - 1, 1))}
+                  disabled={!glassData.has_prev}
+                >
+                  ‹ Önceki
+                </button>
 
-  {/* Input ile sayfa seçimi */}
-  <form
-    onSubmit={e => {
-      e.preventDefault();
-      const val = parseInt(e.target.elements.pageNum.value, 10);
-      if (!isNaN(val) && val >= 1 && val <= glassData.total_pages) {
-        setGlassPage(val);
-      }
-    }}
-    className="flex items-center gap-1"
-  >
-    <input
-      type="number"
-      name="pageNum"
-      min={1}
-      max={glassData.total_pages}
-      defaultValue={glassData.page}
-      className="input input-bordered input-sm w-16 text-center"
-    />
-    <span className="text-sm">/ {glassData.total_pages}</span>
-  </form>
+                {/* Input ile sayfa seçimi */}
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const val = parseInt(e.target.elements.pageNum.value, 10);
+                    if (!isNaN(val) && val >= 1 && val <= glassData.total_pages) {
+                      setGlassPage(val);
+                    }
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <input
+                    type="number"
+                    name="pageNum"
+                    min={1}
+                    max={glassData.total_pages}
+                    defaultValue={glassData.page}
+                    className="input input-bordered input-sm w-16 text-center"
+                  />
+                  <span className="text-sm">/ {glassData.total_pages}</span>
+                </form>
 
-  {/* Sonraki */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setGlassPage(p => p + 1)}
-    disabled={!glassData.has_next}
-  >
-    Sonraki ›
-  </button>
+                {/* Sonraki */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setGlassPage(p => p + 1)}
+                  disabled={!glassData.has_next}
+                >
+                  Sonraki ›
+                </button>
 
-  {/* Son */}
-  <button
-    className="btn btn-sm"
-    onClick={() => setGlassPage(glassData.total_pages)}
-    disabled={glassData.page === glassData.total_pages || glassData.total_pages <= 1}
-  >
-    Son »
-  </button>
-</div>
+                {/* Son */}
+                <button
+                  className="btn btn-sm"
+                  onClick={() => setGlassPage(glassData.total_pages)}
+                  disabled={glassData.page === glassData.total_pages || glassData.total_pages <= 1}
+                >
+                  Son »
+                </button>
+              </div>
             </>
           )}
         </div>
