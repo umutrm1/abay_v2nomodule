@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+// src/scenes/boyalar/Boyalar.jsx
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   getProfileColorFromApi,
@@ -13,6 +14,7 @@ import DialogProfilBoyaDuzenle from './DialogProfilBoyaDuzenle.jsx';
 import DialogCamBoyaEkle from './DialogCamBoyaEkle.jsx';
 import DialogCamBoyaDuzenle from './DialogCamBoyaDuzenle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -33,81 +35,97 @@ const EMPTY_PAGE = {
 const Boyalar = () => {
   const dispatch = useDispatch();
 
-  // Reducer'ların artık obje tuttuğunu varsayıyoruz:
+  // Reducer'ların obje döndüğünü varsayıyoruz:
   const profileData = useSelector(s => s.getProfileColorsFromApiReducer) || EMPTY_PAGE;
-  const glassData = useSelector(s => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
+  const glassData   = useSelector(s => s.getGlassColorsFromApiReducer)   || EMPTY_PAGE;
 
+  // Arama
   const [profileSearch, setProfileSearch] = useState('');
   const [glassSearch, setGlassSearch] = useState('');
+
+  // Sayfa
   const [profilePage, setProfilePage] = useState(1);
   const [glassPage, setGlassPage] = useState(1);
 
+  // 🆕 Limit (kullanıcıdan): min 1, max 50, varsayılan 10
+  const [profileLimit, setProfileLimit] = useState(10);
+  const [glassLimit, setGlassLimit] = useState(10);
+
+  // Loading
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingGlass, setLoadingGlass] = useState(false);
 
-  const confirmRef = useRef(null);
+  // Silme modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null); // { kind: 'profile'|'glass', data: color }
   const [deleting, setDeleting] = useState(false);
 
-  // İlk yükleme + sayfa/arama değiştikçe backend'den çek
+  // Liste fetch — Profil
   useEffect(() => {
     setLoadingProfile(true);
-    dispatch(getProfileColorFromApi(profilePage, profileSearch, 5))
+    const safeLimit = Math.min(50, Math.max(1, Number(profileLimit) || 10));
+    dispatch(getProfileColorFromApi(profilePage, profileSearch, safeLimit))
       .finally(() => setLoadingProfile(false));
-  }, [dispatch, profilePage, profileSearch]);
+  }, [dispatch, profilePage, profileSearch, profileLimit]);
 
+  // Liste fetch — Cam
   useEffect(() => {
     setLoadingGlass(true);
-    dispatch(getGlassColorFromApi(glassPage, glassSearch, 5))
+    const safeLimit = Math.min(50, Math.max(1, Number(glassLimit) || 10));
+    dispatch(getGlassColorFromApi(glassPage, glassSearch, safeLimit))
       .finally(() => setLoadingGlass(false));
-  }, [dispatch, glassPage, glassSearch]);
+  }, [dispatch, glassPage, glassSearch, glassLimit]);
 
   // Ekle/Düzenle/Sil sonrası mevcut sayfa ve aramayı koruyarak refetch
   const refetchProfiles = useCallback(() => {
     setLoadingProfile(true);
-    dispatch(getProfileColorFromApi(profilePage, profileSearch, 5))
+    const safeLimit = Math.min(50, Math.max(1, Number(profileLimit) || 10));
+    dispatch(getProfileColorFromApi(profilePage, profileSearch, safeLimit))
       .finally(() => setLoadingProfile(false));
-  }, [dispatch, profilePage, profileSearch]);
+  }, [dispatch, profilePage, profileSearch, profileLimit]);
 
   const refetchGlasses = useCallback(() => {
     setLoadingGlass(true);
-    dispatch(getGlassColorFromApi(glassPage, glassSearch, 5))
+    const safeLimit = Math.min(50, Math.max(1, Number(glassLimit) || 10));
+    dispatch(getGlassColorFromApi(glassPage, glassSearch, safeLimit))
       .finally(() => setLoadingGlass(false));
-  }, [dispatch, glassPage, glassSearch]);
+  }, [dispatch, glassPage, glassSearch, glassLimit]);
 
-  const handleAddProfile = useCallback(data => {
+  // Profil — Ekle
+  const handleAddProfile = useCallback((data) => {
     setLoadingProfile(true);
     dispatch(addColorToApi({ ...data, type: 'profile' }))
       .finally(() => refetchProfiles());
   }, [dispatch, refetchProfiles]);
 
+  // Profil — Düzenle
   const handleEditProfile = useCallback((data) => {
-    // data: { id, name, unit_cost, ... }
     setLoadingProfile(true);
     dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0, type: 'profile' }))
-      .then(() => dispatch(getProfileColorFromApi(profilePage, profileSearch, 5)))
+      .then(() => refetchProfiles())
       .finally(() => setLoadingProfile(false));
-  }, [dispatch, profilePage, profileSearch]);
+  }, [dispatch, refetchProfiles]);
 
-  const handleAddGlass = useCallback(data => {
+  // Cam — Ekle
+  const handleAddGlass = useCallback((data) => {
     setLoadingGlass(true);
     dispatch(addColorToApi({ ...data, type: 'glass' }))
       .finally(() => refetchGlasses());
   }, [dispatch, refetchGlasses]);
 
+  // Cam — Düzenle
   const handleEditGlass = useCallback((data) => {
     setLoadingGlass(true);
     dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0, type: 'glass' }))
-      .then(() => dispatch(getGlassColorFromApi(glassPage, glassSearch, 5)))
+      .then(() => refetchGlasses())
       .finally(() => setLoadingGlass(false));
-  }, [dispatch, glassPage, glassSearch]);
+  }, [dispatch, refetchGlasses]);
 
+  // Silme modali
   const askDeleteProfile = (color) => {
     setPendingDelete({ kind: "profile", data: color });
     setDeleteOpen(true);
   };
-
   const askDeleteGlass = (color) => {
     setPendingDelete({ kind: "glass", data: color });
     setDeleteOpen(true);
@@ -119,19 +137,22 @@ const Boyalar = () => {
 
     try {
       setDeleting(true);
+      await dispatch(deleteColorFromApi(data.id));
       if (kind === "profile") {
-        await dispatch(deleteColorFromApi(data.id));
-        await dispatch(getProfileColorFromApi(profilePage, profileSearch, 5));
+        await refetchProfiles();
       } else {
-        await dispatch(deleteColorFromApi(data.id));
-        await dispatch(getGlassColorFromApi(glassPage, glassSearch, 5));
+        await refetchGlasses();
       }
     } finally {
       setDeleting(false);
       setPendingDelete(null);
-      // Modal'ı kapatma ConfirmDeleteModal içinde onConfirm sonrası onOpenChange(false) ile yapılır
+      // Modal kapatma: ConfirmDeleteModal içinden onOpenChange(false) ile
     }
   };
+
+  const profileTotalPages = profileData.total_pages || 1;
+  const glassTotalPages = glassData.total_pages || 1;
+
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Boyalar" />
@@ -139,16 +160,35 @@ const Boyalar = () => {
       <div className="space-y-8">
         {/* Profil Boyaları */}
         <div className="p-5 bg-card border border-border rounded-2xl space-y-6 text-foreground">
-          <div className="flex flex-row items-center gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
             <h2 className="text-2xl font-semibold whitespace-nowrap">Profil Boyaları</h2>
             <input
               value={profileSearch}
               onChange={(e) => { setProfileSearch(e.target.value); setProfilePage(1); }}
-              className="input input-bordered w-full"
+              className="input input-bordered w-full md:max-w-sm"
               placeholder="Profil Boyası Ara.."
             />
-            <DialogProfilBoyaEkle onSave={handleAddProfile} />
 
+            {/* 🆕 Kayıt Sayısı (limit) inputu */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm opacity-80">Boya Sayısı</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={profileLimit}
+                onChange={(e) => {
+                  const raw = parseInt(e.target.value, 10);
+                  const clamped = isNaN(raw) ? 10 : Math.min(50, Math.max(1, raw));
+                  setProfileLimit(clamped);
+                  setProfilePage(1);
+                }}
+                className="input input-bordered input-sm w-24 text-center"
+                title="Sayfa Başına Kayıt (min:1 / max:50)"
+              />
+            </div>
+
+            <DialogProfilBoyaEkle onSave={handleAddProfile} />
           </div>
 
           {loadingProfile ? (
@@ -156,34 +196,37 @@ const Boyalar = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="table w-full">
+                <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
                   <thead>
-                    <tr>
+                    <tr className="border-b border-base-500 dark:border-gray-500">
                       <th>Boya İsmi</th>
-                      <th className="text-right">İşlemler</th>
+                      <th className="text-center">İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {profileData.items?.length > 0 ? profileData.items.map(color => (
-                      <tr key={color.id}>
-                        <td>{color.name}</td>
-                        <td className="text-right space-x-2">
-                          <DialogProfilBoyaDuzenle
-                            color={color}
-                            onSave={handleEditProfile}
-                          />
-                          <button
-                            onClick={() => askDeleteProfile(color)}
-                            className="btn btn-outline btn-error"
-                          >
-                            Sil
-                          </button>
-                        </td>
-                      </tr>
-                    )) : (
+                    {profileData.items?.length > 0 ? (
+                      profileData.items.map(color => (
+                        <tr key={color.id} className="border-b border-base-300 dark:border-gray-500">
+                          <td>{color.name}</td>
+                          <td className="text-center space-x-2">
+                            <DialogProfilBoyaDuzenle
+                              color={color}
+                              onSave={handleEditProfile}
+                            />
+                            <AppButton
+                              size="sm"
+                              variant="kirmizi"
+                              onClick={() => askDeleteProfile(color)}
+                            >
+                              Sil
+                            </AppButton>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-muted-foreground py-4">
-                          Veri bulunamadı
+                        <td colSpan={2} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                          Veri bulunamadı.
                         </td>
                       </tr>
                     )}
@@ -191,32 +234,33 @@ const Boyalar = () => {
                 </table>
               </div>
 
-              {/* Server-side pagination controls */}
+              {/* Sayfalama — Teklifler.jsx UX */}
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-                {/* İlk */}
-                <button
-                  className="btn btn-sm"
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
                   onClick={() => setProfilePage(1)}
                   disabled={profileData.page === 1}
+                  title="İlk sayfa"
                 >
                   « İlk
-                </button>
+                </AppButton>
 
-                {/* Önceki */}
-                <button
-                  className="btn btn-sm"
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
                   onClick={() => setProfilePage(p => Math.max(p - 1, 1))}
                   disabled={!profileData.has_prev}
+                  title="Önceki sayfa"
                 >
                   ‹ Önceki
-                </button>
+                </AppButton>
 
-                {/* Input ile sayfa seçimi */}
                 <form
-                  onSubmit={e => {
+                  onSubmit={(e) => {
                     e.preventDefault();
                     const val = parseInt(e.target.elements.pageNum.value, 10);
-                    if (!isNaN(val) && val >= 1 && val <= profileData.total_pages) {
+                    if (!isNaN(val) && val >= 1 && val <= profileTotalPages) {
                       setProfilePage(val);
                     }
                   }}
@@ -226,30 +270,37 @@ const Boyalar = () => {
                     type="number"
                     name="pageNum"
                     min={1}
-                    max={profileData.total_pages}
-                    defaultValue={profileData.page}
+                    max={profileTotalPages}
+                    value={profileData.page || 1}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (isNaN(val)) return setProfilePage(1);
+                      setProfilePage(Math.min(Math.max(1, val), profileTotalPages));
+                    }}
                     className="input input-bordered input-sm w-16 text-center"
                   />
-                  <span className="text-sm">/ {profileData.total_pages}</span>
+                  <span className="text-sm">/ {profileTotalPages}</span>
                 </form>
 
-                {/* Sonraki */}
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setProfilePage(p => p + 1)}
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
+                  onClick={() => setProfilePage(p => Math.min(profileTotalPages, p + 1))}
                   disabled={!profileData.has_next}
+                  title="Sonraki sayfa"
                 >
                   Sonraki ›
-                </button>
+                </AppButton>
 
-                {/* Son */}
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setProfilePage(profileData.total_pages)}
-                  disabled={profileData.page === profileData.total_pages || profileData.total_pages <= 1}
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
+                  onClick={() => setProfilePage(profileTotalPages)}
+                  disabled={profileData.page === profileTotalPages || profileTotalPages <= 1}
+                  title="Son sayfa"
                 >
                   Son »
-                </button>
+                </AppButton>
               </div>
             </>
           )}
@@ -257,16 +308,35 @@ const Boyalar = () => {
 
         {/* Cam Boyaları */}
         <div className="p-5 bg-card border border-border rounded-2xl space-y-6 text-foreground">
-          <div className="flex flex-row items-center gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
             <h2 className="text-2xl font-semibold whitespace-nowrap">Cam Boyaları</h2>
             <input
               value={glassSearch}
               onChange={(e) => { setGlassSearch(e.target.value); setGlassPage(1); }}
-              className="input input-bordered w-full"
-              placeholder='Cam Boyası Ara..'
+              className="input input-bordered w-full md:max-w-sm"
+              placeholder="Cam Boyası Ara.."
             />
-            <DialogCamBoyaEkle onSave={handleAddGlass} />
 
+            {/* 🆕 Kayıt Sayısı (limit) inputu */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm opacity-80">Boya Sayısı</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={glassLimit}
+                onChange={(e) => {
+                  const raw = parseInt(e.target.value, 10);
+                  const clamped = isNaN(raw) ? 10 : Math.min(50, Math.max(1, raw));
+                  setGlassLimit(clamped);
+                  setGlassPage(1);
+                }}
+                className="input input-bordered input-sm w-24 text-center"
+                title="Sayfa Başına Kayıt (min:1 / max:50)"
+              />
+            </div>
+
+            <DialogCamBoyaEkle onSave={handleAddGlass} />
           </div>
 
           {loadingGlass ? (
@@ -274,34 +344,37 @@ const Boyalar = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="table w-full">
+                <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
                   <thead>
-                    <tr>
+                    <tr className="border-b border-base-500 dark:border-gray-500">
                       <th>Boya İsmi</th>
-                      <th className="text-right">İşlemler</th>
+                      <th className="text-center">İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {glassData.items?.length > 0 ? glassData.items.map(color => (
-                      <tr key={color.id}>
-                        <td>{color.name}</td>
-                        <td className="text-right space-x-2">
-                          <DialogCamBoyaDuzenle
-                            color={color}
-                            onSave={handleEditGlass}
-                          />
-                          <button
-                            onClick={() => askDeleteGlass(color)}
-                            className="btn btn-outline btn-error"
-                          >
-                            Sil
-                          </button>
-                        </td>
-                      </tr>
-                    )) : (
+                    {glassData.items?.length > 0 ? (
+                      glassData.items.map(color => (
+                        <tr key={color.id} className="border-b border-base-300 dark:border-gray-500">
+                          <td>{color.name}</td>
+                          <td className="text-center space-x-2">
+                            <DialogCamBoyaDuzenle
+                              color={color}
+                              onSave={handleEditGlass}
+                            />
+                            <AppButton
+                              size="sm"
+                              variant="kirmizi"
+                              onClick={() => askDeleteGlass(color)}
+                            >
+                              Sil
+                            </AppButton>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-muted-foreground py-4">
-                          Veri bulunamadı
+                        <td colSpan={2} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                          Veri bulunamadı.
                         </td>
                       </tr>
                     )}
@@ -309,32 +382,33 @@ const Boyalar = () => {
                 </table>
               </div>
 
-              {/* Server-side pagination controls */}
+              {/* Sayfalama — Teklifler.jsx UX */}
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-                {/* İlk */}
-                <button
-                  className="btn btn-sm"
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
                   onClick={() => setGlassPage(1)}
                   disabled={glassData.page === 1}
+                  title="İlk sayfa"
                 >
                   « İlk
-                </button>
+                </AppButton>
 
-                {/* Önceki */}
-                <button
-                  className="btn btn-sm"
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
                   onClick={() => setGlassPage(p => Math.max(p - 1, 1))}
                   disabled={!glassData.has_prev}
+                  title="Önceki sayfa"
                 >
                   ‹ Önceki
-                </button>
+                </AppButton>
 
-                {/* Input ile sayfa seçimi */}
                 <form
-                  onSubmit={e => {
+                  onSubmit={(e) => {
                     e.preventDefault();
                     const val = parseInt(e.target.elements.pageNum.value, 10);
-                    if (!isNaN(val) && val >= 1 && val <= glassData.total_pages) {
+                    if (!isNaN(val) && val >= 1 && val <= glassTotalPages) {
                       setGlassPage(val);
                     }
                   }}
@@ -344,35 +418,43 @@ const Boyalar = () => {
                     type="number"
                     name="pageNum"
                     min={1}
-                    max={glassData.total_pages}
-                    defaultValue={glassData.page}
+                    max={glassTotalPages}
+                    value={glassData.page || 1}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (isNaN(val)) return setGlassPage(1);
+                      setGlassPage(Math.min(Math.max(1, val), glassTotalPages));
+                    }}
                     className="input input-bordered input-sm w-16 text-center"
                   />
-                  <span className="text-sm">/ {glassData.total_pages}</span>
+                  <span className="text-sm">/ {glassTotalPages}</span>
                 </form>
 
-                {/* Sonraki */}
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setGlassPage(p => p + 1)}
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
+                  onClick={() => setGlassPage(p => Math.min(glassTotalPages, p + 1))}
                   disabled={!glassData.has_next}
+                  title="Sonraki sayfa"
                 >
                   Sonraki ›
-                </button>
+                </AppButton>
 
-                {/* Son */}
-                <button
-                  className="btn btn-sm"
-                  onClick={() => setGlassPage(glassData.total_pages)}
-                  disabled={glassData.page === glassData.total_pages || glassData.total_pages <= 1}
+                <AppButton
+                  size="sm"
+                  variant="kurumsalmavi"
+                  onClick={() => setGlassPage(glassTotalPages)}
+                  disabled={glassData.page === glassTotalPages || glassTotalPages <= 1}
+                  title="Son sayfa"
                 >
                   Son »
-                </button>
+                </AppButton>
               </div>
             </>
           )}
         </div>
       </div>
+
       <ConfirmDeleteModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

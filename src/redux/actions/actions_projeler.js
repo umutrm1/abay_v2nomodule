@@ -1,6 +1,7 @@
 // src/redux/actions/actions_projeler.js
 import * as actionTypes from "./actionTypes.js";
 import { fetchWithAuth } from "./authFetch.js";
+import { toastSuccess, toastError } from "../../lib/toast.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,7 +26,7 @@ export function getProjeRequirementsFromApiToReducer(payload) {
   return { type: actionTypes.GET_PROJE_REQUIREMENTS_FROM_API, payload };
 }
 
-/* GET: Tek proje */
+/* GET: Tek proje — toast yok */
 export function getProjeFromApi(id) {
   return async (dispatch) => {
     try {
@@ -45,7 +46,7 @@ export function getProjeFromApi(id) {
   };
 }
 
-/* GET: Proje gereksinimleri (detaylı) */
+/* GET: Proje gereksinimleri (detaylı) — toast yok */
 export function getProjeRequirementsFromApi(id) {
   return async (dispatch) => {
     try {
@@ -65,46 +66,75 @@ export function getProjeRequirementsFromApi(id) {
   };
 }
 
-/* GET: Proje listesi — yeni endpoint sözleşmesi */
+/* GET: Proje listesi — toast yok */
 export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
   return async (dispatch) => {
     try {
-      // ---- Parametreleri normalize et (yeni + eski imzaya uyum) ----
-      let page, limit, name, code, is_teklif;
+      // ---- Parametreleri normalize et ----
+      let page, limit, name, code, is_teklif,
+          paint_status, glass_status, production_status, customer_id;
 
       if (typeof arg1 === "object" && arg1 !== null) {
-        // Yeni kullanım: getProjelerFromApi({ page, limit, name, code, is_teklif })
-        ({ page = 1, limit = 10, name = "", code = "", is_teklif } = arg1);
+        ({
+          page = 1,
+          limit = 10,
+          name = "",
+          code = "",
+          is_teklif,
+          paint_status = "",
+          glass_status = "",
+          production_status = "",
+          customer_id = ""
+        } = arg1);
       } else {
-        // Eski kullanım: getProjelerFromApi(page=1, q="", limit=10)
+        // Eski imza: (page, q=name, limit)
         page = arg1 ?? 1;
-        limit = arg3 ?? 10;
-        // Yeni API'de "q" yok; geriye dönük uyumluluk için q'yu "name" olarak kullanıyoruz.
         name = arg2 || "";
+        limit = arg3 ?? 10;
         code = "";
-        is_teklif = undefined; // Eski çağrıda bu yoktu; URL'e koymayacağız.
+        is_teklif = undefined;
+        paint_status = "";
+        glass_status = "";
+        production_status = "";
+        customer_id = "";
       }
 
-      // ---- URLSearchParams inşası ----
+      // ---- URLSearchParams ----
       const params = new URLSearchParams();
-      params.set("page", String(page));
-      params.set("limit", String(limit));
 
-      if (name) params.set("name", name);
-      if (code) params.set("code", code);
-      if (typeof is_teklif === "boolean") {
-        // Backend "true"/"false" bekliyor
-        params.set("is_teklif", String(is_teklif));
-      }
+      const setIfHas = (k, v) => {
+        if (v === null || v === undefined) return;
+        if (typeof v === "string") {
+          const t = v.trim();
+          if (t !== "") params.set(k, t);
+        } else if (typeof v === "boolean") {
+          params.set(k, String(v));
+        } else {
+          params.set(k, String(v));
+        }
+      };
+
+      setIfHas("page", page ?? 1);
+      setIfHas("limit", limit ?? 10);
+      setIfHas("name", name);
+      setIfHas("code", code);
+      if (typeof is_teklif === "boolean") setIfHas("is_teklif", is_teklif);
+      setIfHas("paint_status", paint_status);
+      setIfHas("glass_status", glass_status);
+      setIfHas("production_status", production_status);
+      setIfHas("customer_id", customer_id);
+
+      const url = `${API_BASE_URL}/projects/?${params.toString()}`;
 
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/projects/?${params.toString()}`,
+        url,
         { method: "GET", headers: { Accept: "application/json" } },
         dispatch
       );
 
       _assertOk(res, "Projeler çekilemedi");
       const data = await res.json();
+
       dispatch(getProjelerFromApiToReducer(data));
       return data;
     } catch (err) {
@@ -130,11 +160,16 @@ export function addProjeToApi(addedProje) {
         },
         dispatch
       );
-      _assertOk(res, "Proje eklenemedi");
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Proje eklenemedi"); // throw
+      }
       const created = await res.json();
+      toastSuccess();
       await dispatch(getProjelerFromApi());
       return created;
     } catch (err) {
+      toastError();
       console.error("Proje eklenirken hata oluştu:", err);
       throw err;
     }
@@ -153,10 +188,15 @@ export function deleteProjeOnApi(id) {
         },
         dispatch
       );
-      _assertOk(res, "Proje silinemedi");
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Proje silinemedi");
+      }
+      toastSuccess();
       await dispatch(getProjelerFromApi());
       return true;
     } catch (err) {
+      toastError();
       console.log("Proje silinirken hata oluştu:", err);
       throw err;
     }
@@ -166,110 +206,157 @@ export function deleteProjeOnApi(id) {
 /* POST: Sisteme gereksinim ekle */
 export function addRequirementsToProjeToApi(projectId, addedSistem) {
   return async (dispatch) => {
-    const url = `${API_BASE_URL}/projects/${projectId}/add-requirements`;
-    const body = JSON.stringify(addedSistem);
+    try {
+      const url = `${API_BASE_URL}/projects/${projectId}/add-requirements`;
+      const body = JSON.stringify(addedSistem);
 
-    const res = await fetchWithAuth(
-      url,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+      const res = await fetchWithAuth(
+        url,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body,
         },
-        body,
-      },
-      dispatch
-    );
-    _assertOk(res, "Ekleme başarısız");
-    const data = await res.json();
-    await dispatch(getProjeRequirementsFromApi(projectId));
-    return data;
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Ekleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 }
 
 /* POST: Extra glass */
 export function addExtraGlassToApi(projectId, addedGlass) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/projects/extra-glasses`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-glasses`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(addedGlass),
         },
-        body: JSON.stringify(addedGlass),
-      },
-      dispatch
-    );
-    _assertOk(res, "Ekleme başarısız");
-    const data = await res.json();
-    await dispatch(getProjeRequirementsFromApi(projectId));
-    return data;
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Ekleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 }
 
 /* POST: Extra profile */
 export function addExtraProfileToApi(projectId, addedProfile) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/projects/extra-profiles`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-profiles`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(addedProfile),
         },
-        body: JSON.stringify(addedProfile),
-      },
-      dispatch
-    );
-    _assertOk(res, "Ekleme başarısız");
-    const data = await res.json();
-    await dispatch(getProjeRequirementsFromApi(projectId));
-    return data;
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Ekleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 }
+
 export function addExtraRemoteToApi(projectId, addedRemote) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/projects/extra-remotes`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-remotes`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(addedRemote),
         },
-        body: JSON.stringify(addedRemote),
-      },
-      dispatch
-    );
-    _assertOk(res, "Ekleme başarısız");
-    const data = await res.json();
-    await dispatch(getProjeRequirementsFromApi(projectId));
-    return data;
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Ekleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 }
+
 /* POST: Extra material */
 export function addExtraMaterialToApi(projectId, addedMaterial) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/projects/extra-materials`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-materials`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(addedMaterial),
         },
-        body: JSON.stringify(addedMaterial),
-      },
-      dispatch
-    );
-    _assertOk(res, "Ekleme başarısız");
-    const data = await res.json();
-    await dispatch(getProjeRequirementsFromApi(projectId));
-    return data;
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Ekleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 }
 
@@ -289,10 +376,15 @@ export function editProjeSystemOnApi(projectId, projectSystemId, editedSystem) {
         },
         dispatch
       );
-      _assertOk(res, "Sistem düzenlenemedi");
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Sistem düzenlenemedi");
+      }
+      toastSuccess();
       await dispatch(getProjeRequirementsFromApi(projectId));
       return true;
     } catch (err) {
+      toastError();
       console.log("Proje düzenlenirken hata oluştu:", err);
       throw err;
     }
@@ -316,30 +408,31 @@ export function editProjeOnApi(id, editedProje) {
         dispatch
       );
 
-      // ❌ Başarısız ise reducer'a yazma
       if (!res.ok) {
         let detail = "";
         try { detail = await res.text(); } catch {}
+        toastError();
         throw new Error(`Proje düzenlenemedi: ${res.status} ${detail || ""}`.trim());
       }
 
       // ✅ Başarılıysa:
       if (res.status === 204) {
-        // Body yoksa en güvenlisi tekrar çekmek
+        toastSuccess();
         await dispatch(getProjeFromApi(id));
         await dispatch(getProjeRequirementsFromApi(id));
         await dispatch(getProjelerFromApi());
         return { ok: true };
       }
 
-      // Body varsa dönen veriyi reducer'a yaz
       const updated = await res.json();
+      toastSuccess();
       dispatch(getProjeFromApiToReducer(updated));
       await dispatch(getProjeRequirementsFromApi(id));
       await dispatch(getProjelerFromApi());
       return updated;
 
     } catch (err) {
+      toastError();
       console.error("Proje düzenlenirken hata oluştu:", err);
       throw err;
     }
@@ -365,21 +458,21 @@ export function editProjectPricesOnApi(projectId, prices) {
 
       if (!res.ok) {
         let detail = "";
-        try {
-          detail = await res.text();
-        } catch {}
+        try { detail = await res.text(); } catch {}
+        toastError();
         throw new Error(`Proje fiyatları güncellenemedi: ${res.status} ${detail}`);
       }
 
-      // başarılı → body varsa al
       let data = null;
       try {
         data = await res.json();
       } catch {
         data = { ok: true };
       }
+      toastSuccess();
       return data;
     } catch (err) {
+      toastError();
       console.error("Proje fiyatları güncellenirken hata oluştu:", err);
       throw err;
     }
@@ -388,81 +481,93 @@ export function editProjectPricesOnApi(projectId, prices) {
 
 
 /**
- * Tek bir system-glass kaydının cam rengini güncelle.
- * @param {string} projectId           Proje ID
- * @param {string} psgId               Project System Glass ID
- * @param {string} glassColorId        Yeni cam rengi ID'si
- * @returns {Function} thunk -> Promise<any> (API yanıtı)
- *
- * Örnek:
- * await dispatch(updateSystemGlassColorInProject(projectId, psgId, selectedColorId));
+ * Tek bir system-glass kaydının cam rengini güncelle. (PUT)
  */
 export const updateSystemGlassColorInProject = (projectId, psgId, glassColorId) => {
   return async (dispatch) => {
-    const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/${psgId}/color`;
-    const res = await fetchWithAuth(
-      url,
-      {
-        method: "PUT",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ glass_color_id: glassColorId }), // ✅ sadece bu obje
-      },
-      dispatch
-    );
-    _assertOk(res, "Cam rengi güncellenemedi");
-    // Body olmayabilir; çağıran tarafta zaten requirements refresh var.
-    try { return await res.json(); } catch { return { ok: true }; }
+    try {
+      const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/${psgId}/color`;
+      const res = await fetchWithAuth(
+        url,
+        {
+          method: "PUT",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ glass_color_id: glassColorId }),
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Cam rengi güncellenemedi");
+      }
+      toastSuccess();
+      try { return await res.json(); } catch { return { ok: true }; }
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 };
 
 /**
- * Aynı camları toplu güncelle (bulk).
- * @param {string} projectId           Proje ID
- * @param {{project_system_glass_id: string, glass_color_id: string}[]} items
- * @returns {Function} thunk -> Promise<any> (API yanıtı)
- *
- * Örnek:
- * const items = rows.map(r => ({ project_system_glass_id: r.id, glass_color_id: colorId }));
- * await dispatch(updateSameGlassesInProject(projectId, items));
+ * Aynı camları toplu güncelle (bulk). (PUT)
  */
 export const updateSameGlassesInProject = (projectId, system_variant_id, glass_type_id, glass_color_id) => {
   return async (dispatch) => {
-    const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/colors/bulk`;
-    const res = await fetchWithAuth(
-      url,
-      {
-        method: "PUT",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_variant_id,   // ✅ senin istediğin payload
-          glass_type_id,
-          glass_color_id,
-        }),
-      },
-      dispatch
-    );
-    _assertOk(res, "Toplu cam rengi güncellenemedi");
-    try { return await res.json(); } catch { return { ok: true }; }
+    try {
+      const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/colors/bulk`;
+      const res = await fetchWithAuth(
+        url,
+        {
+          method: "PUT",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_variant_id,
+            glass_type_id,
+            glass_color_id,
+          }),
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Toplu cam rengi güncellenemedi");
+      }
+      toastSuccess();
+      try { return await res.json(); } catch { return { ok: true }; }
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 };
 
-// Tüm camların rengini tek seferde güncelle
+// Tüm camların rengini tek seferde güncelle (PUT)
 export const updateAllGlassesColorInProject = (projectId, glassColorId) => {
   return async (dispatch) => {
-    const url = `${API_BASE_URL}/projects/${projectId}/glasses/colors/all`;
-    const res = await fetchWithAuth(
-      url,
-      {
-        method: "PUT",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json",
+    try {
+      const url = `${API_BASE_URL}/projects/${projectId}/glasses/colors/all`;
+      const res = await fetchWithAuth(
+        url,
+        {
+          method: "PUT",
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ glass_color_id: glassColorId }),
         },
-        body: JSON.stringify({ glass_color_id: glassColorId }),
-      },
-      dispatch
-    );
-    _assertOk(res, "Tüm cam renkleri güncellenemedi");
-    try { return await res.json(); } catch { return { ok: true }; }
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Tüm cam renkleri güncellenemedi");
+      }
+      toastSuccess();
+      try { return await res.json(); } catch { return { ok: true }; }
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   };
 };

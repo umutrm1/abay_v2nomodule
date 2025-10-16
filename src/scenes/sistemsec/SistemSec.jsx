@@ -10,6 +10,7 @@ import {
   getSystemImageFromApi,
   getSystemVariantImageFromApi,
 } from '@/redux/actions/actions_sistemler.js';
+import AppButton from "@/components/ui/AppButton.jsx";
 
 /** Spinner (temalı) */
 const Spinner = () => (
@@ -171,9 +172,9 @@ const SistemSec = () => {
     <div className="min-h-screen bg-background text-foreground p-5">
       <div className="w-full flex items-center gap-3">
         <h1 className="text-3xl font-bold mb-4">Sistem Seç</h1>
-        <button className="btn ml-auto" onClick={() => navigate(`/projeduzenle/${projectId}`)}>
+        <AppButton variant="gri" className="ml-auto" onClick={() => navigate(`/projeduzenle/${projectId}`)}>
           Projeye Dön
-        </button>
+        </AppButton>
       </div>
 
       <div className="bg-card border border-border rounded-2xl w-full min-h-300 h-full p-5 overflow-auto">
@@ -211,12 +212,13 @@ const SistemSec = () => {
 
                     <h3 className="text-xl font-semibold mb-2 mt-auto text-center">{sistem.name}</h3>
 
-                    <button
+                    <AppButton
+                      className="mt-auto"
+                      variant="kurumsalmavi"
                       onClick={() => handleSystemSelect(sistem.id)}
-                      className="mt-auto btn btn-primary"
                     >
                       Seç
-                    </button>
+                    </AppButton>
                   </div>
                 );
               })}
@@ -259,12 +261,13 @@ const SistemSec = () => {
 
                       <h3 className="text-lg mt-auto font-medium mb-2 text-center">{variant.name}</h3>
 
-                      <button
+                      <AppButton
+                        className="mt-auto"
+                        variant="kurumsalmavi"
                         onClick={() => handleVariantSelect(variant.id)}
-                        className="mt-auto btn btn-success"
                       >
                         Seç
-                      </button>
+                      </AppButton>
                     </div>
                   );
                 })}

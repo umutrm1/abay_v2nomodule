@@ -1,4 +1,3 @@
-// src/scenes/projeekle/ProjeDuzenle.jsx
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -14,11 +13,13 @@ import SistemTable from './SistemTable.jsx';
 import MalzemeTable from '@/scenes/projeekle/MalzemeTable.jsx';
 import { ReactComponent as Paintbrush } from '../../icons/paintbrush.svg';
 import { ReactComponent as User } from '../../icons/user_v2.svg';
+import { ReactComponent as Pencilruler } from "../../icons/pencil-ruler.svg";
 import { generateCamCiktisiPdf } from './pdf/pdfGlass.js';
 import { generateOrderPdf } from './pdf/pdfOrder.js';
 import { generatePaintPdf } from './pdf/pdfPaint.js';
 import { generateOptimizeProfilesPdf } from './pdf/pdfOptimizeProfiles.js';
 import { getPdfBrandByKey, getPdfTitleByKey } from '@/redux/actions/actionsPdf.js';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 // ✅ Tema uyumlu spinner
 const Spinner = () => (
@@ -32,21 +33,17 @@ const ProjeDuzenle = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // ✅ Global sayfa spinner state
   const [loading, setLoading] = useState(false);
 
-  // Orijinal state
   const [projectCode, setProjectCode] = useState('');
   const [projectName, setProjectName] = useState('');
   const [projectDate, setProjectDate] = useState('');
   const [showOptChoice, setShowOptChoice] = useState(false);
 
-  // ✅ Dialog açık/kapalı state'leri
   const [openMusteri, setOpenMusteri] = useState(false);
   const [openCamRenk, setOpenCamRenk] = useState(false);
   const [openProfilRenk, setOpenProfilRenk] = useState(false);
 
-  // Seçimler
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedGlassColor, setSelectedGlassColor] = useState('');
   const [selectedProfileColor, setSelectedProfileColor] = useState('');
@@ -58,12 +55,10 @@ const ProjeDuzenle = () => {
   const [glassStatus, setGlassStatus] = useState('string');
   const [productionStatus, setProductionStatus] = useState('string');
 
-  // durum listeleri (UI'da dropdown'a basmak için)
-  const BOYA_DURUMLAR = ['Boyanacak', 'Boyada', 'Boyadan Geldi'];
-  const CAM_DURUMLAR = ['Cam Çekildi', 'Cam Geldi', 'Cam Çekilecek'];
-  const URETIM_DURUMLAR = ['Üretimde', 'Sevk Edildi'];
+  const BOYA_DURUMLAR = ['Durum Belirtilmedi', 'Boyanacak', 'Boyada', 'Boyadan Geldi'];
+  const CAM_DURUMLAR = ['Durum Belirtilmedi', 'Cam Çekildi', 'Cam Geldi', 'Cam Çekilecek'];
+  const URETIM_DURUMLAR = ['Durum Belirtilmedi', 'Üretimde', 'Sevk Edildi'];
 
-  // "string" veya boş değerleri normalize eden yardımcı
   const normalizeStatus = (s) => (s && s !== 'string' ? s : 'string');
   const proje = useSelector(state => state.getProjeFromApiReducer) || null;
   const requirements = useSelector(state => state.getProjeRequirementsFromApiReducer) || {
@@ -74,7 +69,6 @@ const ProjeDuzenle = () => {
     extra_remotes: [],
   };
 
-  // ✅ İlk yüklemelerde ilgili API çağrılarını spinner ile sarmala
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -88,7 +82,6 @@ const ProjeDuzenle = () => {
     fetchData();
   }, [dispatch, id]);
 
-  // Proje temel bilgileri
   useEffect(() => {
     if (!proje) return;
     setProjectCode(proje.project_kodu || '');
@@ -109,7 +102,6 @@ const ProjeDuzenle = () => {
       setProjectDate('');
     }
 
-    // ✅ Proje yüklenince mevcut press/boyalı fiyatları state'e bas
     setPressPrice(proje?.press_price ? proje.press_price : 0);
     setPaintedPrice(proje?.painted_price ? proje.painted_price : 0);
     setPaintStatus(normalizeStatus(proje?.paint_status));
@@ -133,7 +125,6 @@ const ProjeDuzenle = () => {
     }
   };
 
-  // Requirements seçili değerleri
   useEffect(() => {
     if (!requirements) return;
     if (requirements.glass_color) {
@@ -149,22 +140,21 @@ const ProjeDuzenle = () => {
     }
   }, [requirements]);
 
-  // ✅ Kaydetme işlemini spinner ile sarmala
   const handleSave = async () => {
     try {
       setLoading(true);
       const profileId = selectedProfileColor === '' ? null : selectedProfileColor;
       const glassId = selectedGlassColor === '' ? null : selectedGlassColor;
       await dispatch(actions_projeler.editProjeOnApi(id, {
-        project_kodu: projectCode,
+        project_code: projectCode,
         customer_id: selectedCustomer?.id,
         project_name: projectName,
         profile_color_id: profileId,
         glass_color_id: glassId,
         press_price: pressPrice,
         painted_price: paintedPrice,
-        paint_status: paintStatus,         
-        glass_status: glassStatus,         
+        paint_status: paintStatus,
+        glass_status: glassStatus,
         production_status: productionStatus
       }));
     } finally {
@@ -172,21 +162,65 @@ const ProjeDuzenle = () => {
     }
   };
 
-  // ✅ Global spinner
+  const StatusDropdown = ({ label, value, options, onChange }) => {
+    const show = (s) => (s && s !== 'string' ? s : 'durum belirtilmedi');
+
+    return (
+      <div className="flex font-semibold items-center gap-2">
+        <span>{label}:</span>
+        <div className="dropdown">
+          <button
+            tabIndex={0}
+            className="select select-bordered min-w-60 w-full cursor-pointer hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 active:border-primary transition"
+            title="Üretim durumuna göre filtrele"
+          >
+            {show(value)}
+          </button>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-[1] menu p-2 shadow bg-card border border-border text-foreground rounded-box w-52"
+          >
+            {options.map((opt) => {
+              const isActive = value === opt;
+              return (
+                <li key={opt} className={`${isActive ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-neutral-800'}`}>
+                  <button
+                    disabled={isActive}
+                    onClick={() => !isActive && onChange(opt)}
+                    className="text-left"
+                  >
+                    {opt}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return <Spinner />;
 
   return (
     <div className="grid grid-rows-[60px_auto_1fr] h-full">
       {/* Üst Başlık ve Butonlar */}
-      {/* Üst Başlık ve Butonlar */}
       <div className="flex items-center justify-between px-5">
         <Header title={`${projectCode} – ${projectName}`} />
         <div className="flex space-x-2 items-start">
-          {/* Profil Aksesuar Listesi (Aynen kalsın) */}
+          {/* Profil Aksesuar Listesi */}
           <div className="dropdown">
-            <div tabIndex={0} role="button" className="btn btn-sm btn-outline">
+            <AppButton
+              tabIndex={0}
+              role="button"
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              className="!min-h-0"
+              title="Profil Aksesuar Listesi"
+            >
               Profil Aksesuar Listesi
-            </div>
+            </AppButton>
             <ul
               tabIndex={0}
               className="dropdown-content z-[1] menu p-2 shadow bg-card border border-border text-foreground rounded-box w-52"
@@ -200,158 +234,80 @@ const ProjeDuzenle = () => {
             </ul>
           </div>
 
-          {/* BOYA DROPDOWN */}
-          <div className="inline-block">
-            <div className="dropdown ">
-              <div tabIndex={0} role="button" className="btn btn-sm btn-outline">
-                Boya
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content z-[1] menu p-2 shadow bg-card border border-border text-foreground rounded-box w-60"
-              >
-                {/* Boya Çıktısı */}
-                <li className="hover:bg-gray-200 dark:hover:bg-neutral-800">
-                  <a
-                    onClick={async () => {
-                      const brandCfgold = await dispatch(getPdfBrandByKey());
-                      const brandCfg = brandCfgold.config_json;
-                      const paintCfgold = await dispatch(getPdfTitleByKey('pdf.paint0'));
-                      const paintCfg = paintCfgold.config_json;
-                      await generatePaintPdf(
-                        { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
-                        paintCfg,
-                        brandCfg
-                      );
-                    }}
-                  >
-                    Boya Çıktısı
-                  </a>
-                </li>
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={async () => {
+              const brandCfgold = await dispatch(getPdfBrandByKey());
+              const brandCfg = brandCfgold.config_json;
+              const paintCfgold = await dispatch(getPdfTitleByKey('pdf.paint0'));
+              const paintCfg = paintCfgold.config_json;
+              await generatePaintPdf(
+                { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
+                paintCfg,
+                brandCfg
+              );
+            }}
+            title="Boya çıktısı oluştur"
+          >
+            Boya Çıktısı
+          </AppButton>
 
-                {/* Durum Seçenekleri */}
-                {BOYA_DURUMLAR.map((d) => {
-                  const isActive = paintStatus === d;
-                  return (
-                    <li key={d} className={`${isActive ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-neutral-800'}`}>
-                      <button
-                        disabled={isActive}
-                        onClick={() => !isActive && setPaintStatus(d)}
-                        className="text-left"
-                      >
-                        {d}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={async () => {
+              const brandCfgold = await dispatch(getPdfBrandByKey());
+              const brandCfg = brandCfgold.config_json;
+              const glassCfgold = await dispatch(getPdfTitleByKey('pdf.glass0'));
+              const glassCfg = glassCfgold.config_json;
 
-          </div>
+              await generateCamCiktisiPdf(
+                { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
+                glassCfg,
+                brandCfg
+              );
+            }}
+            title="Cam çıktısı oluştur"
+          >
+            Cam Çıktısı
+          </AppButton>
 
-          {/* CAM DROPDOWN */}
-          <div className="inline-block">
-            <div className="dropdown">
-              <div tabIndex={0} role="button" className="btn btn-sm btn-outline">
-                Cam
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content z-[1] menu p-2 shadow bg-card border border-border text-foreground rounded-box w-60"
-              >
-                {/* Cam Çıktısı */}
-                <li className="hover:bg-gray-200 dark:hover:bg-neutral-800">
-                  <a
-                    onClick={async () => {
-                      const brandCfgold = await dispatch(getPdfBrandByKey());
-                      const brandCfg = brandCfgold.config_json;
-                      const glassCfgold = await dispatch(getPdfTitleByKey('pdf.glass0'));
-                      const glassCfg = glassCfgold.config_json;
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={async () => {
+              const brandCfgold = await dispatch(getPdfBrandByKey());
+              const brandCfg = brandCfgold.config_json;
+              const orderCfgold = await dispatch(getPdfTitleByKey('pdf.order0'));
+              const orderCfg = orderCfgold.config_json;
+              await generateOrderPdf(
+                { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
+                orderCfg,
+                brandCfg
+              );
+            }}
+            title="Üretim çıktısı oluştur"
+          >
+            Üretim Çıktısı
+          </AppButton>
 
-                      await generateCamCiktisiPdf(
-                        { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
-                        glassCfg,
-                        brandCfg
-                      );
-                    }}
-                  >
-                    Cam Çıktısı
-                  </a>
-                </li>
-
-                {/* Durum Seçenekleri */}
-                {CAM_DURUMLAR.map((d) => {
-                  const isActive = glassStatus === d;
-                  return (
-                    <li key={d} className={`${isActive ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-neutral-800'}`}>
-                      <button
-                        disabled={isActive}
-                        onClick={() => !isActive && setGlassStatus(d)}
-                        className="text-left"
-                      >
-                        {d}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-
-          {/* ÜRETİM DROPDOWN */}
-          <div className="inline-block">
-            <div className="dropdown">
-              <div tabIndex={0} role="button" className="btn btn-sm btn-outline">
-                Üretim
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content z-[1] menu p-2 shadow bg-card border border-border text-foreground rounded-box w-60"
-              >
-                {/* Üretim Çıktısı */}
-                <li className="hover:bg-gray-200 dark:hover:bg-neutral-800">
-                  <a
-                    onClick={async () => {
-                      const brandCfgold = await dispatch(getPdfBrandByKey());
-                      const brandCfg = brandCfgold.config_json;
-                      const orderCfgold = await dispatch(getPdfTitleByKey('pdf.order0'));
-                      const orderCfg = orderCfgold.config_json;
-                      await generateOrderPdf(
-                        { dispatch, getProfilImageFromApi, projectName, projectCode, proje, requirements },
-                        orderCfg,
-                        brandCfg
-                      );
-                    }}
-                  >
-                    Üretim Çıktısı
-                  </a>
-                </li>
-
-                {/* Durum Seçenekleri */}
-                {URETIM_DURUMLAR.map((d) => {
-                  const isActive = productionStatus === d;
-                  return (
-                    <li key={d} className={`${isActive ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-neutral-800'}`}>
-                      <button
-                        disabled={isActive}
-                        onClick={() => !isActive && setProductionStatus(d)}
-                        className="text-left"
-                      >
-                        {d}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-          </div>
-
-          {/* Optimizasyon dropdown (seninki olduğu gibi kalsın) */}
+          {/* Optimizasyon */}
           <div className="dropdown">
-            <div tabIndex={0} role="button" className="btn bg-blue-600 hover:bg-blue-700 text-white">
+            <AppButton
+              tabIndex={0}
+              role="button"
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              className="!min-h-0"
+              title="Optimizasyon PDF"
+            >
               Optimizasyon
-            </div>
+            </AppButton>
             <ul
               tabIndex={0}
               className="dropdown-content z-[1] menu p-2 shadow bg-card border border-border text-foreground rounded-box w-52"
@@ -396,32 +352,44 @@ const ProjeDuzenle = () => {
           </div>
 
           {/* Kaydet */}
-          <button
-            className="btn btn-sm bg-green-600 text-white hover:bg-green-700"
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
             onClick={handleSave}
+            title="Değişiklikleri kaydet"
           >
             Değişiklikleri Kaydet
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      {/* --- ÖZET DURUM SATIRI --- */}
-
-
       {/* Ana içerik */}
       <div className="bg-card text-foreground w-full border border-border rounded-2xl p-5 h-full flex flex-col">
-        {(() => {
-          const show = (s) => (s === 'string' ? 'Durum Belirtilmedi' : s);
-          return (
-            <div className="border mb-5 border-border rounded-2xl h-15 items-center text-foreground px-4 py-2 flex justify-between flex-wrap gap-x-6 gap-y-2">
-              <div className="font-semibold ml-10">Boya Durum: {show(paintStatus)}</div>
+        {/* Özet durum */}
+        {!proje.is_teklif && (
+          <div className="border mb-5 border-border rounded-2xl h-auto items-center text-foreground px-4 py-3 flex justify-between flex-wrap gap-x-6 gap-y-3">
+            <StatusDropdown
+              label="Boya Durum"
+              value={paintStatus}
+              options={BOYA_DURUMLAR}
+              onChange={setPaintStatus}
+            />
+            <StatusDropdown
+              label="Cam Durum"
+              value={glassStatus}
+              options={CAM_DURUMLAR}
+              onChange={setGlassStatus}
+            />
+            <StatusDropdown
+              label="Üretim Durum"
+              value={productionStatus}
+              options={URETIM_DURUMLAR}
+              onChange={setProductionStatus}
+            />
+          </div>
+        )}
 
-              <div className="font-semibold md:ml-10">Cam Durum: {show(glassStatus)}</div>
-
-              <div className="font-semibold md:ml-10 mr-10">Üretim Durum: {show(productionStatus)}</div>
-            </div>
-          );
-        })()}
         {/* Proje Bilgileri */}
         <div className="border border-border justify-center rounded-2xl h-20 flex">
           <div className="w-1/3 font-semibold flex items-center p-4">
@@ -458,7 +426,7 @@ const ProjeDuzenle = () => {
         </div>
 
         <div className="border border-border mt-5 rounded-2xl flex h-20">
-          <div className="w-1/2 font-semibold flex items-center justify-center p-4">
+          <div className="w-1/2 font-semibold flex justify-center items-center p-4">
             Profil Press Fiyatı:
             <div className="flex items-stretch ml-2">
               <input
@@ -468,7 +436,7 @@ const ProjeDuzenle = () => {
                 onChange={handleNumberChange(setPressPrice)}
                 onBlur={() => handleNumberBlur(pressPrice, setPressPrice)}
                 placeholder="Press Profil Fiyatı Giriniz.."
-                className="input input-bordered rounded-r w-full max-w-xs"
+                className="input input-bordered min-w-xs ml-2 w-full max-w-xs"
               />
             </div>
           </div>
@@ -482,7 +450,7 @@ const ProjeDuzenle = () => {
               onChange={handleNumberChange(setPaintedPrice)}
               onBlur={() => handleNumberBlur(paintedPrice, setPaintedPrice)}
               placeholder="Boyalı Profil Fiyatı Giriniz.."
-              className="input input-bordered ml-2 w-full max-w-xs"
+              className="input input-bordered ml-2 w-full min-w-xs max-w-xs"
             />
           </div>
         </div>
@@ -490,35 +458,39 @@ const ProjeDuzenle = () => {
         {/* Renk & Müşteri */}
         <div className="border border-border mt-5 rounded-2xl flex h-20">
           <div className="w-2/3 flex items-center p-2 space-x-6">
+                      
+                      <div className="w-1/2 flex items-center p-2 space-x-6">
+
             <Paintbrush className="w-10" />
-            <div className="flex-1">
-              <div className="font-semibold mb-1">Cam Rengi</div>
-              <div className="flex items-center gap-3">
-                <div className="truncate">
-                  {selectedGlassName || requirements?.glass_color?.name || 'Henüz Seçilmedi'}
-                </div>
-                <button
-                  className="btn btn-sm ml-auto bg-blue-600 text-white hover:bg-blue-700"
+            <div className="font-semibold mb-1">Cam Rengi</div>
+
+                <AppButton
+                  variant="kurumsalmavi"
+                  size="sm"
+                  className="ml-auto"
                   onClick={() => setOpenCamRenk(true)}
+                  title="Cam rengi seç"
                 >
                   Seç
-                </button>
-              </div>
+                </AppButton>
             </div>
 
-            <div className="flex-1">
+            <div className="w-1/2 items-center flex p-2 space-x-6">
+              <Pencilruler className="w-10" />
               <div className="font-semibold mb-1">Profil Rengi</div>
-              <div className="flex items-center gap-3">
                 <div className="truncate">
                   {selectedProfileName || requirements?.profile_color?.name || 'Henüz Seçilmedi'}
                 </div>
-                <button
-                  className="btn btn-sm bg-blue-600 text-white hover:bg-blue-700"
-                  onClick={() => setOpenProfilRenk(true)}
-                >
-                  Seç
-                </button>
-              </div>
+                    <AppButton
+                      variant="kurumsalmavi"
+                      className='ml-auto'
+                      size="sm"
+                      onClick={() => setOpenProfilRenk(true)}
+                      title="Profil rengi seç"
+                    >
+                      Seç
+                    </AppButton>
+
             </div>
           </div>
 
@@ -534,12 +506,16 @@ const ProjeDuzenle = () => {
                     : 'Henüz Seçilmedi')}
               </div>
             </div>
-            <button
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              className="mr-10"
               onClick={() => setOpenMusteri(true)}
-              className="btn btn-sm mr-10 bg-blue-600 text-white hover:bg-blue-700"
+              title="Müşteri seç"
             >
               Seç
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -557,18 +533,24 @@ const ProjeDuzenle = () => {
 
         {/* Alt Butonlar */}
         <div className="flex justify-end mt-4 space-x-4">
-          <button
-            className="btn rounded-xl w-40 bg-blue-700 text-white"
+          <AppButton
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-40"
             onClick={() => navigate(`/ekstramalzemeekle/${id}`)}
+            title="Ekstra malzeme ekle"
           >
             Malzeme Ekle
-          </button>
-          <button
-            className="btn rounded-xl w-40 bg-blue-700 text-white"
+          </AppButton>
+          <AppButton
+          size="mdtxtlg"
+            variant="kurumsalmavi"
+            className="w-40"
             onClick={() => navigate(`/sistemsec/${id}`)}
+            title="Sistem ekle"
           >
             Sistem Ekle
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -585,8 +567,8 @@ const ProjeDuzenle = () => {
       <DialogCamRenkSec
         open={openCamRenk}
         onOpenChange={setOpenCamRenk}
-        requirements={requirements}   // !!! eklendi
-        projectId={id}                // !!! eklendi
+        requirements={requirements}
+        projectId={id}
       />
 
       <DialogProfilRenkSec

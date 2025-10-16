@@ -1,4 +1,3 @@
-// src/scenes/sistemler/DialogPdfAyar.jsx
 import React, { useEffect, useState } from "react";
 import {
   Dialog,
@@ -6,9 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from "@/components/ui/dialog.jsx"; // PagedSelectDialog ile aynı dialog katmanı
+} from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-// Proje genelinde varsayılan pdf alanları
 const DEFAULT_PDF = {
   optimizasyonDetayliCiktisi: true,
   optimizasyonDetaysizCiktisi: true,
@@ -39,22 +38,13 @@ const DialogPdfAyar = ({
 }) => {
   const [form, setForm] = useState({ ...DEFAULT_PDF });
 
-  // modal her açıldığında başlangıç değerlerini güncelle
   useEffect(() => {
     if (!open) return;
-    setForm({
-      ...DEFAULT_PDF,
-      ...initial,
-    });
+    setForm({ ...DEFAULT_PDF, ...initial });
   }, [open, initial]);
 
   const setField = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-
-  // shadcn Dialog open state’i üst komponentten yönetiliyor
-  const handleOpenChange = (v) => {
-    onOpenChange?.(v);
-    // kapanışta lokal state’i sıfırlamaya gerek yok; open=true olduğunda yeniden set ediliyor
-  };
+  const handleOpenChange = (v) => onOpenChange?.(v);
 
   const handleSave = () => {
     onSave?.(form);
@@ -68,66 +58,21 @@ const DialogPdfAyar = ({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        {/* İçerik */}
         <div className="mt-2 divide-y divide-border">
-          <Row
-            label="Optimizasyon Detaylı Çıktısı"
-            checked={form.optimizasyonDetayliCiktisi}
-            onChange={(v) => setField("optimizasyonDetayliCiktisi", v)}
-          />
-          <Row
-            label="Optimizasyon Detaysız Çıktısı"
-            checked={form.optimizasyonDetaysizCiktisi}
-            onChange={(v) => setField("optimizasyonDetaysizCiktisi", v)}
-          />
-          <Row
-            label="Sipariş Çıktısı"
-            checked={form.siparisCiktisi}
-            onChange={(v) => setField("siparisCiktisi", v)}
-          />
-          <Row
-            label="Boya Çıktısı"
-            checked={form.boyaCiktisi}
-            onChange={(v) => setField("boyaCiktisi", v)}
-          />
-          <Row
-            label="Profil Aksesuar Çıktısı"
-            checked={form.profilAksesuarCiktisi}
-            onChange={(v) => setField("profilAksesuarCiktisi", v)}
-          />
-          <Row
-            label="Cam Çıktısı"
-            checked={form.camCiktisi}
-            onChange={(v) => setField("camCiktisi", v)}
-          />
+          <Row label="Optimizasyon Detaylı Çıktısı"  checked={form.optimizasyonDetayliCiktisi} onChange={(v) => setField("optimizasyonDetayliCiktisi", v)} />
+          <Row label="Optimizasyon Detaysız Çıktısı" checked={form.optimizasyonDetaysizCiktisi} onChange={(v) => setField("optimizasyonDetaysizCiktisi", v)} />
+          <Row label="Sipariş Çıktısı"               checked={form.siparisCiktisi}               onChange={(v) => setField("siparisCiktisi", v)} />
+          <Row label="Boya Çıktısı"                  checked={form.boyaCiktisi}                  onChange={(v) => setField("boyaCiktisi", v)} />
+          <Row label="Profil Aksesuar Çıktısı"       checked={form.profilAksesuarCiktisi}        onChange={(v) => setField("profilAksesuarCiktisi", v)} />
+          <Row label="Cam Çıktısı"                   checked={form.camCiktisi}                   onChange={(v) => setField("camCiktisi", v)} />
         </div>
 
-        {/* Aksiyonlar */}
         <div className="mt-6 flex justify-end gap-2">
-          {/* DialogClose ile anında kapanış (kaydetmeden) */}
           <DialogClose asChild>
-            <button className="btn btn-sm">
-              Vazgeç
-            </button>
+            <AppButton size="sm" variant="gri">Vazgeç</AppButton>
           </DialogClose>
-
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={handleSave}
-          >
-            Kaydet
-          </button>
+          <AppButton size="sm" variant="kurumsalmavi" onClick={handleSave}>Kaydet</AppButton>
         </div>
-
-        {/* Sağ üst X */}
-        <DialogClose asChild>
-          <button
-            aria-label="Close"
-            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-          >
-            ✕
-          </button>
-        </DialogClose>
       </DialogContent>
     </Dialog>
   );

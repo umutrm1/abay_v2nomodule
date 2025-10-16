@@ -7,8 +7,9 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogDigerMalzemeEkle = ({ onSave }) => {
+const DialogDigerMalzemeEkle = ({ onSave, children }) => {
   const [form, setForm] = useState({
     diger_malzeme_isim: '',
     birim: '',
@@ -31,11 +32,20 @@ const DialogDigerMalzemeEkle = ({ onSave }) => {
 
   return (
     <Dialog>
+      {/* Tetikleyici: children gelirse onu, gelmezse varsayılan AppButton kullan */}
       <DialogTrigger asChild>
-        <button className="btn w-40 ml-auto btn-primary">
-          + Malzeme Ekle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+            title="Yeni malzeme ekle"
+          >
+            + Malzeme Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
+
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Yeni Malzeme Ekle</DialogTitle>
@@ -82,10 +92,17 @@ const DialogDigerMalzemeEkle = ({ onSave }) => {
             <option value="adetli">adetli</option>
           </select>
         </div>
+
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Kaydet ve kapat"
+          >
             Kaydet
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

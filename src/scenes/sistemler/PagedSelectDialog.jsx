@@ -1,4 +1,3 @@
-// src/scenes/sistemler/PagedSelectDialog.jsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dialog,
@@ -7,6 +6,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-8">
@@ -14,7 +14,6 @@ const Spinner = () => (
   </div>
 );
 
-// Küçük debounce hook'u
 const useDebounced = (value, delay = 300) => {
   const [v, setV] = useState(value);
   useEffect(() => {
@@ -28,11 +27,11 @@ const PagedSelectDialog = ({
   title,
   open,
   onOpenChange,
-  data,               // { items, page, total_pages, has_next, has_prev, ... }
-  fetchPage,          // (page, q) => Promise
-  columns,            // [{ key, label }]
-  onSelect,           // (item) => void
-  searchPlaceholder,  // string
+  data,
+  fetchPage,
+  columns,
+  onSelect,
+  searchPlaceholder,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounced(searchTerm, 300);
@@ -40,13 +39,9 @@ const PagedSelectDialog = ({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // 🔒 fetchPage referansını sabitle
   const fetchRef = useRef(fetchPage);
-  useEffect(() => {
-    fetchRef.current = fetchPage;
-  }, [fetchPage]);
+  useEffect(() => { fetchRef.current = fetchPage; }, [fetchPage]);
 
-  // 🔁 Sadece open/page/debouncedSearch değişince çek
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -56,26 +51,17 @@ const PagedSelectDialog = ({
     return () => { cancelled = true; };
   }, [open, page, debouncedSearch]);
 
-  // Arama → page’i 1’e çek
-  const onSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setPage(1);
-  };
+  const onSearchChange = (e) => { setSearchTerm(e.target.value); setPage(1); };
 
   const totalPages = data.total_pages || 1;
   const goFirst = () => setPage(1);
-  const goPrev = () => setPage((p) => Math.max(1, p - 1));
-  const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
-  const goLast = () => setPage(totalPages);
+  const goPrev  = () => setPage((p) => Math.max(1, p - 1));
+  const goNext  = () => setPage((p) => Math.min(totalPages, p + 1));
+  const goLast  = () => setPage(totalPages);
 
-  // Kapandığında local state’i sıfırla
   const handleOpenChange = (v) => {
     onOpenChange(v);
-    if (!v) {
-      setSearchTerm("");
-      setPage(1);
-      setLoading(false);
-    }
+    if (!v) { setSearchTerm(""); setPage(1); setLoading(false); }
   };
 
   return (
@@ -86,7 +72,6 @@ const PagedSelectDialog = ({
         </DialogHeader>
 
         <div className="grid gap-4">
-          {/* Arama */}
           <input
             type="text"
             placeholder={searchPlaceholder || "Ara..."}
@@ -95,14 +80,11 @@ const PagedSelectDialog = ({
             className="input input-bordered w-full"
           />
 
-          {/* Tablo */}
           <div className="overflow-x-auto">
             <table className="table w-full">
               <thead>
                 <tr>
-                  {columns.map((c) => (
-                    <th key={c.key}>{c.label}</th>
-                  ))}
+                  {columns.map((c) => (<th key={c.key}>{c.label}</th>))}
                   <th className="text-right">Seç</th>
                 </tr>
               </thead>
@@ -110,9 +92,7 @@ const PagedSelectDialog = ({
               {loading ? (
                 <tbody>
                   <tr>
-                    <td colSpan={columns.length + 1}>
-                      <Spinner />
-                    </td>
+                    <td colSpan={columns.length + 1}><Spinner /></td>
                   </tr>
                 </tbody>
               ) : (
@@ -120,28 +100,24 @@ const PagedSelectDialog = ({
                   {(data.items ?? []).length > 0 ? (
                     data.items.map((item) => (
                       <tr key={item.id} className="hover:bg-muted/40">
-                        {columns.map((c) => (
-                          <td key={c.key}>{item[c.key]}</td>
-                        ))}
+                        {columns.map((c) => (<td key={c.key}>{item[c.key]}</td>))}
                         <td className="text-right">
-                          {/* Not: DialogClose kapanmayı tetikler */}
                           <DialogClose asChild>
-                            <button
+                            <AppButton
+                              size="xs"
+                              variant="kurumsalmavi"
+                              shape="none"
                               onClick={() => onSelect(item)}
-                              className="btn btn-xs btn-primary"
                             >
                               Seç
-                            </button>
+                            </AppButton>
                           </DialogClose>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan={columns.length + 1}
-                        className="text-center text-muted-foreground py-4"
-                      >
+                      <td colSpan={columns.length + 1} className="text-center text-muted-foreground py-4">
                         Veri bulunamadı
                       </td>
                     </tr>
@@ -151,36 +127,18 @@ const PagedSelectDialog = ({
             </table>
           </div>
 
-          {/* Sayfalama */}
           <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
-            <button
-              className="btn btn-sm"
-              onClick={goFirst}
-              disabled={(page || 1) === 1}
-              title="İlk sayfa"
-            >
-              « İlk
-            </button>
-            <button
-              className="btn btn-sm"
-              onClick={goPrev}
-              disabled={!data.has_prev || page <= 1}
-              title="Önceki sayfa"
-            >
-              ‹ Önceki
-            </button>
+            <AppButton size="sm" variant="gri" shape="none" onClick={goFirst} disabled={(page || 1) === 1}>« İlk</AppButton>
+            <AppButton size="sm" variant="gri" shape="none" onClick={goPrev}  disabled={!data.has_prev || page <= 1}>‹ Önceki</AppButton>
 
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const val = parseInt(e.target.elements.pageNum.value, 10);
-                if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                  setPage(val);
-                }
+                const val = parseInt(e.currentTarget.elements.pageNum.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) setPage(val);
               }}
               className="flex items-center gap-1"
             >
-              {/* 👇 controlled */}
               <input
                 type="number"
                 name="pageNum"
@@ -196,22 +154,8 @@ const PagedSelectDialog = ({
               <span className="text-sm">/ {totalPages}</span>
             </form>
 
-            <button
-              className="btn btn-sm"
-              onClick={goNext}
-              disabled={!data.has_next || page >= totalPages}
-              title="Sonraki sayfa"
-            >
-              Sonraki ›
-            </button>
-            <button
-              className="btn btn-sm"
-              onClick={goLast}
-              disabled={page >= totalPages}
-              title="Son sayfa"
-            >
-              Son »
-            </button>
+            <AppButton size="sm" variant="gri" shape="none" onClick={goNext} disabled={!data.has_next || page >= totalPages}>Sonraki ›</AppButton>
+            <AppButton size="sm" variant="gri" shape="none" onClick={goLast} disabled={page >= totalPages}>Son »</AppButton>
           </div>
         </div>
       </DialogContent>

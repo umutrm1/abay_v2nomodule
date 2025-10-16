@@ -1,6 +1,7 @@
 // src/redux/actions/actionsPdf.js
 import * as actionTypes from "./actionTypes.js";
 import { fetchWithAuth } from "./authFetch.js";
+import { toastSuccess, toastError } from "../../lib/toast.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -28,17 +29,20 @@ export function updatePdfTitle(id, { key, config_json = {} }) {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
+        toastError();
         throw new Error(`PDF title güncellenemedi: ${res.status} ${text}`);
       }
 
       const data = await res.json().catch(() => ({}));
       dispatch({ type: actionTypes.UPDATE_PDF_TITLE_SUCCESS, payload: data });
+      toastSuccess();
       return data;
     } catch (error) {
       dispatch({
         type: actionTypes.UPDATE_PDF_TITLE_FAILURE,
         payload: error?.message || "PDF title güncellenemedi",
       });
+      toastError();
       throw error;
     }
   };
@@ -137,17 +141,20 @@ export function updatePdfBrand({ key, config_json = {} }) {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
+        toastError();
         throw new Error(`PDF brand güncellenemedi:  ${res.status} ${text}`);
       }
 
       const data = await res.json().catch(() => ({}));
       dispatch({ type: actionTypes.UPDATE_PDF_BRAND_SUCCESS, payload: data });
+      toastSuccess();
       return data;
     } catch (error) {
       dispatch({
         type: actionTypes.UPDATE_PDF_BRAND_FAILURE,
         payload: error?.message || "PDF brand güncellenemedi",
       });
+      toastError();
       throw error;
     }
   };
@@ -178,21 +185,52 @@ export function updateProformaRule({ prefix, separator, padding, start_number })
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
+        toastError();
         throw new Error(`Proforma kuralı güncellenemedi: ${res.status} ${text}`);
       }
 
       const data = await res.json().catch(() => ({}));
       dispatch({ type: actionTypes.UPDATE_PROFORMA_RULE_SUCCESS, payload: data });
+      toastSuccess();
       return data;
     } catch (error) {
       dispatch({
         type: actionTypes.UPDATE_PROFORMA_RULE_FAILURE,
         payload: error?.message || "Proforma kuralı güncellenemedi",
       });
+      toastError();
       throw error;
     }
   };
 }
+
+export function getProformaRule () {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/me/project-code/rule`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Proforma kuralı getirilemedi: ${res.status} ${text}`);
+      }
+
+      const data = await res.json().catch(() => ({}));
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 
 export function getBrandImage(brandId) {
   return async (dispatch) => {

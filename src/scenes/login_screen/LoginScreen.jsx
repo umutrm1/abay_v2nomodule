@@ -1,9 +1,9 @@
-// src/scenes/login_screen/LoginScreen.jsx
 import React, { useState, useEffect, Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '@/redux/actions/authActions.js';
 import { useTheme } from '@/global/useTheme';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 export default function LoginScreen() {
   const dispatch = useDispatch();
@@ -31,15 +31,16 @@ export default function LoginScreen() {
 
   return (
     <Fragment>
-      {/* SAĞ ÜST: TopBar ile aynı tema butonu (swap-rotate sun/moon) */}
+      {/* SAĞ ÜST: Tema butonu */}
       <div className="fixed top-3 right-3 z-50">
+        {/* Buradaki swap animasyonu label tabanlı olduğu için korunuyor */}
         <label
           className="btn btn-ghost btn-sm swap swap-rotate"
           aria-label="Temayı değiştir"
           title="Tema"
         >
           <input type="checkbox" checked={isDark} onChange={toggleTheme} />
-          {/* Gündüz (açık tema) ikonu */}
+          {/* Gündüz ikonu */}
           <svg
             className="swap-off w-5 h-5"
             xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +48,7 @@ export default function LoginScreen() {
           >
             <path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.48 0l1.79-1.8 1.41 1.41-1.8 1.79-1.4-1.4zM12 4V1h-0v3h0zm0 19v-3h0v3h0zM4 13H1v-0h3v0zm22 0h-3v0h3v0zM6.76 19.16l-1.42 1.42-1.79-1.8 1.41-1.41 1.8 1.79zM19.16 17.24l1.4 1.4-1.79 1.8-1.41-1.41 1.8-1.79zM12 8a4 4 0 100 8 4 4 0 000-8z"/>
           </svg>
-          {/* Gece (koyu tema) ikonu */}
+          {/* Gece ikonu */}
           <svg
             className="swap-on w-5 h-5"
             xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +59,7 @@ export default function LoginScreen() {
         </label>
       </div>
 
-      {/* Form — önceki hali korunarak tema-friendly sınıflarla */}
+      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="space-y-4 bg-card border border-border rounded-2xl p-6 text-foreground"
@@ -101,13 +102,16 @@ export default function LoginScreen() {
         {loading && <p className="text-sm text-muted-foreground">Giriş yapılıyor…</p>}
         {error && <p className="text-error">{error}</p>}
 
-        <button
+        <AppButton
           type="submit"
           disabled={loading}
-          className="btn btn-primary w-full"
+          variant="kurumsalmavi"
+          size="md"
+          shape="none"
+          className="w-full"
         >
           Giriş Yap
-        </button>
+        </AppButton>
       </form>
     </Fragment>
   );

@@ -1,6 +1,7 @@
 // src/redux/actions/actions_bayiler.js
 import * as actionTypes from "./actionTypes.js";
 import { fetchWithAuth } from "./authFetch.js";
+import { toastSuccess, toastError } from "../../lib/toast.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -10,30 +11,37 @@ export function getBayilerFromApiToReducer(payload) {
 
 export function SetUserNamePasswordOnApi(token, username, password) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/auth/accept-invite`,
-      {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ token, username, password }),
-      },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/auth/accept-invite`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ token, username, password }),
+        },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let msg = `İşlem başarısız (HTTP ${res.status})`;
-      try {
-        const data = await res.json();
-        if (data?.message) msg = data.message;
-        if (data?.detail) msg = data.detail;
-      } catch {}
-      throw new Error(msg);
+      if (!res.ok) {
+        let msg = `İşlem başarısız (HTTP ${res.status})`;
+        try {
+          const data = await res.json();
+          if (data?.message) msg = data.message;
+          if (data?.detail) msg = data.detail;
+        } catch {}
+        toastError();
+        throw new Error(msg);
+      }
+      toastSuccess();
+      return res.json();
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json();
   };
 }
 
-// 1) Listele
+// 1) Listele (GET - toast yok)
 export const getDealersFromApi = (q = "search", limit = 5, page = 1) => {
   return async (dispatch) => {
     const url = `${API_BASE_URL}/dealers/?q=${encodeURIComponent(q)}&limit=${limit}&page=${page}`;
@@ -55,134 +63,182 @@ export const getDealersFromApi = (q = "search", limit = 5, page = 1) => {
   };
 };
 
-// 2) Düzenle
+// 2) Düzenle (PUT)
 export const editDealerOnApi = (id, payload) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/${encodeURIComponent(id)}`,
-      {
-        method: "PUT",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify(payload || {}),
-      },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/${encodeURIComponent(id)}`,
+        {
+          method: "PUT",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(payload || {}),
+        },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Bayi güncellenemedi (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Bayi güncellenemedi (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      return res.json();
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json();
   };
 };
 
-// 3) Sil
+// 3) Sil (DELETE)
 export const sellDealerOnApi = (id) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/${encodeURIComponent(id)}`,
-      { method: "DELETE", headers: { Accept: "*/*" } },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/${encodeURIComponent(id)}`,
+        { method: "DELETE", headers: { Accept: "*/*" } },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Bayi silinemedi (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Bayi silinemedi (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      try { return await res.json(); } catch { return true; }
+    } catch (err) {
+      toastError();
+      throw err;
     }
-
-    try { return await res.json(); } catch { return true; }
   };
 };
 
-// 4) Davet et
+// 4) Davet et (POST)
 export const addDealerOnApi = (payload) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/invite`,
-      {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify(payload || {}),
-      },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/invite`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(payload || {}),
+        },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Bayi daveti gönderilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Bayi daveti gönderilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      return res.json();
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json();
   };
 };
 
-// 5) Askıya al
+// 5) Askıya al (POST)
 export const suspendDealerOnApi = (id) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/${encodeURIComponent(id)}/suspend`,
-      { method: "POST", headers: { Accept: "application/json" } },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/${encodeURIComponent(id)}/suspend`,
+        { method: "POST", headers: { Accept: "application/json" } },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Bayi askıya alınamadı (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Bayi askıya alınamadı (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      return res.json().catch(() => true);
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json().catch(() => true);
   };
 };
 
-// 6) Daveti yeniden gönder
+// 6) Daveti yeniden gönder (POST)
 export const reSendInviteOnApi = (id) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/${encodeURIComponent(id)}/resend-invite`,
-      { method: "POST", headers: { Accept: "application/json" } },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/${encodeURIComponent(id)}/resend-invite`,
+        { method: "POST", headers: { Accept: "application/json" } },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Davet yeniden gönderilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Davet yeniden gönderilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      return res.json().catch(() => true);
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json().catch(() => true);
   };
 };
 
-// 7) Aktif et
+// 7) Aktif et (POST)
 export const activateDealerOnApi = (id) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/${encodeURIComponent(id)}/activate`,
-      { method: "POST", headers: { Accept: "application/json" } },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/${encodeURIComponent(id)}/activate`,
+        { method: "POST", headers: { Accept: "application/json" } },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Bayi aktifleştirilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Bayi aktifleştirilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      return res.json().catch(() => true);
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json().catch(() => true);
   };
 };
 
-// 8) Yeniden aktifleştir (opsiyonel davet)
+// 8) Yeniden aktifleştir (POST)
 export const reActivateDealerOnApi = ({ id, email, sendInvite = true }) => {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/dealers/reactivate?send_invite=${sendInvite ? "true" : "false"}`,
-      {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ id, email }),
-      },
-      dispatch
-    );
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/reactivate?send_invite=${sendInvite ? "true" : "false"}`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ id, email }),
+        },
+        dispatch
+      );
 
-    if (!res.ok) {
-      let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
-      throw new Error(`Bayi yeniden aktifleştirilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      if (!res.ok) {
+        let detail; try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Bayi yeniden aktifleştirilemedi (${res.status}): ${JSON.stringify(detail)}`);
+      }
+      toastSuccess();
+      return res.json();
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return res.json();
   };
 };

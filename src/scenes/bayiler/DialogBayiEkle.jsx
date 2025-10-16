@@ -1,6 +1,14 @@
 // src/scenes/bayiler/DialogBayiEkle.jsx
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const DialogBayiEkle = ({ onSave }) => {
   const [yeniBayi, setYeniBayi] = useState({
@@ -30,28 +38,67 @@ const DialogBayiEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn max-w-40 ml-auto w-40 bg-blue-700 text-white">+ Bayi Ekle</button>
+        <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">
+          + Bayi Ekle
+        </AppButton>
       </DialogTrigger>
-      <DialogContent className={"max-w-200"}>
-        <DialogHeader><DialogTitle>Yeni Bayi Ekle</DialogTitle></DialogHeader>
+
+      <DialogContent className="max-w-200">
+        <DialogHeader>
+          <DialogTitle>Yeni Bayi Ekle</DialogTitle>
+        </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <label className="font-semibold">İsim</label>
-          <input name="name" value={yeniBayi.name} onChange={handleChange} placeholder="İsim" className="input input-bordered" />
+          <input
+            name="name"
+            value={yeniBayi.name}
+            onChange={handleChange}
+            placeholder="İsim"
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">E-posta</label>
-          <input name="email" value={yeniBayi.email} onChange={handleChange} placeholder="E-posta" className="input input-bordered" />
+          <input
+            name="email"
+            value={yeniBayi.email}
+            onChange={handleChange}
+            placeholder="E-posta"
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Telefon</label>
-          <input name="phone" value={yeniBayi.phone} onChange={handleChange} placeholder="Telefon" className="input input-bordered" />
+          <input
+            name="phone"
+            value={yeniBayi.phone}
+            onChange={handleChange}
+            placeholder="Telefon"
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Sahip</label>
-          <input name="owner_name" value={yeniBayi.owner_name} onChange={handleChange} placeholder="Sahip Adı" className="input input-bordered" />
+          <input
+            name="owner_name"
+            value={yeniBayi.owner_name}
+            onChange={handleChange}
+            placeholder="Sahip Adı"
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Şehir</label>
-          <input name="city" value={yeniBayi.city} onChange={handleChange} placeholder="Şehir" className="input input-bordered" />
+          <input
+            name="city"
+            value={yeniBayi.city}
+            onChange={handleChange}
+            placeholder="Şehir"
+            className="input input-bordered"
+          />
         </div>
+
         <DialogClose asChild>
-          <button onClick={handleSaveClick} className="btn btn-success">Kaydet</button>
+          <AppButton variant="koyumavi" size="md" shape="none" onClick={handleSaveClick}>
+            Kaydet
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

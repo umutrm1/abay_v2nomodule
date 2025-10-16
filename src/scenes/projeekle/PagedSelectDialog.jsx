@@ -1,4 +1,3 @@
-// src/scenes/sistemler/PagedSelectDialog.jsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dialog,
@@ -7,6 +6,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-8">
@@ -40,13 +40,11 @@ const PagedSelectDialog = ({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // 🔒 fetchPage referansını sabitle
   const fetchRef = useRef(fetchPage);
   useEffect(() => {
     fetchRef.current = fetchPage;
   }, [fetchPage]);
 
-  // 🔁 Sadece open/page/debouncedSearch değişince çek
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -56,7 +54,6 @@ const PagedSelectDialog = ({
     return () => { cancelled = true; };
   }, [open, page, debouncedSearch]);
 
-  // Arama → page’i 1’e çek
   const onSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setPage(1);
@@ -68,7 +65,6 @@ const PagedSelectDialog = ({
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
   const goLast = () => setPage(totalPages);
 
-  // Kapandığında local state’i sıfırla
   const handleOpenChange = (v) => {
     onOpenChange(v);
     if (!v) {
@@ -124,14 +120,17 @@ const PagedSelectDialog = ({
                           <td key={c.key}>{item[c.key]}</td>
                         ))}
                         <td className="text-right">
-                          {/* Not: DialogClose kapanmayı tetikler */}
+                          {/* Kapanmayı tetikler */}
                           <DialogClose asChild>
-                            <button
+                            <AppButton
                               onClick={() => onSelect(item)}
-                              className="btn btn-xs btn-primary"
+                              variant="kurumsalmavi"
+                              size="sm"
+                              shape="none"
+                              title="Seç"
                             >
                               Seç
-                            </button>
+                            </AppButton>
                           </DialogClose>
                         </td>
                       </tr>
@@ -153,22 +152,26 @@ const PagedSelectDialog = ({
 
           {/* Sayfalama */}
           <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
-            <button
-              className="btn btn-sm"
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
               onClick={goFirst}
               disabled={(page || 1) === 1}
               title="İlk sayfa"
             >
               « İlk
-            </button>
-            <button
-              className="btn btn-sm"
+            </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
               onClick={goPrev}
               disabled={!data.has_prev || page <= 1}
               title="Önceki sayfa"
             >
               ‹ Önceki
-            </button>
+            </AppButton>
 
             <form
               onSubmit={(e) => {
@@ -180,7 +183,6 @@ const PagedSelectDialog = ({
               }}
               className="flex items-center gap-1"
             >
-              {/* 👇 Artık controlled; defaultValue yerine value=page */}
               <input
                 type="number"
                 name="pageNum"
@@ -196,22 +198,26 @@ const PagedSelectDialog = ({
               <span className="text-sm">/ {totalPages}</span>
             </form>
 
-            <button
-              className="btn btn-sm"
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
               onClick={goNext}
               disabled={!data.has_next || page >= totalPages}
               title="Sonraki sayfa"
             >
               Sonraki ›
-            </button>
-            <button
-              className="btn btn-sm"
+            </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
               onClick={goLast}
               disabled={page >= totalPages}
               title="Son sayfa"
             >
               Son »
-            </button>
+            </AppButton>
           </div>
         </div>
       </DialogContent>

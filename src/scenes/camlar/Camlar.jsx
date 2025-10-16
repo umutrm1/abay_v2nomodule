@@ -11,6 +11,7 @@ import Header from '@/components/mycomponents/Header.jsx';
 import DialogCamEkle from './DialogCamEkle.jsx';
 import DialogCamDuzenle from './DialogCamDuzenle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -31,28 +32,39 @@ const EMPTY_PAGE = {
 const Camlar = () => {
   const dispatch = useDispatch();
 
-  // Reducer artık obje (server-side sayfalama sonucu) tutmalı
   const data = useSelector(state => state.getCamlarFromApiReducer) || EMPTY_PAGE;
 
   const [searchTerm, setSearchTerm]   = useState('');
-  const [currentPage, setCurrentPage] = useState(1); // 1'den başlar
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading]     = useState(false);
 
-  // Silme modali (shadcn/Radix)
+  // 🆕 Limit: min 1, max 50
+  const [limit, setLimit] = useState(10);
+
+  // Silme modali
   const [deleteOpen, setDeleteOpen]   = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting]       = useState(false);
 
-  // Veri çekme: page / search değişince
+  // Veri çekme
   useEffect(() => {
     setIsLoading(true);
-    dispatch(getCamlarFromApi(currentPage, searchTerm, 5))
+    const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+    dispatch(getCamlarFromApi(currentPage, searchTerm, safeLimit))
       .finally(() => setIsLoading(false));
-  }, [dispatch, currentPage, searchTerm]);
+  }, [dispatch, currentPage, searchTerm, limit]);
 
-  // Arama değişince 1. sayfaya dön
+  // Arama
   const onSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // 🆕 Limit değişimi
+  const onLimitChange = (e) => {
+    const raw = parseInt(e.target.value, 10);
+    const clamped = isNaN(raw) ? 10 : Math.min(50, Math.max(1, raw));
+    setLimit(clamped);
     setCurrentPage(1);
   };
 
@@ -61,11 +73,12 @@ const Camlar = () => {
     setIsLoading(true);
     try {
       await dispatch(addCamToApi(row));
-      await dispatch(getCamlarFromApi(currentPage, searchTerm, 5));
+      const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+      await dispatch(getCamlarFromApi(currentPage, searchTerm, safeLimit));
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch, currentPage, searchTerm]);
+  }, [dispatch, currentPage, searchTerm, limit]);
 
   const handleEditCam = useCallback(async (row) => {
     setIsLoading(true);
@@ -74,11 +87,12 @@ const Camlar = () => {
         cam_isim: row.cam_isim,
         thickness_mm: row.thickness_mm
       }));
-      await dispatch(getCamlarFromApi(currentPage, searchTerm, 5));
+      const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+      await dispatch(getCamlarFromApi(currentPage, searchTerm, safeLimit));
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch, currentPage, searchTerm]);
+  }, [dispatch, currentPage, searchTerm, limit]);
 
   // Sil: modal aç
   const askDelete = (cam) => {
@@ -92,7 +106,8 @@ const Camlar = () => {
     try {
       setDeleting(true);
       await dispatch(sellCamOnApi(pendingDelete.id));
-      await dispatch(getCamlarFromApi(currentPage, searchTerm, 5));
+      const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+      await dispatch(getCamlarFromApi(currentPage, searchTerm, safeLimit));
     } finally {
       setDeleting(false);
       setPendingDelete(null);
@@ -100,96 +115,127 @@ const Camlar = () => {
     }
   };
 
+  const totalPages = data.total_pages || 1;
+
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Camlar" />
 
       <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
-        {/* Arama ve Ekle (tasarımı bozma) */}
-        <div className="flex flex-col md:flex-row items-center gap-4">
+        {/* Arama + Limit + Ekle */}
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
           <input
             type="text"
             placeholder="Cam ismine göre ara..."
             value={searchTerm}
             onChange={onSearchChange}
-            className="input input-bordered w-full"
+            className="input input-bordered w-full md:max-w-sm"
           />
+
+        {/* 🆕 Kayıt Sayısı (limit) */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm opacity-80">Cam Sayısı</label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={limit}
+              onChange={onLimitChange}
+              className="input input-bordered input-sm w-24 text-center"
+              title="Sayfa Başına Kayıt (min:1 / max:50)"
+            />
+          </div>
+
+          {/* Not: DialogCamEkle kendi tetikleyicisini içeriyor. İstersen asChild ile AppButton'a taşıyabiliriz. */}
           <DialogCamEkle onSave={handleAddCam} />
         </div>
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full">
+          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
             <thead>
-              <tr>
+              <tr className="border-b border-base-500 dark:border-gray-500">
                 <th>Cam İsmi</th>
-                <th className="text-right">İşlemler</th>
+                <th className="text-center">İşlemler</th>
               </tr>
             </thead>
 
             {isLoading ? (
               <tbody>
-                <tr>
+                <tr className="border-b border-base-400 dark:border-gray-500">
                   <td colSpan={2}>
                     <Spinner />
                   </td>
                 </tr>
               </tbody>
-            ) : (
+            ) : (data.items?.length > 0 ? (
               <tbody>
-                {data.items?.length > 0 ? data.items.map(cam => (
-                  <tr key={cam.id}>
+                {data.items.map(cam => (
+                  <tr key={cam.id} className="border-b border-base-300 dark:border-gray-500">
                     <td>{cam.cam_isim}</td>
-                    <td className="text-right space-x-2">
-                      <DialogCamDuzenle cam={cam} onSave={handleEditCam} />
-                      <button
+                    <td className="text-center space-x-2">
+                      {/* Düzenle: sari, sm, dikdörtgen */}
+                      <DialogCamDuzenle cam={cam} onSave={handleEditCam} asChild>
+                        <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
+                          Düzenle
+                        </AppButton>
+                      </DialogCamDuzenle>
+
+                      {/* Sil: kirmizi, sm, dikdörtgen */}
+                      <AppButton
+                        variant="kirmizi"
+                        size="sm"
+                        shape="none"
                         onClick={() => askDelete(cam)}
-                        className="btn btn-error btn-sm"
+                        title="Sil"
                       >
                         Sil
-                      </button>
+                      </AppButton>
                     </td>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={2} className="text-center text-muted-foreground py-4">
-                      Veri bulunamadı
-                    </td>
-                  </tr>
-                )}
+                ))}
               </tbody>
-            )}
+            ) : (
+              <tbody>
+                <tr>
+                  <td colSpan={2} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                    Veri bulunamadı
+                  </td>
+                </tr>
+              </tbody>
+            ))}
           </table>
         </div>
 
-        {/* Sayfalama — boyalardakiyle aynı: İlk/Önceki/Input/Sonraki/Son + toplam */}
+        {/* Sayfalama */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-          {/* İlk */}
-          <button
-            className="btn btn-sm"
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
             onClick={() => setCurrentPage(1)}
             disabled={data.page === 1}
             title="İlk sayfa"
           >
             « İlk
-          </button>
+          </AppButton>
 
-          {/* Önceki */}
-          <button
-            className="btn btn-sm"
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
             onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
             disabled={!data.has_prev}
             title="Önceki sayfa"
           >
             ‹ Önceki
-          </button>
+          </AppButton>
 
-          {/* Sayfa inputu (Enter ile git) + toplam */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               const val = parseInt(e.target.elements.pageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= data.total_pages) {
+              if (!isNaN(val) && val >= 1 && val <= totalPages) {
                 setCurrentPage(val);
               }
             }}
@@ -199,36 +245,43 @@ const Camlar = () => {
               type="number"
               name="pageNum"
               min={1}
-              max={data.total_pages}
-              defaultValue={data.page}
+              max={totalPages}
+              value={currentPage}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (isNaN(val)) return setCurrentPage(1);
+                setCurrentPage(Math.min(Math.max(1, val), totalPages));
+              }}
               className="input input-bordered input-sm w-16 text-center"
             />
-            <span className="text-sm">/ {data.total_pages}</span>
+            <span className="text-sm">/ {totalPages}</span>
           </form>
 
-          {/* Sonraki */}
-          <button
-            className="btn btn-sm"
-            onClick={() => setCurrentPage(p => p + 1)}
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={!data.has_next}
             title="Sonraki sayfa"
           >
             Sonraki ›
-          </button>
+          </AppButton>
 
-          {/* Son */}
-          <button
-            className="btn btn-sm"
-            onClick={() => setCurrentPage(data.total_pages)}
-            disabled={data.page === data.total_pages || data.total_pages <= 1}
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={data.page === totalPages || totalPages <= 1}
             title="Son sayfa"
           >
             Son »
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      {/* Silme Onay Modali (shadcn/ui) */}
+      {/* Silme Onay Modali */}
       <ConfirmDeleteModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

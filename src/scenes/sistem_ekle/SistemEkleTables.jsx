@@ -1,4 +1,3 @@
-// src/scenes/sistemekle/SistemEkleTables.jsx
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -6,6 +5,7 @@ import * as math from 'mathjs';
 import { editProjeSystemOnApi } from '@/redux/actions/actions_projeler.js';
 import { getSystemFullVariantsOfSystemFromApi } from '@/redux/actions/actions_sistemler.js';
 import DialogSistemDuzenleOnProject from './DialogSistemDuzenleOnProject.jsx';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const SistemEkleTables = ({ systems = [], onRefresh }) => {
   const dispatch = useDispatch();
@@ -144,21 +144,25 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
                   <td>{sys.height_mm}</td>
                   <td>{sys.quantity}</td>
                   <td className="text-right space-x-2">
-                    <button
+                    <AppButton
                       onClick={() => handleEdit(sys)}
+                      variant="sari"
+                      size="sm"
+                      shape="none"
                       disabled={savingEdit}
-                      className="btn btn-warning btn-sm"
                       title="Sistemi düzenle"
                     >
                       {savingEdit ? "Kaydediliyor…" : "Düzenle"}
-                    </button>
-                    <button
-                      className="btn btn-error btn-sm"
+                    </AppButton>
+                    <AppButton
+                      variant="kirmizi"
+                      size="sm"
+                      shape="none"
                       disabled={savingEdit}
                       title="Sistemi sil"
                     >
                       Sil
-                    </button>
+                    </AppButton>
                   </td>
                 </tr>
               );

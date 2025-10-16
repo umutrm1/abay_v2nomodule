@@ -1,6 +1,4 @@
-// src/scenes/profiller/DialogProfilEkle.jsx
 import React, { useState } from 'react';
-// Müşterilerde olduğu gibi ui/dialog parçalarını alıyoruz
 import {
   Dialog,
   DialogContent,
@@ -9,8 +7,9 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogProfilEkle = ({ onSave }) => {
+const DialogProfilEkle = ({ onSave, children }) => {
   // 1) Form alanlarını tutacak state
   const [form, setForm] = useState({
     profil_kodu: '',
@@ -33,16 +32,22 @@ const DialogProfilEkle = ({ onSave }) => {
   // 3) Kaydet butonuna tıklanınca parent onSave çağrısı
   const handleSave = () => {
     onSave(form);
-    // istersen burada form reset de edebilirsin
   };
 
   return (
     <Dialog>
-      {/* 4) Butona tıklayınca modal açılır */}
+      {/* 4) Modal tetikleyici (AppButton) */}
       <DialogTrigger asChild>
-        <button className="btn btn-primary w-40 ml-auto">
-          + Profil Ekle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+            title="Yeni profil ekle"
+          >
+            + Profil Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
 
       {/* 5) Modal içeriği */}
@@ -52,7 +57,6 @@ const DialogProfilEkle = ({ onSave }) => {
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          {/* 6) Her alan için label + input */}
           <label>Profil Kodu</label>
           <input
             name="profil_kodu"
@@ -86,14 +90,19 @@ const DialogProfilEkle = ({ onSave }) => {
             onChange={handleChange}
             className="input input-bordered"
           />
-
         </div>
 
-        {/* 7) Kaydet: modal kapanır, handleSave çağrılır */}
+        {/* 7) Kaydet (AppButton) */}
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Kaydet ve kapat"
+          >
             Kaydet
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

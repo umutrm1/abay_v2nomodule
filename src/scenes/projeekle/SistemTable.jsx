@@ -1,11 +1,9 @@
-// src/scenes/projeler/SistemTable.jsx
 import React from 'react';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const SistemTable = ({ systems = [], onEdit, onDelete }) => {
-  // Sistem adı: "<ana sistem> <varyant adı>"
   const fullName = (s) => `${s.system?.name || ''} ${s.name || ''}`.trim();
 
-  // İsimlere göre sırala
   const sorted = [...systems].sort((a, b) =>
     fullName(a).toLowerCase().localeCompare(fullName(b).toLowerCase())
   );
@@ -36,20 +34,24 @@ const SistemTable = ({ systems = [], onEdit, onDelete }) => {
                 <td className="text-right">{showNum(sys.height_mm)}</td>
                 <td className="text-right">{showNum(sys.quantity)}</td>
                 <td className="text-right space-x-2">
-                  <button
-                    className="btn btn-sm btn-outline btn-info"
+                  <AppButton
+                    variant="sari"
+                    size="sm"
+                    shape="none"
                     onClick={() => onEdit?.(sys)}
-                    aria-label="Sistemi düzenle"
+                    title="Sistemi düzenle"
                   >
                     Düzenle
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline btn-error"
+                  </AppButton>
+                  <AppButton
+                    variant="kirmizi"
+                    size="sm"
+                    shape="none"
                     onClick={() => onDelete?.(sys)}
-                    aria-label="Sistemi sil"
+                    title="Sistemi sil"
                   >
                     Sil
-                  </button>
+                  </AppButton>
                 </td>
               </tr>
             ))

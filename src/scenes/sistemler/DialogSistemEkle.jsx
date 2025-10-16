@@ -1,4 +1,3 @@
-// src/scenes/sistemler/DialogSistemEkle.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -6,7 +5,6 @@ import {
   getSystemImageFromApi,
   deleteSystemImageOnApi,
 } from "@/redux/actions/actions_sistemler.js";
-// Dialog parçaları
 import {
   Dialog,
   DialogTrigger,
@@ -15,173 +13,114 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const DialogSistemEkle = ({ system, onSave }) => {
-  // 1) system varsa düzenleme, yoksa ekleme formu
   const [form, setForm] = useState({ name: '', description: '' });
-
-  // 2) Foto yükleme/silme local state
   const [photoFile, setPhotoFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const dispatch = useDispatch();
-
-  // 3) Mevcut görseli store’dan oku (düzenle modunda)
   const sysId = system?.id;
   const sysImage = useSelector(s => s.getSystemImageFromApiReducer?.[sysId]);
   const existingUrl = sysImage?.imageUrl;
 
-  // 4) system değişince formu doldur ve görseli çek
   useEffect(() => {
     if (system) {
       setForm({ name: system.name, description: system.description || "" });
-      // Mevcut görseli getir (önizleme için)
       if (system.id) dispatch(getSystemImageFromApi(system.id));
     } else {
       setForm({ name: '', description: '' });
     }
-    // yeni sistem ekleme ekranına her girişte dosya seçimini sıfırla
     setPhotoFile(null);
   }, [system, dispatch]);
 
-  // 5) Input/textarea handler
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target; setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // 6) Local seçilen foto’nun geçici önizlemesi (varsa)
   const localPreview = useMemo(() => {
     if (!photoFile) return null;
-    try {
-      return URL.createObjectURL(photoFile);
-    } catch {
-      return null;
-    }
+    try { return URL.createObjectURL(photoFile); } catch { return null; }
   }, [photoFile]);
 
-  // 7) Kaydet/Güncelle — üst parent’a foto dosyasını da iletiyoruz
-  const handleSave = () => {
-    onSave({ id: system?.id, ...form, photoFile });
-  };
+  const handleSave = () => { onSave({ id: system?.id, ...form, photoFile }); };
 
-  // 8) Düzenle modunda tek tıkla yükle
   const handleUploadNow = async () => {
     if (!sysId || !photoFile) return;
     try {
       setUploading(true);
       await dispatch(AddOrUpdateSystemImageFromApi(sysId, photoFile));
-      await dispatch(getSystemImageFromApi(sysId)); // taze önizleme
-      setPhotoFile(null); // seçim sıfırlansın
-    } finally {
-      setUploading(false);
-    }
+      await dispatch(getSystemImageFromApi(sysId));
+      setPhotoFile(null);
+    } finally { setUploading(false); }
   };
 
-  // 9) Düzenle modunda foto sil
   const handleDeletePhoto = async () => {
     if (!sysId) return;
     try {
       setDeleting(true);
       await dispatch(deleteSystemImageOnApi(sysId));
-      // local seçili dosya da sıfırlansın
       setPhotoFile(null);
-    } finally {
-      setDeleting(false);
-    }
+    } finally { setDeleting(false); }
   };
 
   return (
     <Dialog>
-      {/* Trigger */}
       <DialogTrigger asChild>
         {system ? (
-          <button className="btn btn-warning btn-sm">
-            Düzenle
-          </button>
+          <AppButton size="sm" variant="sari" shape="none">Düzenle</AppButton>
         ) : (
-          <button className="btn btn-primary w-40 ml-auto text-lg">
-            + Sistem Ekle
-          </button>
+          <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">+ Sistem Ekle</AppButton>
         )}
       </DialogTrigger>
 
-      {/* İçerik */}
       <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {system ? 'Sistem Düzenle' : 'Yeni Sistem Ekle'}
-          </DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>{system ? 'Sistem Düzenle' : 'Yeni Sistem Ekle'}</DialogTitle></DialogHeader>
 
         <div className="grid gap-3 py-4">
           <label className="text-sm text-muted-foreground">Sistem İsmi</label>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Sistem İsmi"
-            className="input input-bordered"
-          />
+          <input name="name" value={form.name} onChange={handleChange} placeholder="Sistem İsmi" className="input input-bordered" />
 
           <label className="text-sm text-muted-foreground">Açıklama</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Açıklama"
-            className="textarea textarea-bordered"
-          />
+          <textarea name="description" value={form.description} onChange={handleChange} placeholder="Açıklama" className="textarea textarea-bordered" />
 
-          {/* --- Sistem Fotoğraf Alanı --- */}
           <div className="mt-2">
             <label className="block mb-2 text-sm text-muted-foreground">Sistem Fotoğraf</label>
 
-            {/* Önizleme kutusu */}
             <div className="w-full aspect-video bg-muted/20 rounded flex items-center justify-center overflow-hidden border border-border">
               {(localPreview || existingUrl) ? (
-                <img
-                  src={localPreview || existingUrl}
-                  alt="Önizleme"
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <span className="text-muted-foreground text-sm">Görsel yok</span>
-              )}
+                <img src={localPreview || existingUrl} alt="Önizleme" className="w-full h-full object-contain" />
+              ) : (<span className="text-muted-foreground text-sm">Görsel yok</span>)}
             </div>
 
-            {/* Dosya seç + aksiyonlar */}
             <div className="flex items-center gap-2 mt-3">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                className="file-input file-input-bordered file-input-sm"
-              />
+              <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} className="file-input file-input-bordered file-input-sm" />
 
-              {/* Düzenle modunda anında yükle */}
-              <button
-                className="btn btn-sm btn-primary"
+              <AppButton
+                size="sm"
+                variant="kurumsalmavi"
+                shape="none"
                 onClick={handleUploadNow}
                 disabled={!sysId || !photoFile || uploading}
                 title={!sysId ? "Önce sistemi kaydedin" : (!photoFile ? "Önce dosya seçin" : "")}
               >
                 {uploading ? "Yükleniyor..." : "Yükle"}
-              </button>
+              </AppButton>
 
-              {/* Düzenle modunda sil */}
-              <button
-                className="btn btn-sm btn-error"
+              <AppButton
+                size="sm"
+                variant="kirmizi"
+                shape="none"
                 onClick={handleDeletePhoto}
                 disabled={!sysId || deleting}
                 title={!sysId ? "Kayıtlı sistemde kullanılabilir" : ""}
               >
                 {deleting ? "Siliniyor..." : "Sil"}
-              </button>
+              </AppButton>
             </div>
 
-            {/* Bilgi notu */}
             {!sysId && (
               <p className="text-xs text-muted-foreground mt-1">
                 * Yeni sistem eklemede fotoğraf, <b>Kaydet</b>’e bastıktan sonra otomatik yüklenecektir.
@@ -190,11 +129,8 @@ const DialogSistemEkle = ({ system, onSave }) => {
           </div>
         </div>
 
-        {/* Kaydet/Güncelle */}
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
-            {system ? 'Güncelle' : 'Kaydet'}
-          </button>
+          <AppButton variant="kurumsalmavi" onClick={handleSave}>{system ? 'Güncelle' : 'Kaydet'}</AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

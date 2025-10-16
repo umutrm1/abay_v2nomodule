@@ -1,4 +1,3 @@
-// src/scenes/projeekle/DialogCamRenkSec.jsx
 import React, { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as RadixDialog from "@radix-ui/react-dialog";
@@ -6,6 +5,7 @@ import * as RadixDialog from "@radix-ui/react-dialog";
 import PagedSelectDialog from "./PagedSelectDialog.jsx";
 import { getGlassColorFromApi } from "@/redux/actions/actions_boyalar.js";
 import * as actions_projeler from "@/redux/actions/actions_projeler.js";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const EMPTY_PAGE = { items: [], total: 0, page: 1, limit: 5, total_pages: 1, has_next: false, has_prev: false };
 const LIMIT = 5;
@@ -31,14 +31,15 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
   const fetchPage = useCallback((page, q) => dispatch(getGlassColorFromApi(page, q, LIMIT)), [dispatch]);
 
   // Üst mod düğmeleri
-  const [mode, setMode] = useState("bySystem"); // "bySystem" | "byType"
+  const [mode, setMode] = useState("bySystem"); // "bySystem" | "byType" | "all"
 
   // Alt renk seçim modalı durumu
   const [colorDialogOpen, setColorDialogOpen] = useState(false);
   const [target, setTarget] = useState(null);
   // target:
   //   { type: 'single', psgId }
-  //   { type: 'bulk',  glass_type_id, psgIds: [] }
+  //   { type: 'bulk',  glass_type_id, system_variant_id }
+  //   { type: 'all' }
 
   // Refresh spinner (overlay) kontrolü
   const [refreshing, setRefreshing] = useState(false);
@@ -77,7 +78,7 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
     return `Karma (${names.size} renk)`;
   }, [systems]);
 
-  // Tek bir cam satırı (system-glass) için renk modalını aç
+  // Tek bir cam satırı için renk modalını aç
   const openColorForSingle = (psgId) => {
     setTarget({ type: "single", psgId });
     setColorDialogOpen(true);
@@ -85,7 +86,6 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
 
   // Belirli cam türündeki tüm satırlar için renk modalını aç
   const openColorForType = (glass_type_id) => {
-    // Bu cam türünün geçtiği ilk sistemin system_variant_id'sini al
     let system_variant_id = null;
     for (const sys of systems) {
       const hit = (sys.glasses || []).some((g) => g.glass_type_id === glass_type_id);
@@ -107,34 +107,28 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
       setRefreshing(true);
 
       if (target.type === "single") {
-        await console.log(row.id)
-        // single: psgId target'tan gelir, body: { glass_color_id }
         await dispatch(
           actions_projeler.updateSystemGlassColorInProject(projectId, target.psgId, glassColorId)
         );
-      } else {
-        // byType: backend'in istediği obje ile gönder
-        await console.log(target.system_variant_id , " " , target.glass_type_id , " " , glassColorId)
-   if (target.type === "bulk") {
-     await dispatch(
-       actions_projeler.updateSameGlassesInProject(
-         projectId,
-         target.system_variant_id,
-         target.glass_type_id,
-         glassColorId
-       )
-     );
-   } else if (target.type === "all") {
-     await dispatch(
-       actions_projeler.updateAllGlassesColorInProject(projectId, glassColorId)
-     );
-   }
+      } else if (target.type === "bulk") {
+        await dispatch(
+          actions_projeler.updateSameGlassesInProject(
+            projectId,
+            target.system_variant_id,
+            target.glass_type_id,
+            glassColorId
+          )
+        );
+      } else if (target.type === "all") {
+        await dispatch(
+          actions_projeler.updateAllGlassesColorInProject(projectId, glassColorId)
+        );
       }
 
       // Yalnızca renk seçme modalını kapat (ana dialog açık kalsın)
       setColorDialogOpen(false);
 
-      // Gereksinimleri tazele (ana dialog açıkken içerik güncellensin)
+      // Gereksinimleri tazele
       await dispatch(actions_projeler.getProjeRequirementsFromApi(projectId));
     } finally {
       setRefreshing(false);
@@ -145,16 +139,16 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        {/* Overlay — PagedSelectDialog ile aynı: simetrik fade in/out */}
+        {/* Overlay */}
         <RadixDialog.Overlay
           className="fixed inset-0 z-40 bg-black/30
                      data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200 data-[state=open]:ease-in-out
                      data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-200 data-[state=closed]:ease-in-out"
         />
 
-        {/* Merkezleme wrapper (PagedSelectDialog ile hizalı) */}
+        {/* Merkezleme wrapper */}
         <div className="fixed inset-0 z-50 grid place-items-center p-4">
-          {/* Panel (Content) — PagedSelectDialog ile aynı giriş/çıkış: fade + zoom + slide-from-top */}
+          {/* Panel */}
           <RadixDialog.Content
             className="relative w-full max-w-[1000px] max-h-[90vh]
                        bg-card text-foreground border border-border rounded-2xl shadow-xl
@@ -171,29 +165,38 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
 
             <div className="flex items-center justify-between mb-4">
               <RadixDialog.Title className="text-lg font-semibold">Cam Rengini Uygula</RadixDialog.Title>
-              <RadixDialog.Close className="btn btn-sm">Kapat</RadixDialog.Close>
+
             </div>
 
             {/* Üst mod düğmeleri */}
             <div className="flex gap-2 mb-4">
-              <button
-                className={`btn btn-sm ${mode === "bySystem" ? "bg-blue-600 text-white" : "btn-outline"}`}
+              <AppButton
+                variant={mode === "bySystem" ? "kurumsalmavi" : "gri"}
+                size="sm"
+                shape="none"
                 onClick={() => setMode("bySystem")}
+                title="Sistem içindeki tek cam satırına göre uygula"
               >
                 Sistem İçindeki Cama Göre
-              </button>
-              <button
-                className={`btn btn-sm ${mode === "byType" ? "bg-blue-600 text-white" : "btn-outline"}`}
+              </AppButton>
+              <AppButton
+                variant={mode === "byType" ? "kurumsalmavi" : "gri"}
+                size="sm"
+                shape="none"
                 onClick={() => setMode("byType")}
+                title="Cam türüne göre tüm satırlara uygula"
               >
                 Cam Türüne Göre
-              </button>
-   <button
-     className={`btn btn-sm ${mode === "all" ? "bg-blue-600 text-white" : "btn-outline"}`}
-     onClick={() => setMode("all")}
-   >
-     Tüm Camlar
-   </button>
+              </AppButton>
+              <AppButton
+                variant={mode === "all" ? "kurumsalmavi" : "gri"}
+                size="sm"
+                shape="none"
+                onClick={() => setMode("all")}
+                title="Projede yer alan tüm camlara uygula"
+              >
+                Tüm Camlar
+              </AppButton>
             </div>
 
             {/* İçerik */}
@@ -232,12 +235,15 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
                                 <td>{g.count}</td>
                                 <td>{g?.glass_color?.name || "-"}</td>
                                 <td className="text-right">
-                                  <button
-                                    className="btn btn-xs bg-blue-600 text-white hover:bg-blue-700"
-                                    onClick={() => openColorForSingle(g.id /* project_system_glass_id */)}
+                                  <AppButton
+                                    variant="kurumsalmavi"
+                                    size="sm"
+                                    shape="none"
+                                    onClick={() => openColorForSingle(g.id)}
+                                    title="Bu cam için renk seç"
                                   >
                                     Renk Seç
-                                  </button>
+                                  </AppButton>
                                 </td>
                               </tr>
                             ))}
@@ -259,7 +265,6 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {uniqueGlassTypes.map((t, idx) => {
                     const summary = getColorSummaryForType(t.glass_type_id);
-                    // Bilgi amaçlı: bu türün kaç satırda geçtiği
                     const totalRowsForType = systems.reduce((acc, sys) => {
                       const c = (sys.glasses || []).filter((g) => g.glass_type_id === t.glass_type_id).length;
                       return acc + c;
@@ -272,12 +277,15 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
                             Bu türden {totalRowsForType} satır var • Mevcut renk: <b>{summary}</b>
                           </div>
                         </div>
-                        <button
-                          className="btn btn-sm bg-blue-600 text-white hover:bg-blue-700"
+                        <AppButton
+                          variant="kurumsalmavi"
+                          size="sm"
+                          shape="none"
                           onClick={() => openColorForType(t.glass_type_id)}
+                          title="Bu cam türündeki tüm satırlar için renk seç"
                         >
                           Renk Seç
-                        </button>
+                        </AppButton>
                       </div>
                     );
                   })}
@@ -288,27 +296,35 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
                   )}
                 </div>
               )}
-   {mode === "all" && (
-     <div className="border border-border rounded-xl p-4 flex items-center justify-between">
-       <div>
-         <div className="font-medium">Projede yer alan tüm camlar</div>
-         <div className="text-xs text-muted-foreground">
-           Seçtiğiniz renk, projedeki tüm camlara uygulanacaktır.
-         </div>
-       </div>
-       <button
-         className="btn btn-sm bg-blue-600 text-white hover:bg-blue-700"
-         onClick={() => { setTarget({ type: "all" }); setColorDialogOpen(true); }}
-       >
-         Renk Seç
-       </button>
-     </div>
-   )}
+
+              {mode === "all" && (
+                <div className="border border-border rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Projede yer alan tüm camlar</div>
+                    <div className="text-xs text-muted-foreground">
+                      Seçtiğiniz renk, projedeki tüm camlara uygulanacaktır.
+                    </div>
+                  </div>
+                  <AppButton
+                    variant="kurumsalmavi"
+                    size="sm"
+                    shape="none"
+                    onClick={() => { setTarget({ type: "all" }); setColorDialogOpen(true); }}
+                    title="Tüm camlara renk uygula"
+                  >
+                    Renk Seç
+                  </AppButton>
+                </div>
+              )}
             </div>
 
             {/* Alt kapat butonu */}
             <div className="mt-4 flex justify-end">
-              <RadixDialog.Close className="btn btn-sm">Kapat</RadixDialog.Close>
+              <RadixDialog.Close asChild>
+                <AppButton variant="kirmizi" size="sm" shape="none" title="Kapat">
+                  Kapat
+                </AppButton>
+              </RadixDialog.Close>
             </div>
 
             {/* ALT (renk) SEÇİM MODALI */}

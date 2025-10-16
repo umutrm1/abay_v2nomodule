@@ -1,9 +1,9 @@
-
 // actions_pdfConfig.js
 import axios from 'axios';
 
 const api = axios.create({ baseURL: 'http://localhost:3000' });
 
+// sadece GET var — toast eklemedim
 export const getPdfConfigByKey = (key) => async (dispatch) => {
   const { data } = await api.get(`/pdfler?key=${encodeURIComponent(key)}`);
   const rec = Array.isArray(data) ? data[0] : data;

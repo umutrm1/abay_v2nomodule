@@ -11,6 +11,7 @@ import Header from '@/components/mycomponents/Header.jsx';
 import DialogMusteriEkle from './DialogMusteriEkle.jsx';
 import DialogMusteriDuzenle from './DialogMusteriDuzenle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -40,42 +41,56 @@ const Musteriler = () => {
   const [page, setPage] = useState(1);
   const [listLoading, setListLoading] = useState(false);
 
+  // 🆕 Limit
+  const [limit, setLimit] = useState(10);
+
   // Silme modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Listeyi çek (sayfa/arama değişince)
+  // Listeyi çek
   useEffect(() => {
     setListLoading(true);
-    Promise.resolve(dispatch(getMusterilerFromApi(page, search, 5)))
+    const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+    Promise.resolve(dispatch(getMusterilerFromApi(page, search, safeLimit)))
       .finally(() => setListLoading(false));
-  }, [dispatch, page, search]);
+  }, [dispatch, page, search, limit]);
 
-  // Arama değişince 1. sayfaya dön
+  // Arama
   const onSearchChange = (e) => {
     setSearch(e.target.value);
     setPage(1);
   };
 
+  // Limit
+  const onLimitChange = (e) => {
+    const raw = parseInt(e.target.value, 10);
+    const clamped = isNaN(raw) ? 10 : Math.min(50, Math.max(1, raw));
+    setLimit(clamped);
+    setPage(1);
+  };
+
   // EKLE
   const handleAdd = useCallback(async (payload) => {
+    const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
     await dispatch(addMusteriToApi(payload));
-    await dispatch(getMusterilerFromApi(page, search, 5));
-  }, [dispatch, page, search]);
+    await dispatch(getMusterilerFromApi(page, search, safeLimit));
+  }, [dispatch, page, search, limit]);
 
   // DÜZENLE
   const handleEdit = useCallback(async (musteri) => {
+    const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
     await dispatch(editMusteriOnApi(musteri.id, {
       company_name: musteri.company_name,
       name:        musteri.name,
       phone:       musteri.phone,
       city:        musteri.city
     }));
-    await dispatch(getMusterilerFromApi(page, search, 5));
-  }, [dispatch, page, search]);
+    await dispatch(getMusterilerFromApi(page, search, safeLimit));
+  }, [dispatch, page, search, limit]);
 
-  // SİL → modal aç
+  // SİL
   const askDelete = (m) => {
     setPendingDelete(m);
     setDeleteOpen(true);
@@ -84,8 +99,9 @@ const Musteriler = () => {
     if (!pendingDelete) return;
     try {
       setDeleting(true);
+      const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
       await dispatch(deleteMusteriOnApi(pendingDelete.id));
-      await dispatch(getMusterilerFromApi(page, search, 5));
+      await dispatch(getMusterilerFromApi(page, search, safeLimit));
     } finally {
       setDeleting(false);
       setPendingDelete(null);
@@ -93,102 +109,122 @@ const Musteriler = () => {
     }
   };
 
+  const totalPages = data.total_pages || 1;
+
   return (
     <div className="grid grid-rows-[60px_1fr]">
       <Header title="Müşteriler" />
 
       <div className="bg-card w-full border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
-        {/* Arama & Ekle — (tasarım korunur) */}
-        <div className="flex flex-col md:flex-row items-center gap-4">
+        {/* Arama & Ekle & Kayıt Sayısı */}
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
           <input
             type="text"
             placeholder="Müşteri ismine göre ara..."
             value={search}
             onChange={onSearchChange}
-            className="input input-bordered w-full md:w-1/2 lg:w-1/3"
+            className="input input-bordered w-full md:max-w-sm"
           />
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm opacity-80">Müşteri Sayısı</label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={limit}
+              onChange={onLimitChange}
+              className="input input-bordered input-sm w-24 text-center"
+              title="Sayfa Başına Kayıt (min:1 / max:50)"
+            />
+          </div>
+
           <DialogMusteriEkle onSave={handleAdd} />
         </div>
 
         {/* Tablo */}
         <div className="flex-grow overflow-x-auto">
-          <table className="table w-full">
+          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
             <thead>
-              <tr>
+              <tr className="border-b border-base-500 dark:border-gray-500 ">
                 <th>Şirket İsmi</th>
                 <th>İsim</th>
                 <th>Telefon</th>
                 <th>Şehir</th>
-                <th className="text-right">İşlemler</th>
+                <th className="text-center">İşlemler</th>
               </tr>
             </thead>
 
             {listLoading ? (
               <tbody>
-                <tr><td colSpan={5}><Spinner /></td></tr>
+                <tr className="border-b border-base-400 dark:border-gray-500 ">
+                  <td colSpan={5}><Spinner /></td>
+                </tr>
+              </tbody>
+            ) : ( (data.items ?? []).length > 0 ? (
+              <tbody>
+                {data.items.map(m => (
+                  <tr key={m.id} className="border-b border-base-300 dark:border-gray-500 ">
+                    <td className="font-bold">{m.company_name}</td>
+                    <td>{m.name}</td>
+                    <td>{m.phone}</td>
+                    <td>{m.city}</td>
+                    <td className="text-center space-x-2">
+                      <DialogMusteriDuzenle musteri={m} onSave={handleEdit} />
+                      <AppButton
+                        onClick={() => askDelete(m)}
+                        variant="kirmizi"
+                        size="sm"
+                        shape="none"
+                        title="Müşteriyi sil"
+                      >
+                        Sil
+                      </AppButton>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             ) : (
               <tbody>
-                {(data.items ?? []).length > 0 ? (
-                  data.items.map(m => (
-                    <tr key={m.id} className="hover">
-                      <td className="font-bold">{m.company_name}</td>
-                      <td>{m.name}</td>
-                      <td>{m.phone}</td>
-                      <td>{m.city}</td>
-                      <td className="text-right space-x-2">
-                        <DialogMusteriDuzenle musteri={m} onSave={handleEdit} />
-                        <button
-                          onClick={() => askDelete(m)}
-                          className="btn btn-sm btn-outline btn-error"
-                        >
-                          Sil
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="text-center text-muted-foreground py-10">
-                      Gösterilecek müşteri bulunamadı.
-                    </td>
-                  </tr>
-                )}
+                <tr>
+                  <td colSpan={5} className="border-b border-base-500 text-center text-muted-foreground py-10">
+                    Gösterilecek müşteri bulunamadı.
+                  </td>
+                </tr>
               </tbody>
-            )}
+            ))}
           </table>
         </div>
 
-        {/* Sayfalama — boyalardakiyle aynı: İlk/Önceki/Input/Sonraki/Son + toplam */}
-        <div className="flex justify-center items-center mt-4 px-4 gap-2 sm:gap-3">
-          {/* İlk */}
-          <button
-            className="btn btn-sm"
+        {/* Sayfalama */}
+        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
             onClick={() => setPage(1)}
             disabled={data.page === 1}
             title="İlk sayfa"
           >
             « İlk
-          </button>
+          </AppButton>
 
-          {/* Önceki */}
-          <button
-            className="btn btn-sm"
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
             onClick={() => setPage(p => Math.max(p - 1, 1))}
             disabled={!data.has_prev}
             title="Önceki sayfa"
           >
             ‹ Önceki
-          </button>
+          </AppButton>
 
-          {/* Sayfa inputu (Enter ile git) + toplam */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               const val = parseInt(e.target.elements.pageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= data.total_pages) {
-                setPage(val);
-              }
+              if (!isNaN(val) && val >= 1 && val <= totalPages) setPage(val);
             }}
             className="flex items-center gap-1"
           >
@@ -196,36 +232,43 @@ const Musteriler = () => {
               type="number"
               name="pageNum"
               min={1}
-              max={data.total_pages}
-              defaultValue={data.page}
+              max={totalPages}
+              value={page}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (isNaN(val)) return setPage(1);
+                setPage(Math.min(Math.max(1, val), totalPages));
+              }}
               className="input input-bordered input-sm w-16 text-center"
             />
-            <span className="text-sm">/ {data.total_pages}</span>
+            <span className="text-sm">/ {totalPages}</span>
           </form>
 
-          {/* Sonraki */}
-          <button
-            className="btn btn-sm"
-            onClick={() => setPage(p => p + 1)}
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={!data.has_next}
             title="Sonraki sayfa"
           >
             Sonraki ›
-          </button>
+          </AppButton>
 
-          {/* Son */}
-          <button
-            className="btn btn-sm"
-            onClick={() => setPage(data.total_pages)}
-            disabled={data.page === data.total_pages || data.total_pages <= 1}
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={() => setPage(totalPages)}
+            disabled={data.page === totalPages || totalPages <= 1}
             title="Son sayfa"
           >
             Son »
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      {/* Silme Onay Modali (shadcn/Radix) */}
+      {/* Silme Onay Modali */}
       <ConfirmDeleteModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

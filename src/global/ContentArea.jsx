@@ -24,7 +24,6 @@ import ProjeDuzenle from "@/scenes/projeekle/ProjeDuzenle.jsx";
 import SistemEkle from "@/scenes/sistem_ekle/SistemEkle.jsx";
 import SistemSec from "@/scenes/sistemsec/SistemSec.jsx";
 import EkstraMalzemeEkle from "@/scenes/ekstramalzemeekle/EkstraMalzemeEkle.jsx";
-import SistemVaryantOlustur from "@/scenes/sistemler/SistemVaryantOlustur.jsx";
 import Boyalar from "@/scenes/boyalar/Boyalar.jsx";
 import TanimlanmayanSayfa from "@/scenes/tanimlanmayan_sayfa/TanimlanmayanSayfa.jsx";
 import SistemVaryantDuzenle from "@/scenes/sistemler/SistemVaryantDuzenle.jsx";
@@ -82,7 +81,6 @@ const ContentArea = () => {
               <Route path="/sistemsec/:projectId" element={<SistemSec />} />
               <Route path="/ekstramalzemeekle/:projectId" element={<EkstraMalzemeEkle />} />
               <Route path="*" element={<TanimlanmayanSayfa />} />
-              <Route path="/sistemvaryantolustur" element={<SistemVaryantOlustur />} />
               <Route path="/boyalar" element={<Boyalar />} />
               <Route path="/sistemvaryantduzenle/:variantId" element={<SistemVaryantDuzenle />} />
               <Route path="/kumandalar" element={<Kumandalar />} />

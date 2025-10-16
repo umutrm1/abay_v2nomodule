@@ -7,6 +7,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const initialForm = { project_name: "" };
 
@@ -45,9 +46,11 @@ const DialogProjeEkle = ({ onSave }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button className="btn btn-primary w-40 ml-auto">
+        <AppButton
+variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+        >
           + Proje Ekle
-        </button>
+        </AppButton>
       </DialogTrigger>
 
       <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
@@ -73,15 +76,18 @@ const DialogProjeEkle = ({ onSave }) => {
 
         <div className="mt-2 flex justify-end gap-2">
           <DialogClose asChild>
-            <button className="btn">Vazgeç</button>
+            <AppButton variant="gri" title="İptal et">
+              Vazgeç
+            </AppButton>
           </DialogClose>
-          <button
+          <AppButton
+            variant="kurumsalmavi"
             onClick={handleSave}
-            className="btn btn-success"
             disabled={!canSave}
+            title="Projeyi kaydet"
           >
             Kaydet
-          </button>
+          </AppButton>
         </div>
       </DialogContent>
     </Dialog>

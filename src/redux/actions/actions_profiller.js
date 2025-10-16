@@ -1,9 +1,10 @@
 // src/redux/actions/actions_profiller.js
 import * as actionTypes from "./actionTypes.js";
 import { fetchWithAuth } from "./authFetch.js";
+import { toastSuccess, toastError } from "../../lib/toast.js";
+
 // .env'den taban URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
 export function getProfillerFromApiToReducer(payload) {
   return { type: actionTypes.GET_PROFILLER_FROM_API, payload }
@@ -12,6 +13,7 @@ export function getProfilImageFromApiToReducer(payload) {
   return { type: actionTypes.GET_PROFIL_IMAGE_FROM_API, payload }
 }
 
+// GET — toast yok
 export function getProfillerFromApi(page = 1, q = "", limit = 5) {
   return async (dispatch) => {
     const params = new URLSearchParams({ limit: String(limit), page: String(page) })
@@ -29,6 +31,7 @@ export function getProfillerFromApi(page = 1, q = "", limit = 5) {
   }
 }
 
+// GET — toast yok
 export function getProfilImageFromApi(profileId) {
   return async (dispatch,) => {
     const res = await fetchWithAuth(
@@ -48,76 +51,124 @@ export function getProfilImageFromApi(profileId) {
   }
 }
 
+// PUT
 export function editProfillerOnApi(id, editedRow) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/catalog/profiles/${id}`,
-      {
-        method: "PUT",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify(editedRow)
-      },
-       dispatch
-    )
-    if (!res.ok) throw new Error(`Güncelleme başarısız: ${res.status}`)
-    return res.json()
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/catalog/profiles/${id}`,
+        {
+          method: "PUT",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(editedRow)
+        },
+         dispatch
+      )
+      if (!res.ok) {
+        toastError();
+        throw new Error(`Güncelleme başarısız: ${res.status}`)
+      }
+      toastSuccess();
+      return res.json()
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   }
 }
 
+// POST
 export function addProfillerToApi(addedRow) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/catalog/profiles`,
-      {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify(addedRow)
-      },
-       dispatch
-    )
-    if (!res.ok) throw new Error(`Sunucu hatası: ${res.status}`)
-    return res.json()
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/catalog/profiles`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(addedRow)
+        },
+         dispatch
+      )
+      if (!res.ok) {
+        toastError();
+        throw new Error(`Sunucu hatası: ${res.status}`)
+      }
+      toastSuccess();
+      return res.json()
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   }
 }
 
+// DELETE
 export function sellProfillerOnApi(id) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/catalog/profiles/${id}`,
-      { method: "DELETE", headers: { Accept: "application/json" } },
-       dispatch
-    )
-    if (!res.ok) throw new Error(`Silme başarısız: ${res.status}`)
-    return true
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/catalog/profiles/${id}`,
+        { method: "DELETE", headers: { Accept: "application/json" } },
+         dispatch
+      )
+      if (!res.ok) {
+        toastError();
+        throw new Error(`Silme başarısız: ${res.status}`)
+      }
+      toastSuccess();
+      return true
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   }
 }
 
+// POST (file upload)
 export function uploadProfilImageToApi(profileId, file) {
   return async (dispatch) => {
-    const form = new FormData()
-    form.append("file", file)
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/catalog/profiles/${profileId}/image`,
-      { method: "POST", headers: { Accept: "application/json" }, body: form },
-       dispatch
-    )
-    if (!res.ok) {
-      const text = await res.text().catch(() => "")
-      throw new Error(`Görsel yükleme başarısız: ${res.status} ${text}`)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/catalog/profiles/${profileId}/image`,
+        { method: "POST", headers: { Accept: "application/json" }, body: form },
+         dispatch
+      )
+      if (!res.ok) {
+        const text = await res.text().catch(() => "")
+        toastError();
+        throw new Error(`Görsel yükleme başarısız: ${res.status} ${text}`)
+      }
+      toastSuccess();
+      return true
+    } catch (err) {
+      toastError();
+      throw err;
     }
-    return true
   }
 }
 
+// DELETE
 export function deleteProfilImageFromApi(profileId) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/catalog/profiles/${profileId}/image`,
-      { method: "DELETE", headers: { Accept: "*/*" } },
-       dispatch
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/catalog/profiles/${profileId}/image`,
+        { method: "DELETE", headers: { Accept: "*/*" } },
+         dispatch
     )
-    if (!res.ok) throw new Error(`Fotoğraf silinemedi: ${res.status}`)
-    dispatch({ type: "DELETE_PROFIL_IMAGE_SUCCESS", payload: { profileId } })
-    return true
+      if (!res.ok) {
+        toastError();
+        throw new Error(`Fotoğraf silinemedi: ${res.status}`)
+      }
+      toastSuccess();
+      dispatch({ type: "DELETE_PROFIL_IMAGE_SUCCESS", payload: { profileId } })
+      return true
+    } catch (err) {
+      toastError();
+      throw err;
+    }
   }
 }

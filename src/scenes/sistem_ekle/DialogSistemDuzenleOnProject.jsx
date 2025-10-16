@@ -1,4 +1,3 @@
-// src/scenes/sistemekle/DialogSistemDuzenleOnProject.jsx
 import React, { useEffect, useState, useRef } from "react";
 import {
   Dialog,
@@ -7,6 +6,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const initialState = { width_mm: "", height_mm: "", quantity: "" };
 
@@ -22,7 +22,6 @@ const DialogSistemDuzenleOnProject = ({
   const [form, setForm] = useState(initialState);
   const firstInputRef = useRef(null);
 
-  // open olduğunda initial değerleri string olarak yükle (boş değerleri de destekler)
   useEffect(() => {
     if (!open) return;
     setForm({
@@ -30,29 +29,22 @@ const DialogSistemDuzenleOnProject = ({
       height_mm: String(initial?.height_mm ?? ""),
       quantity: String(initial?.quantity ?? ""),
     });
-    // ilk inputa odak
     setTimeout(() => firstInputRef.current?.focus(), 0);
   }, [open, initial]);
 
-  // kapandıysa local formu temizle
   const handleOpenChange = (v) => {
     onOpenChange?.(v);
     if (!v) setForm(initialState);
   };
 
   const setField = (k, v) => setForm((s) => ({ ...s, [k]: v }));
+  const toNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
-  // parse helper’ları
-  const toNumber = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  };
   const width = toNumber(form.width_mm);
   const height = toNumber(form.height_mm);
   const qtyRaw = toNumber(form.quantity);
-  const qty = Number.isInteger(qtyRaw) ? qtyRaw : qtyRaw; // tam sayı bekleniyorsa istersek Math.round edebiliriz
+  const qty = qtyRaw;
 
-  // basit validasyonlar
   const errors = {
     width: width <= 0,
     height: height <= 0,
@@ -64,11 +56,7 @@ const DialogSistemDuzenleOnProject = ({
   const submit = (e) => {
     e?.preventDefault?.();
     if (!canSave) return;
-    onSave?.({
-      width_mm: width,
-      height_mm: height,
-      quantity: qty,
-    });
+    onSave?.({ width_mm: width, height_mm: height, quantity: qty });
   };
 
   return (
@@ -98,9 +86,7 @@ const DialogSistemDuzenleOnProject = ({
                 disabled={saving}
                 placeholder="Örn: 1200"
               />
-              {errors.width && (
-                <span className="text-xs text-destructive mt-1">En 0’dan büyük olmalı.</span>
-              )}
+              {errors.width && <span className="text-xs text-destructive mt-1">En 0’dan büyük olmalı.</span>}
             </label>
 
             <label className="form-control w-full">
@@ -116,9 +102,7 @@ const DialogSistemDuzenleOnProject = ({
                 disabled={saving}
                 placeholder="Örn: 2400"
               />
-              {errors.height && (
-                <span className="text-xs text-destructive mt-1">Boy 0’dan büyük olmalı.</span>
-              )}
+              {errors.height && <span className="text-xs text-destructive mt-1">Boy 0’dan büyük olmalı.</span>}
             </label>
 
             <label className="form-control w-full">
@@ -134,30 +118,26 @@ const DialogSistemDuzenleOnProject = ({
                 disabled={saving}
                 placeholder="Örn: 3"
               />
-              {errors.qty && (
-                <span className="text-xs text-destructive mt-1">Adet pozitif tam sayı olmalı.</span>
-              )}
+              {errors.qty && <span className="text-xs text-destructive mt-1">Adet pozitif tam sayı olmalı.</span>}
             </label>
 
             <div className="mt-6 flex justify-end gap-2">
               <DialogClose asChild>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  disabled={saving}
-                >
+                <AppButton type="button" size="sm" variant="gri" disabled={saving}>
                   Vazgeç
-                </button>
+                </AppButton>
               </DialogClose>
 
-              <button
+              <AppButton
                 type="submit"
-                className="btn btn-sm btn-primary inline-flex items-center gap-2"
+                size="sm"
+                variant="kurumsalmavi"
+                className="inline-flex items-center gap-2"
                 disabled={!canSave}
               >
                 {saving && <span className="loading loading-spinner loading-xs" />}
                 Kaydet
-              </button>
+              </AppButton>
             </div>
           </form>
         )}

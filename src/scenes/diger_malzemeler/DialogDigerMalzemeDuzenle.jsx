@@ -7,8 +7,9 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogDigerMalzemeDuzenle = ({ item, onSave }) => {
+const DialogDigerMalzemeDuzenle = ({ item, onSave, children }) => {
   const [form, setForm] = useState({
     diger_malzeme_isim: '',
     birim: '',
@@ -43,17 +44,22 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave }) => {
 
   return (
     <Dialog>
+      {/* Tetikleyici: children gelirse onu, gelmezse varsayılan AppButton kullan */}
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline">
-          Düzenle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton variant="sari" size="sm" shape="none" title="Malzemeyi düzenle">
+            Düzenle
+          </AppButton>
+        )}
       </DialogTrigger>
+
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Malzemeyi Düzenle</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* aynı inputlar */}
           <label>İsim</label>
           <input
             name="diger_malzeme_isim"
@@ -95,10 +101,17 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave }) => {
             <option value="adetli">adetli</option>
           </select>
         </div>
+
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Güncelle ve kapat"
+          >
             Güncelle
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

@@ -6,6 +6,7 @@ import { addRequirementsToProjeToApi, getProjeRequirementsFromApi } from '@/redu
 import { ReactComponent as PencilRuler } from '../../icons/pencil-ruler_v2.svg';
 import * as math from 'mathjs';
 import SistemEkleTables from './SistemEkleTables.jsx';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const round2 = (v) => {
   const n = Number(v);
@@ -27,7 +28,6 @@ const SistemEkle = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingInit, setIsLoadingInit] = useState(true);
 
-  // ölçü girdileri
   const [sistemGenislik, setSistemGenislik] = useState(0);
   const [sistemYukseklik, setSistemYukseklik] = useState(0);
   const [sistemAdet, setSistemAdet] = useState(0);
@@ -56,7 +56,6 @@ const SistemEkle = () => {
     fetchData();
   }, [dispatch, variantId, projectId]);
 
-  // güvenli formül evaluatörü
   const guvenliHesapla = (expr) => {
     try {
       const scope = {
@@ -93,15 +92,12 @@ const SistemEkle = () => {
       width_mm: Math.round(sistemGenislik),
       height_mm: Math.round(sistemYukseklik),
       quantity: Math.round(sistemAdet),
-
-      // PROFİLLER
       profiles: (seciliSistemTam.profile_templates || []).map((tpl, index) => {
         const cut_length_mm = Math.round(guvenliHesapla(tpl.formula_cut_length));
         const cut_count = Math.round(guvenliHesapla(tpl.formula_cut_count));
-        const birimAgirlik = Number(tpl.profile?.birim_agirlik || 0); // kg/m
-        const toplamKg = (cut_length_mm / 1000) * cut_count * birimAgirlik; // kg
+        const birimAgirlik = Number(tpl.profile?.birim_agirlik || 0);
+        const toplamKg = (cut_length_mm / 1000) * cut_count * birimAgirlik;
         const total_weight_kg = round2(toplamKg);
-
         return {
           profile_id: tpl.profile_id,
           cut_length_mm,
@@ -111,14 +107,11 @@ const SistemEkle = () => {
           pdf: tpl.pdf
         };
       }),
-
-      // CAMLAR
       glasses: (seciliSistemTam.glass_templates || []).map((tpl, index) => {
         const width_mm = Math.round(guvenliHesapla(tpl.formula_width));
         const height_mm = Math.round(guvenliHesapla(tpl.formula_height));
         const count = Math.round(guvenliHesapla(tpl.formula_count));
         const area_m2 = round2((width_mm * height_mm * count) / 1_000_000);
-
         return {
           glass_type_id: tpl.glass_type_id,
           width_mm,
@@ -129,12 +122,9 @@ const SistemEkle = () => {
           pdf: tpl.pdf
         };
       }),
-
-      // MALZEMELER
       materials: (seciliSistemTam.material_templates || []).map((tpl, i) => {
         const rq = guvenliHesapla(tpl.formula_quantity);
         const rl = guvenliHesapla(tpl.formula_cut_length);
-
         let count, cut_length_mm;
         if (tpl?.type === 'chunk_by_length') {
           ({ count, cut_length_mm } = applyChunkByLength(tpl, rl));
@@ -142,7 +132,6 @@ const SistemEkle = () => {
           count = Math.round(rq);
           cut_length_mm = Math.round(rl);
         }
-
         return {
           material_id: tpl.material_id,
           count,
@@ -151,8 +140,6 @@ const SistemEkle = () => {
           pdf: tpl.pdf
         };
       }),
-
-      // KUMANDALAR
       remotes: (seciliSistemTam.remote_templates || []).map((tpl, index) => ({
         remote_id: tpl.remote_id,
         count: 0,
@@ -167,10 +154,7 @@ const SistemEkle = () => {
     setIsRefreshing(true);
     try {
       await dispatch(addRequirementsToProjeToApi(projectId, payload));
-      // ekledikten sonra anlık görüntüyü tazele
       await dispatch(getProjeRequirementsFromApi(projectId));
-      // istersen burada inputları da sıfırlayabilirsin:
-      // setSistemGenislik(0); setSistemYukseklik(0); setSistemAdet(0);
     } finally {
       setIsRefreshing(false);
     }
@@ -202,7 +186,6 @@ const SistemEkle = () => {
               {displayName || "Sistem Adı - Varyant Adı"}
             </div>
 
-            {/* Ölçü Inputları */}
             <div className="flex gap-2">
               <input
                 type="number"
@@ -215,7 +198,6 @@ const SistemEkle = () => {
                 placeholder="En (mm)"
                 className="input input-bordered w-full max-w-xs"
               />
-
               <input
                 type="number"
                 inputMode="numeric"
@@ -227,7 +209,6 @@ const SistemEkle = () => {
                 placeholder="Boy (mm)"
                 className="input input-bordered w-full max-w-xs"
               />
-
               <input
                 type="number"
                 inputMode="numeric"
@@ -242,26 +223,30 @@ const SistemEkle = () => {
             </div>
           </div>
 
-          <button
-            className="btn btn-outline ml-auto w-40"
+          <AppButton
+            variant="kurumsalmavi"
+            className="ml-auto w-40"
             onClick={() => navigate(`/projeduzenle/${projectId}`)}
           >
             Projeye Dön
-          </button>
-          <button
-            className="btn btn-outline ml-auto w-40"
+          </AppButton>
+
+          <AppButton
+            variant="kurumsalmavi"
+            className="ml-auto w-40"
             onClick={() => navigate(`/sistemsec/${projectId}`)}
           >
             Sistem Seç
-          </button>
+          </AppButton>
 
-          <button
+          <AppButton
+            variant="kurumsalmavi"
+            className="ml-auto w-40"
             onClick={handleSistemKaydet}
             disabled={!canSave || isRefreshing}
-            className="btn btn-primary ml-auto w-40 disabled:opacity-50"
           >
             {isRefreshing ? "Ekleniyor..." : "Sistem Ekle"}
-          </button>
+          </AppButton>
         </div>
       )}
 

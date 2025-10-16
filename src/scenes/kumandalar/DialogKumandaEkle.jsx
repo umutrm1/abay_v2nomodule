@@ -1,4 +1,3 @@
-// src/scenes/kumandalar/DialogKumandaEkle.jsx
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -8,8 +7,9 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogKumandaEkle = ({ onSave }) => {
+const DialogKumandaEkle = ({ onSave, children }) => {
   const [form, setForm] = useState({
     kumanda_isim: '',
     kapasite: 0,
@@ -31,9 +31,16 @@ const DialogKumandaEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn w-40 ml-auto btn-primary">
-          + Kumanda Ekle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+            title="Yeni kumanda ekle"
+          >
+            + Kumanda Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-w-md">
@@ -58,6 +65,7 @@ const DialogKumandaEkle = ({ onSave }) => {
             onChange={handleChange}
             className="input input-bordered"
           />
+
           <label>Fiyat</label>
           <input
             type="number"
@@ -69,9 +77,9 @@ const DialogKumandaEkle = ({ onSave }) => {
         </div>
 
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton onClick={handleSave} variant="kurumsalmavi" size="md" shape="none" title="Kaydet ve kapat">
             Kaydet
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

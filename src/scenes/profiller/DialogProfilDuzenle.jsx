@@ -1,4 +1,3 @@
-// src/scenes/profiller/DialogProfilDuzenle.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -8,8 +7,9 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogProfilDuzenle = ({ profil, onSave }) => {
+const DialogProfilDuzenle = ({ profil, onSave, children }) => {
   // 1) Düzenlenen profil alanlarını tutacak state
   const [form, setForm] = useState({
     profil_kodu: '',
@@ -48,11 +48,15 @@ const DialogProfilDuzenle = ({ profil, onSave }) => {
 
   return (
     <Dialog>
-      {/* 3) Düzenle butonu */}
+      {/* 3) Düzenle butonu (AppButton) */}
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline">
-          Düzenle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton variant="sari" size="sm" shape="none" title="Profili düzenle">
+            Düzenle
+          </AppButton>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-w-md">
@@ -96,11 +100,17 @@ const DialogProfilDuzenle = ({ profil, onSave }) => {
           />
         </div>
 
-        {/* 4) Güncelle: modal kapanır, handleSave çağrılır */}
+        {/* 4) Güncelle (AppButton) */}
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Güncelle ve kapat"
+          >
             Güncelle
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

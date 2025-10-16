@@ -7,8 +7,9 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogCamDuzenle = ({ cam, onSave }) => {
+const DialogCamDuzenle = ({ cam, onSave, children }) => {
   // 1) Düzenlenen cam verisi için state
   const [form, setForm] = useState({
     cam_isim: '',
@@ -26,7 +27,7 @@ const DialogCamDuzenle = ({ cam, onSave }) => {
   }, [cam]);
 
   // 3) Input değişim handler
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
       ...prev,
@@ -41,15 +42,27 @@ const DialogCamDuzenle = ({ cam, onSave }) => {
 
   return (
     <Dialog>
+      {/* Tetikleyici: children verilmişse onu kullan; yoksa varsayılan AppButton */}
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline">
-          Düzenle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+            variant="sari"
+            size="sm"
+            shape="none"
+            title="Cam bilgisini düzenle"
+          >
+            Düzenle
+          </AppButton>
+        )}
       </DialogTrigger>
+
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Cam Düzenle: {cam.cam_isim}</DialogTitle>
+          <DialogTitle>Cam Düzenle{cam?.cam_isim ? `: ${cam.cam_isim}` : ""}</DialogTitle>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <label>Cam İsmi</label>
           <input
@@ -67,10 +80,18 @@ const DialogCamDuzenle = ({ cam, onSave }) => {
             className="input input-bordered"
           />
         </div>
+
+        {/* Kapat/Güncelle: AppButton ile */}
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Güncelle ve kapat"
+          >
             Güncelle
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

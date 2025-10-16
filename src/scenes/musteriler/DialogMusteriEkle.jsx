@@ -1,8 +1,8 @@
-// src/scenes/musteriler/DialogMusteriEkle.jsx
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogMusteriEkle = ({ onSave }) => {
+const DialogMusteriEkle = ({ onSave, children }) => {
   const [yeniMusteri, setYeniMusteri] = useState({
     company_name: '',
     name: '',
@@ -16,7 +16,6 @@ const DialogMusteriEkle = ({ onSave }) => {
   };
 
   const handleSaveClick = () => {
-    // Gönderilecek obje
     const musteriToSave = {
       company_name: yeniMusteri.company_name,
       name:         yeniMusteri.name,
@@ -29,7 +28,13 @@ const DialogMusteriEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-primary max-w-40 ml-auto w-40">+ Müşteri Ekle</button>
+        {children ? (
+          children
+        ) : (
+          <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40" title="Yeni müşteri ekle">
+            + Müşteri Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
       <DialogContent className={"max-w-200"}>
         <DialogHeader><DialogTitle>Yeni Müşteri Ekle</DialogTitle></DialogHeader>
@@ -47,7 +52,9 @@ const DialogMusteriEkle = ({ onSave }) => {
           <input name="city" value={yeniMusteri.city} onChange={handleChange} placeholder="Şehir" className="input input-bordered" />
         </div>
         <DialogClose asChild>
-          <button onClick={handleSaveClick} className="btn btn-success">Kaydet</button>
+          <AppButton onClick={handleSaveClick} variant="kurumsalmavi" size="md" shape="none" title="Kaydet ve kapat">
+            Kaydet
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

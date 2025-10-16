@@ -1,8 +1,10 @@
+// src/scenes/boyalar/DialogCamBoyaEkle.jsx
 import React, { useState, useCallback } from 'react';
 import {
   Dialog, DialogTrigger, DialogContent,
   DialogHeader, DialogTitle, DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const initialForm = { name: '', unit_cost: 0 };
 
@@ -30,10 +32,13 @@ const DialogCamBoyaEkle = ({ onSave }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button className="btn ml-auto btn-primary">+ Ekle</button>
+        <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">+ Cam Boya Ekle</AppButton>
       </DialogTrigger>
+
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Yeni Cam Boyası Ekle</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Yeni Cam Boyası Ekle</DialogTitle>
+        </DialogHeader>
 
         <div className="grid gap-4 py-4">
           <label>Boya İsmi</label>
@@ -43,14 +48,15 @@ const DialogCamBoyaEkle = ({ onSave }) => {
             onChange={handleChange}
             className="input input-bordered"
           />
-
         </div>
 
         <div className="mt-2 flex justify-end gap-2">
           <DialogClose asChild>
-            <button className="btn">Vazgeç</button>
+            <AppButton variant="gri">Vazgeç</AppButton>
           </DialogClose>
-          <button onClick={handleSave} className="btn btn-success">Kaydet</button>
+          <AppButton variant="kurumsalmavi" onClick={handleSave}>
+            Kaydet
+          </AppButton>
         </div>
       </DialogContent>
     </Dialog>

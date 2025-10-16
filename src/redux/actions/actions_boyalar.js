@@ -1,6 +1,7 @@
 // src/redux/actions/actions_boyalar.js
 import * as actionTypes from "./actionTypes.js";
 import { fetchWithAuth } from "./authFetch.js";
+import { toastSuccess, toastError } from "../../lib/toast.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -13,46 +14,85 @@ export function getGlassColorFromApiToReducer(payload) {
 
 export function addColorToApi(colorObj) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/colors/`,
-      {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify(colorObj),
-      },
-      dispatch
-    );
-    if (!res.ok) throw new Error(`Renk ekleme başarısız: ${res.status}`);
-    return res.json();
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(colorObj),
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        toastError(); // İşlem başarısız
+        const text = await res.text().catch(() => "");
+        throw new Error(`Renk ekleme başarısız: ${res.status} ${text}`);
+      }
+
+      const data = await res.json();
+      toastSuccess(); // İşlem başarılı
+      return data;
+    } catch (err) {
+      // fetchWithAuth atarsa veya parse aşamasında hata olursa
+      toastError(); // İşlem başarısız
+      throw err;
+    }
   };
 }
 
 export function editColorInApi(colorObj) {
   return async (dispatch) => {
-    const { id, name, unit_cost } = colorObj;
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/colors/${id}`,
-      {
-        method: "PUT",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ name, unit_cost }),
-      },
-      dispatch
-    );
-    if (!res.ok) throw new Error(`Renk güncelleme başarısız: ${res.status}`);
-    return res.json();
+    try {
+      const { id, name, unit_cost } = colorObj;
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/${id}`,
+        {
+          method: "PUT",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ name, unit_cost }),
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        toastError(); // İşlem başarısız
+        const text = await res.text().catch(() => "");
+        throw new Error(`Renk güncelleme başarısız: ${res.status} ${text}`);
+      }
+
+      const data = await res.json();
+      toastSuccess(); // İşlem başarılı
+      return data;
+    } catch (err) {
+      toastError(); // İşlem başarısız
+      throw err;
+    }
   };
 }
 
 export function deleteColorFromApi(id) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/colors/${id}`,
-      { method: "DELETE", headers: { Accept: "*/*" } },
-      dispatch
-    );
-    if (!res.ok) throw new Error(`Renk silme başarısız: ${res.status}`);
-    return true;
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/${id}`,
+        { method: "DELETE", headers: { Accept: "*/*" } },
+        dispatch
+      );
+
+      if (!res.ok) {
+        toastError(); // İşlem başarısız
+        const text = await res.text().catch(() => "");
+        throw new Error(`Renk silme başarısız: ${res.status} ${text}`);
+      }
+
+      toastSuccess(); // İşlem başarılı
+      return true;
+    } catch (err) {
+      toastError(); // İşlem başarısız
+      throw err;
+    }
   };
 }
 

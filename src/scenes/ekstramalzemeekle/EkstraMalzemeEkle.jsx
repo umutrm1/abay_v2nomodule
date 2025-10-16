@@ -3,12 +3,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 
-// Server-side listeleme (limit 5) — daha önce entegre ettiğimiz fonksiyonlar
+// Server-side listeleme (limit 5)
 import { getCamlarFromApi } from '@/redux/actions/actions_camlar.js';
 import { getDigerMalzemelerFromApi } from '@/redux/actions/actions_diger_malzemeler.js';
 import { getProfillerFromApi } from '@/redux/actions/actions_profiller.js';
 import { getKumandalarFromApi } from '@/redux/actions/actions_kumandalar.js';
-// Projeye ekstra ekleme aksiyonları
 import {
   addExtraGlassToApi,
   addExtraMaterialToApi,
@@ -16,13 +15,14 @@ import {
   addExtraRemoteToApi
 } from '@/redux/actions/actions_projeler.js';
 
+import AppButton from '@/components/ui/AppButton.jsx';
+
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
     <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
 
-// Backend sayfalama objesi boşluğu
 const EMPTY_PAGE = {
   items: [],
   total: 0,
@@ -38,8 +38,7 @@ const EkstraMalzemeEkle = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
 
-  // hangi bölüm?
-  const [mode, setMode] = useState(null); // 'profil' | 'cam' | 'malzeme'
+  const [mode, setMode] = useState(null); // 'profil' | 'cam' | 'malzeme' | 'kumanda'
   const [notification, setNotification] = useState(null);
 
   // her tablo için ARAMA + SAYFA + loading
@@ -55,27 +54,26 @@ const EkstraMalzemeEkle = () => {
   const [otherPage, setOtherPage] = useState(1);
   const [loadingOther, setLoadingOther] = useState(false);
 
-  // satır içi inputlar (ekleme için)
-  const [profilInputs, setProfilInputs] = useState({});
-  const [camInputs, setCamInputs] = useState({});
-  const [malzemeInputs, setMalzemeInputs] = useState({});
-
-  // kumanda için arama/sayfa/loading
   const [kumandaSearch, setKumandaSearch] = useState('');
   const [kumandaPage, setKumandaPage] = useState(1);
   const [loadingKumanda, setLoadingKumanda] = useState(false);
+
+  const [profilInputs, setProfilInputs] = useState({});
+  const [camInputs, setCamInputs] = useState({});
+  const [malzemeInputs, setMalzemeInputs] = useState({});
   const [kumandaInputs, setKumandaInputs] = useState({});
 
   const [profilUnitPrices, setProfilUnitPrices] = useState({});
   const [camUnitPrices, setCamUnitPrices] = useState({});
   const [malzemeUnitPrices, setMalzemeUnitPrices] = useState({});
-  const [kumandaUnitPrices, setKumandaUnitPrices] = useState({}); // Kumanda tablosu için
-  // reducer’dan sayfalı objeleri al
+  const [kumandaUnitPrices, setKumandaUnitPrices] = useState({});
+
   const profiller = useSelector(s => s.getProfillerFromApiReducer) || EMPTY_PAGE;
   const camlar = useSelector(s => s.getCamlarFromApiReducer) || EMPTY_PAGE;
   const digerMalzemeler = useSelector(s => s.getDigerMalzemerFromApiReducer || s.getDigerMalzemelerFromApiReducer) || EMPTY_PAGE;
   const kumandalar = useSelector(s => s.getKumandalarFromApiReducer) || EMPTY_PAGE;
-  // Seçilen moda göre veri çek (server-side)
+
+  // Seçilen moda göre veri çek
   useEffect(() => {
     if (mode === 'profil') {
       setLoadingProfile(true);
@@ -83,6 +81,7 @@ const EkstraMalzemeEkle = () => {
         .finally(() => setLoadingProfile(false));
     }
   }, [dispatch, mode, profilePage, profileSearch]);
+
   useEffect(() => {
     if (mode === 'kumanda') {
       setLoadingKumanda(true);
@@ -91,6 +90,7 @@ const EkstraMalzemeEkle = () => {
         .finally(() => setLoadingKumanda(false));
     }
   }, [dispatch, mode, kumandaPage, kumandaSearch]);
+
   useEffect(() => {
     if (mode === 'cam') {
       setLoadingGlass(true);
@@ -113,26 +113,30 @@ const EkstraMalzemeEkle = () => {
     setTimeout(() => setNotification(null), 2500);
   };
 
-  // --- Ortak sayfalama barı (boyalardakiyle aynı) ---
+  // Ortak sayfalama barı → AppButton ile
   const Pager = ({ data, setPage }) => (
     <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-      <button
-        className="btn btn-sm"
+      <AppButton
+        variant="kurumsalmavi"
+        size="sm"
+        shape="none"
         onClick={() => setPage(1)}
         disabled={data.page === 1}
         title="İlk sayfa"
       >
         « İlk
-      </button>
+      </AppButton>
 
-      <button
-        className="btn btn-sm"
+      <AppButton
+        variant="kurumsalmavi"
+        size="sm"
+        shape="none"
         onClick={() => setPage(p => Math.max(1, (typeof p === 'number' ? p : data.page) - 1))}
         disabled={!data.has_prev}
         title="Önceki sayfa"
       >
         ‹ Önceki
-      </button>
+      </AppButton>
 
       <form
         onSubmit={(e) => {
@@ -153,25 +157,32 @@ const EkstraMalzemeEkle = () => {
         <span className="text-sm">/ {data.total_pages}</span>
       </form>
 
-      <button
-        className="btn btn-sm"
+      <AppButton
+        variant="kurumsalmavi"
+        size="sm"
+        shape="none"
         onClick={() => setPage(p => (typeof p === 'number' ? p + 1 : data.page + 1))}
         disabled={!data.has_next}
         title="Sonraki sayfa"
       >
         Sonraki ›
-      </button>
+      </AppButton>
 
-      <button
-        className="btn btn-sm"
+      <AppButton
+        variant="kurumsalmavi"
+        size="sm"
+        shape="none"
         onClick={() => setPage(data.total_pages)}
         disabled={data.page === data.total_pages || data.total_pages <= 1}
         title="Son sayfa"
       >
         Son »
-      </button>
+      </AppButton>
     </div>
   );
+
+  const getApiUnitPrice = (item) =>
+    item?.unit_price ?? item?.price ?? item?.unitPrice ?? item?.fiyat ?? 0;
 
   // --- Ekleme handler’ları ---
   const onAddProfile = useCallback((profil) => {
@@ -235,12 +246,12 @@ const EkstraMalzemeEkle = () => {
         : Number(data.size_input_text || 0),
       unit_price: chosenUnitPrice,
       pdf: {
-        "camCiktisi": true,
-        "profilAksesuarCiktisi": true,
-        "boyaCiktisi": true,
-        "siparisCiktisi": true,
-        "optimizasyonDetayliCiktisi": true,
-        "optimizasyonDetaysizCiktisi": true
+        camCiktisi: true,
+        profilAksesuarCiktisi: true,
+        boyaCiktisi: true,
+        siparisCiktisi: true,
+        optimizasyonDetayliCiktisi: true,
+        optimizasyonDetaysizCiktisi: true
       }
     }))
       .then(() => {
@@ -254,8 +265,6 @@ const EkstraMalzemeEkle = () => {
       .catch(() => showNotification('Malzeme eklenirken hata oluştu'));
   }, [dispatch, malzemeInputs, projectId]);
 
-
-
   const onAddRemote = useCallback((remote) => {
     const data = kumandaInputs[remote.id] || {};
     const adet = Number(data.count || 0);
@@ -266,7 +275,7 @@ const EkstraMalzemeEkle = () => {
       project_id: projectId,
       remote_id: remote.id,
       count: adet,
-      unit_price: chosenUnitPrice, // örnekteki gibi sabit; istersen API'den gelen price'a bağlayabilirsin
+      unit_price: chosenUnitPrice,
       pdf: {
         camCiktisi: true,
         profilAksesuarCiktisi: true,
@@ -285,23 +294,22 @@ const EkstraMalzemeEkle = () => {
         });
       })
       .catch(() => showNotification('Kumanda eklenirken hata oluştu'));
-  }, [dispatch, kumandaInputs, projectId]);
+  }, [dispatch, kumandaInputs, projectId, kumandaUnitPrices]);
 
-
-
-
-  const getApiUnitPrice = (item) =>
-    item?.unit_price ?? item?.price ?? item?.unitPrice ?? item?.fiyat ?? 0;
   return (
     <div className="p-5 text-foreground">
       <div className="flex items-center mb-4">
         <h1 className="text-2xl font-bold">Ekstra Malzeme Ekle</h1>
-        <button
+        <AppButton
           onClick={() => navigate(`/projeduzenle/${projectId}`)}
-          className="btn btn-sm ml-auto"
+          variant="kurumsalmavi"
+          size="sm"
+          shape="none"
+          className="ml-auto"
+          title="Projeye geri dön"
         >
           Projeye Dön
-        </button>
+        </AppButton>
       </div>
 
       {notification && (
@@ -310,26 +318,56 @@ const EkstraMalzemeEkle = () => {
         </div>
       )}
 
-      {/* seçim kartları — görünüş aynı */}
+      {/* seçim kartları — AppButton ile */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <button onClick={() => { setMode('profil'); setProfilePage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
-          <h2 className="text-lg  font-semibold">Profil Ekle</h2>
-        </button>
-        <button onClick={() => { setMode('cam'); setGlassPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
+        <AppButton
+          onClick={() => { setMode('profil'); setProfilePage(1); }}
+          variant="kurumsalmavi"
+          size="md"
+          shape="none"
+          className="card w-full bg-base-100 shadow p-4 hover:bg-primary/10 text-left"
+          title="Profil ekleme modunu aç"
+        >
+          <h2 className="text-lg font-semibold">Profil Ekle</h2>
+        </AppButton>
+
+        <AppButton
+          onClick={() => { setMode('cam'); setGlassPage(1); }}
+          variant="kurumsalmavi"
+          size="md"
+          shape="none"
+          className="card w-full bg-base-100 shadow p-4 hover:bg-primary/10 text-left"
+          title="Cam ekleme modunu aç"
+        >
           <h2 className="text-lg font-semibold">Cam Ekle</h2>
-        </button>
-        <button onClick={() => { setMode('malzeme'); setOtherPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
+        </AppButton>
+
+        <AppButton
+          onClick={() => { setMode('malzeme'); setOtherPage(1); }}
+          variant="kurumsalmavi"
+          size="md"
+          shape="none"
+          className="card w-full bg-base-100 shadow p-4 hover:bg-primary/10 text-left"
+          title="Malzeme ekleme modunu aç"
+        >
           <h2 className="text-lg font-semibold">Malzeme Ekle</h2>
-        </button>
-        <button onClick={() => { setMode('kumanda'); setKumandaPage(1); }} className="card btn bg-base-100 shadow p-4 hover:bg-primary/10">
+        </AppButton>
+
+        <AppButton
+          onClick={() => { setMode('kumanda'); setKumandaPage(1); }}
+          variant="kurumsalmavi"
+          size="md"
+          shape="none"
+          className="card w-full bg-base-100 shadow p-4 hover:bg-primary/10 text-left"
+          title="Kumanda ekleme modunu aç"
+        >
           <h2 className="text-lg font-semibold">Kumanda Ekle</h2>
-        </button>
+        </AppButton>
       </div>
 
       {!mode ? null : (
         <div className="mt-6">
           <div className="flex justify-between items-center mb-4">
-            {/* Her tabloya ayrı arama inputu */}
             {mode === 'profil' && (
               <input
                 type="text"
@@ -366,14 +404,24 @@ const EkstraMalzemeEkle = () => {
                 className="input input-bordered w-full max-w-md"
               />
             )}
-            <button onClick={() => setMode(null)} className="btn btn-sm ml-4">Geri</button>
+
+            <AppButton
+              onClick={() => setMode(null)}
+              variant="gri"
+              size="sm"
+              shape="none"
+              className="ml-4"
+              title="Ana seçim ekranına dön"
+            >
+              Geri
+            </AppButton>
           </div>
 
           {/* PROFİLLER */}
           {mode === 'profil' && (
             <div className="w-full">
               <table className="table w-full">
-                <thead >
+                <thead>
                   <tr>
                     <th>Profil Kodu</th>
                     <th>Profil Adı</th>
@@ -384,7 +432,7 @@ const EkstraMalzemeEkle = () => {
                   </tr>
                 </thead>
                 {loadingProfile ? (
-                  <tbody><tr><td colSpan={5}><Spinner /></td></tr></tbody>
+                  <tbody><tr><td colSpan={6}><Spinner /></td></tr></tbody>
                 ) : (
                   <tbody>
                     {(profiller.items ?? []).map(profil => (
@@ -426,45 +474,50 @@ const EkstraMalzemeEkle = () => {
                               className="input input-sm input-bordered w-24"
                               value={
                                 profilUnitPrices[profil.id] ??
-                                getApiUnitPrice(profil) // açılışta API fiyatı
+                                getApiUnitPrice(profil)
                               }
                               onChange={(e) => {
                                 const v = e.target.value;
                                 setProfilUnitPrices((prev) => ({ ...prev, [profil.id]: v }));
                               }}
                             />
-                            <button
+                            <AppButton
                               type="button"
-                              className="btn btn-xs"
+                              variant="gri"
+                              size="sm"
+                              shape="none"
                               onClick={() =>
                                 setProfilUnitPrices((prev) => ({
                                   ...prev,
                                   [profil.id]: getApiUnitPrice(profil),
                                 }))
                               }
+                              title="API fiyatına sıfırla"
                             >
                               Sıfırla
-                            </button>
+                            </AppButton>
                           </div>
                         </td>
                         <td className="text-right">
-                          <button
-                            className="btn btn-sm btn-primary"
+                          <AppButton
+                            variant="kurumsalmavi"
+                            size="sm"
+                            shape="none"
                             onClick={() => onAddProfile(profil)}
+                            title="Bu profili projeye ekle"
                           >
                             Ekle
-                          </button>
+                          </AppButton>
                         </td>
                       </tr>
                     ))}
                     {(!profiller.items || profiller.items.length === 0) && (
-                      <tr><td colSpan={5} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={6} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
               </table>
 
-              {/* sayfalama */}
               <Pager data={profiller || EMPTY_PAGE} setPage={setProfilePage} />
             </div>
           )}
@@ -484,7 +537,7 @@ const EkstraMalzemeEkle = () => {
                   </tr>
                 </thead>
                 {loadingGlass ? (
-                  <tbody><tr><td colSpan={5}><Spinner /></td></tr></tbody>
+                  <tbody><tr><td colSpan={6}><Spinner /></td></tr></tbody>
                 ) : (
                   <tbody>
                     {(camlar.items ?? []).map(cam => (
@@ -546,38 +599,43 @@ const EkstraMalzemeEkle = () => {
                                 setCamUnitPrices((prev) => ({ ...prev, [cam.id]: v }));
                               }}
                             />
-                            <button
+                            <AppButton
                               type="button"
-                              className="btn btn-xs"
+                              variant="gri"
+                              size="sm"
+                              shape="none"
                               onClick={() =>
                                 setCamUnitPrices((prev) => ({
                                   ...prev,
                                   [cam.id]: getApiUnitPrice(cam),
                                 }))
                               }
+                              title="API fiyatına sıfırla"
                             >
                               Sıfırla
-                            </button>
+                            </AppButton>
                           </div>
                         </td>
                         <td className="text-right">
-                          <button
-                            className="btn btn-sm btn-primary"
+                          <AppButton
+                            variant="kurumsalmavi"
+                            size="sm"
+                            shape="none"
                             onClick={() => onAddGlass(cam)}
+                            title="Bu camı projeye ekle"
                           >
                             Ekle
-                          </button>
+                          </AppButton>
                         </td>
                       </tr>
                     ))}
                     {(!camlar.items || camlar.items.length === 0) && (
-                      <tr><td colSpan={5} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={6} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
               </table>
 
-              {/* sayfalama */}
               <Pager data={camlar || EMPTY_PAGE} setPage={setGlassPage} />
             </div>
           )}
@@ -596,7 +654,7 @@ const EkstraMalzemeEkle = () => {
                   </tr>
                 </thead>
                 {loadingOther ? (
-                  <tbody><tr><td colSpan={4}><Spinner /></td></tr></tbody>
+                  <tbody><tr><td colSpan={5}><Spinner /></td></tr></tbody>
                 ) : (
                   <tbody>
                     {(digerMalzemeler.items ?? []).map(m => (
@@ -631,7 +689,6 @@ const EkstraMalzemeEkle = () => {
                               }
                             />
                           ) : (
-                            // 'adetli' ise input gizlenir; görsel olarak kısa bir ibare gösterilebilir
                             <span className="text-muted-foreground">Adetli Malzeme</span>
                           )}
                         </td>
@@ -641,53 +698,59 @@ const EkstraMalzemeEkle = () => {
                               type="number"
                               className="input input-sm input-bordered w-24"
                               value={
-                                (malzemeInputs[m.id]?.unit_price) ?? getApiUnitPrice(m) // açılışta API fiyatı
+                                (malzemeInputs[m.id]?.unit_price) ?? getApiUnitPrice(m)
                               }
                               onChange={(e) => {
-                                const v = e.target.value; // string gelir
+                                const v = e.target.value;
                                 setMalzemeInputs(prev => ({
                                   ...prev,
                                   [m.id]: { ...(prev[m.id] || {}), unit_price: v }
                                 }));
                               }}
                             />
-                            <button
+                            <AppButton
                               type="button"
-                              className="btn btn-xs"
+                              variant="gri"
+                              size="sm"
+                              shape="none"
                               onClick={() =>
                                 setMalzemeInputs(prev => ({
                                   ...prev,
                                   [m.id]: { ...(prev[m.id] || {}), unit_price: getApiUnitPrice(m) }
                                 }))
                               }
+                              title="API fiyatına sıfırla"
                             >
                               Sıfırla
-                            </button>
-
+                            </AppButton>
                           </div>
                         </td>
 
                         <td className="text-right">
-                          <button
-                            className="btn btn-sm btn-primary"
+                          <AppButton
+                            variant="kurumsalmavi"
+                            size="sm"
+                            shape="none"
                             onClick={() => onAddOther(m)}
+                            title="Bu malzemeyi projeye ekle"
                           >
                             Ekle
-                          </button>
+                          </AppButton>
                         </td>
                       </tr>
                     ))}
                     {(!digerMalzemeler.items || digerMalzemeler.items.length === 0) && (
-                      <tr><td colSpan={4} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={5} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
               </table>
 
-              {/* sayfalama */}
               <Pager data={digerMalzemeler || EMPTY_PAGE} setPage={setOtherPage} />
             </div>
           )}
+
+          {/* KUMANDALAR */}
           {mode === 'kumanda' && (
             <div className="w-full">
               <table className="table w-full">
@@ -701,7 +764,7 @@ const EkstraMalzemeEkle = () => {
                 </thead>
 
                 {loadingKumanda ? (
-                  <tbody><tr><td colSpan={3}><Spinner /></td></tr></tbody>
+                  <tbody><tr><td colSpan={4}><Spinner /></td></tr></tbody>
                 ) : (
                   <tbody>
                     {(kumandalar.items ?? []).map(remote => (
@@ -735,47 +798,50 @@ const EkstraMalzemeEkle = () => {
                                 setKumandaUnitPrices(prev => ({ ...prev, [remote.id]: v }));
                               }}
                             />
-                            <button
+                            <AppButton
                               type="button"
-                              className="btn btn-xs"
+                              variant="gri"
+                              size="sm"
+                              shape="none"
                               onClick={() =>
                                 setKumandaUnitPrices(prev => ({
                                   ...prev,
                                   [remote.id]: getApiUnitPrice(remote)
                                 }))
                               }
+                              title="API fiyatına sıfırla"
                             >
                               Sıfırla
-                            </button>
+                            </AppButton>
                           </div>
                         </td>
 
                         <td className="text-right">
-                          <button
-                            className="btn btn-sm btn-primary"
+                          <AppButton
+                            variant="kurumsalmavi"
+                            size="sm"
+                            shape="none"
                             onClick={() => onAddRemote(remote)}
+                            title="Bu kumandayı projeye ekle"
                           >
                             Ekle
-                          </button>
+                          </AppButton>
                         </td>
                       </tr>
                     ))}
 
                     {(!kumandalar.items || kumandalar.items.length === 0) && (
-                      <tr><td colSpan={3} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
+                      <tr><td colSpan={4} className="text-center text-muted-foreground py-6">Kayıt yok</td></tr>
                     )}
                   </tbody>
                 )}
               </table>
 
-              {/* sayfalama */}
               <Pager data={kumandalar || EMPTY_PAGE} setPage={setKumandaPage} />
             </div>
           )}
-
         </div>
       )}
-
     </div>
   );
 };

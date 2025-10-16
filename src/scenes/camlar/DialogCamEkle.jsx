@@ -7,8 +7,9 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogCamEkle = ({ onSave }) => {
+const DialogCamEkle = ({ onSave, children }) => {
   // 1) Form alan state'i
   const [form, setForm] = useState({
     cam_isim: '',
@@ -16,7 +17,7 @@ const DialogCamEkle = ({ onSave }) => {
   });
 
   // 2) Input değişim handler
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
       ...prev,
@@ -27,20 +28,31 @@ const DialogCamEkle = ({ onSave }) => {
   // 3) Kaydet: parent onSave fonksiyonunu çağır
   const handleSave = () => {
     onSave(form);
-    // istersen form reset ekleyebilirsin
+    // Not: istersen burada form reset yapabilirsin.
+    // setForm({ cam_isim: '', thickness_mm: 0 });
   };
 
   return (
     <Dialog>
+      {/* Tetikleyici: children verilmişse onu kullan; yoksa varsayılan AppButton */}
       <DialogTrigger asChild>
-        <button className="btn w-40 ml-auto btn-primary">
-          + Cam Ekle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+            title="Yeni cam kaydı ekle"
+          >
+            + Cam Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
+
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Yeni Cam Ekle</DialogTitle>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <label>Cam İsmi</label>
           <input
@@ -58,10 +70,18 @@ const DialogCamEkle = ({ onSave }) => {
             className="input input-bordered"
           />
         </div>
+
+        {/* Kapat/Kaydet: AppButton ile */}
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Kaydet ve kapat"
+          >
             Kaydet
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

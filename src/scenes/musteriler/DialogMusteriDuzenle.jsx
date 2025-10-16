@@ -1,8 +1,8 @@
-// src/scenes/musteriler/DialogMusteriDuzenle.jsx
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogMusteriDuzenle = ({ musteri, onSave }) => {
+const DialogMusteriDuzenle = ({ musteri, onSave, children }) => {
   const [guncelMusteri, setGuncelMusteri] = useState({
     company_name: '',
     name: '',
@@ -11,7 +11,6 @@ const DialogMusteriDuzenle = ({ musteri, onSave }) => {
   });
 
   useEffect(() => {
-    // API'den dönen objeyi direkt alıyoruz
     setGuncelMusteri({
       company_name: musteri.company_name || '',
       name:         musteri.name         || '',
@@ -28,7 +27,13 @@ const DialogMusteriDuzenle = ({ musteri, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline">Düzenle</button>
+        {children ? (
+          children
+        ) : (
+          <AppButton variant="sari" size="sm" shape="none" title="Müşteriyi düzenle">
+            Düzenle
+          </AppButton>
+        )}
       </DialogTrigger>
       <DialogContent className={"max-w-200"}>
         <DialogHeader>
@@ -48,9 +53,15 @@ const DialogMusteriDuzenle = ({ musteri, onSave }) => {
           <input name="city" value={guncelMusteri.city} onChange={handleChange} className="input input-bordered" />
         </div>
         <DialogClose asChild>
-          <button onClick={() => onSave({ ...guncelMusteri, id: musteri.id })} className="btn btn-success">
+          <AppButton
+            onClick={() => onSave({ ...guncelMusteri, id: musteri.id })}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Güncelle ve kapat"
+          >
             Güncelle
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,3 @@
-// src/scenes/projeekle/ProfilAksesuarEdit.jsx
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -8,6 +7,7 @@ import { getProfilImageFromApi } from "@/redux/actions/actions_profiller.js";
 import { getPdfBrandByKey, getPdfTitleByKey } from "@/redux/actions/actionsPdf.js";
 import { generateProfileAccessoryPdf } from "./pdf/pdfProfileAccessory.js";
 import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 // Tema uyumlu spinner
 const Spinner = () => (
@@ -65,7 +65,6 @@ export default function ProfilAksesuarEdit() {
   };
 
   function buildRemotePlanRowsFromRequirements(requirements) {
-    // systems.remotes → sadece pdfAllow(remote) olanlar
     const filteredSystems = (requirements?.systems || []).map((sys) => ({
       ...sys,
       remotes: (sys?.remotes || []).filter((r) => pdfAllow(r)),
@@ -76,7 +75,6 @@ export default function ProfilAksesuarEdit() {
       return sum + (Number.isFinite(q) && q > 0 ? q : 0);
     }, 0);
 
-    // kapasite → en ucuz & min(order_index)
     const capacityMap = new Map();
     filteredSystems.forEach((sys) => {
       (sys.remotes || []).forEach((r) => {
@@ -328,7 +326,6 @@ export default function ProfilAksesuarEdit() {
         const toplamKgR = round2(adetR * boy_mR * birimKgR);
         const birimFiyatR = round2(birimFiyat);
         const toplamFiyatR = round2(birimFiyatR ? toplamKgR * birimFiyatR : 0);
-        // görselleri dışarıdan PDF üretiminde de çekiyoruz; tablo için boş bırakmak sorun değil.
         profRows.push({
           lineType: "profile",
           kod,
@@ -342,7 +339,6 @@ export default function ProfilAksesuarEdit() {
           imageData: null,
           orderIndex: safeIndex(minOrderIndex),
         });
-        // istersen önbelleği ısıt:
         try { await dispatch(getProfilImageFromApi(pid)); } catch {}
       }
 
@@ -387,7 +383,6 @@ export default function ProfilAksesuarEdit() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requirements, proje, mode, dispatch]);
 
-  // NaN güvenli yardımcı
   const toNum = (x) => {
     const n = Number(x);
     return Number.isFinite(n) ? n : 0;
@@ -446,10 +441,18 @@ export default function ProfilAksesuarEdit() {
       <div className="flex items-center justify-between px-5">
         <Header title={`Profil Aksesuar – ${proje?.project_kodu || ""} ${proje?.project_name || ""}`} />
         <div className="flex gap-2">
-          <button className="btn btn-sm" onClick={() => navigate(-1)}>Geri</button>
-          <button className="btn btn-sm bg-green-600 text-white hover:bg-green-700" onClick={handleCreatePdf}>
+          <AppButton variant="gri" size="sm" shape="none" onClick={() => navigate(-1)} title="Geri">
+            Geri
+          </AppButton>
+          <AppButton
+            variant="kurumsalmavi"
+            size="sm"
+            shape="none"
+            onClick={handleCreatePdf}
+            title="PDF çıktısı oluştur"
+          >
             Pdf Çıktısı
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -585,10 +588,12 @@ export default function ProfilAksesuarEdit() {
         </div>
 
         <div className="flex justify-end gap-2">
-          <button className="btn" onClick={recalcTotals}>Toplamları Yeniden Hesapla</button>
-          <button className="btn bg-blue-600 text-white hover:bg-blue-700" onClick={handleCreatePdf}>
+          <AppButton variant="gri" onClick={recalcTotals} title="Toplamları yeniden hesapla">
+            Toplamları Yeniden Hesapla
+          </AppButton>
+          <AppButton variant="kurumsalmavi" onClick={handleCreatePdf} title="PDF çıktısı oluştur">
             Pdf Çıktısı
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>

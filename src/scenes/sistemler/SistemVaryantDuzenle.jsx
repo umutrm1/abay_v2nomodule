@@ -16,6 +16,8 @@ import DialogMalzemeSec from "./DialogMalzemeSec.jsx";
 import DialogKumandaSec from "./DialogKumandaSec.jsx";
 import DialogSystemVariantFoto from "./DialogSystemVariantFoto.jsx";
 
+import AppButton from "@/components/ui/AppButton.jsx";
+
 const SistemVaryantDuzenle = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -304,25 +306,28 @@ const SistemVaryantDuzenle = () => {
             />
           </div>
 
-          <button
+          <AppButton
+            variant="gri"
+            className="ml-5"
             onClick={() => setOpenVariantPhotoDlg(true)}
-            className="btn btn-secondary ml-5"
           >
             Fotoğraf
-          </button>
+          </AppButton>
 
-          <button
+          <AppButton
+            variant="kurumsalmavi"
+            className="ml-auto"
             onClick={handleSave}
-            className="btn btn-success ml-auto"
             disabled={!variantName}
           >
             Kaydet
-          </button>
+          </AppButton>
         </div>
 
         {/* Profiller */}
         <Section
           title="Profiller"
+          addButtonLabel="Profil Ekle"
           columns={['Profil Kodu', 'Profil Adı', 'Kesim Ölçüsü', 'Kesim Adedi', 'Boyanacak mı?', 'İşlemler']}
           rows={profiles}
           addRow={addProfileRow}
@@ -336,7 +341,7 @@ const SistemVaryantDuzenle = () => {
               onChange={e => setProfiles(ps => ps.map(r =>
                 r.rowKey === row.rowKey ? { ...r, formula_cut_length: e.target.value } : r
               ))}
-              className="input input-xs input-bordered w-24"
+              className="input input-xs input-bordered w-50"
             />,
             <input
               key="cutcount"
@@ -345,7 +350,7 @@ const SistemVaryantDuzenle = () => {
               onChange={e => setProfiles(ps => ps.map(r =>
                 r.rowKey === row.rowKey ? { ...r, formula_cut_count: e.target.value } : r
               ))}
-              className="input input-xs input-bordered w-20"
+              className="input input-xs input-bordered w-50"
             />,
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Evet/Hayır</span>
@@ -359,20 +364,18 @@ const SistemVaryantDuzenle = () => {
               />
             </div>,
             <div key="actions" className="flex justify-center flex-wrap gap-2">
-              <button
-                onClick={() => {
-                  setPdfTarget({ type: 'profile', rowKey: row.rowKey });
-                  setPdfDraft(row.pdf);
-                  setOpenPdfDlg(true);
-                }}
-                className="btn btn-xs btn-primary"
+              <AppButton
+                size="xs"
+                variant="kurumsalmavi"
+                shape="none"
+                onClick={() => { setPdfTarget({ type: 'profile', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
               >
                 PDF
-              </button>
-              <button onClick={() => moveProfileUp(row.rowKey)} className="btn btn-xs" title="Yukarı taşı">▲</button>
-              <button onClick={() => moveProfileDown(row.rowKey)} className="btn btn-xs" title="Aşağı taşı">▼</button>
-              <button onClick={() => openProfileDialog(row.rowKey)} className="btn btn-xs btn-success">Seç</button>
-              <button onClick={() => removeProfileRow(row.rowKey)} className="btn btn-xs btn-error">Kaldır</button>
+              </AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveProfileUp(row.rowKey)} title="Yukarı taşı">▲</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveProfileDown(row.rowKey)} title="Aşağı taşı">▼</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => openProfileDialog(row.rowKey)}>Seç</AppButton>
+              <AppButton size="xs" variant="kirmizi" shape="none" onClick={() => removeProfileRow(row.rowKey)}>Kaldır</AppButton>
             </div>
           ]}
         />
@@ -380,6 +383,7 @@ const SistemVaryantDuzenle = () => {
         {/* Camlar */}
         <Section
           title="Camlar"
+          addButtonLabel="Cam Ekle"
           columns={['Cam İsmi', 'Genişlik Formülü', 'Yükseklik Formülü', 'Adet Formülü', 'İşlemler']}
           rows={glasses}
           addRow={addGlassRow}
@@ -392,7 +396,7 @@ const SistemVaryantDuzenle = () => {
               onChange={e => setGlasses(gs => gs.map(r =>
                 r.rowKey === row.rowKey ? { ...r, formula_width: e.target.value } : r
               ))}
-              className="input input-xs input-bordered w-20"
+              className="input input-xs input-bordered w-50"
             />,
             <input
               key="h"
@@ -401,7 +405,7 @@ const SistemVaryantDuzenle = () => {
               onChange={e => setGlasses(gs => gs.map(r =>
                 r.rowKey === row.rowKey ? { ...r, formula_height: e.target.value } : r
               ))}
-              className="input input-xs input-bordered w-20"
+              className="input input-xs input-bordered w-50"
             />,
             <input
               key="c"
@@ -410,23 +414,21 @@ const SistemVaryantDuzenle = () => {
               onChange={e => setGlasses(gs => gs.map(r =>
                 r.rowKey === row.rowKey ? { ...r, formula_count: e.target.value } : r
               ))}
-              className="input input-xs input-bordered w-16"
+              className="input input-xs input-bordered w-50"
             />,
             <div key="actions" className="flex justify-center flex-wrap gap-2">
-              <button
-                onClick={() => {
-                  setPdfTarget({ type: 'glass', rowKey: row.rowKey });
-                  setPdfDraft(row.pdf);
-                  setOpenPdfDlg(true);
-                }}
-                className="btn btn-xs btn-primary"
+              <AppButton
+                size="xs"
+                variant="kurumsalmavi"
+                shape="none"
+                onClick={() => { setPdfTarget({ type: 'glass', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
               >
                 PDF
-              </button>
-              <button onClick={() => moveCamUp(row.rowKey)} className="btn btn-xs" title="Yukarı taşı">▲</button>
-              <button onClick={() => moveCamDown(row.rowKey)} className="btn btn-xs" title="Aşağı taşı">▼</button>
-              <button onClick={() => openCamDialog(row.rowKey)} className="btn btn-xs btn-success">Seç</button>
-              <button onClick={() => removeGlassRow(row.rowKey)} className="btn btn-xs btn-error">Kaldır</button>
+              </AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveCamUp(row.rowKey)} title="Yukarı taşı">▲</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveCamDown(row.rowKey)} title="Aşağı taşı">▼</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => openCamDialog(row.rowKey)}>Seç</AppButton>
+              <AppButton size="xs" variant="kirmizi" shape="none" onClick={() => removeGlassRow(row.rowKey)}>Kaldır</AppButton>
             </div>
           ]}
         />
@@ -434,6 +436,7 @@ const SistemVaryantDuzenle = () => {
         {/* Diğer Malzemeler */}
         <Section
           title="Diğer Malzemeler"
+          addButtonLabel="Diğer Malzeme Ekle"
           columns={['Malzeme İsmi', 'Adet Formülü', 'Kesim Ölçüsü Formülü', 'Sayıya Tamamla', 'İşlemler']}
           rows={materials}
           addRow={addMaterialRow}
@@ -452,7 +455,7 @@ const SistemVaryantDuzenle = () => {
                 onChange={e => setMaterials(ms => ms.map(r =>
                   r.rowKey === row.rowKey ? { ...r, formula_quantity: e.target.value } : r
                 ))}
-                className="input input-xs input-bordered w-24"
+                className="input input-xs input-bordered w-50"
               />
             ),
 
@@ -463,7 +466,7 @@ const SistemVaryantDuzenle = () => {
               onChange={e => setMaterials(ms => ms.map(r =>
                 r.rowKey === row.rowKey ? { ...r, formula_cut_length: e.target.value } : r
               ))}
-              className="input input-xs input-bordered w-28"
+              className="input input-xs input-bordered w-50"
             />,
 
             <input
@@ -480,38 +483,38 @@ const SistemVaryantDuzenle = () => {
                 ));
               }}
               disabled={!row.chunk_enabled}
-              className="input input-xs input-bordered w-24"
+              className="input input-xs input-bordered w-50"
               title={row.chunk_enabled ? 'Parça uzunluğu (mm)' : 'Önce Sayıya Tamamla’yı açın'}
             />,
 
             <div key="actions" className="flex justify-center flex-wrap gap-2">
               {/* Sayıya Tamamla toggle */}
-              <button
+              <AppButton
+                size="xs"
+                variant={row.chunk_enabled ? 'kurumsalmavi' : 'gri'}
+                shape="none"
                 onClick={() => setMaterials(ms => ms.map(r =>
                   r.rowKey === row.rowKey
                     ? { ...r, chunk_enabled: !r.chunk_enabled }
                     : r
                 ))}
-                className={`btn btn-xs ${row.chunk_enabled ? 'btn-success' : 'btn-outline'}`}
                 title="Sayıya Tamamla"
               >
                 {row.chunk_enabled ? '✅' : '☐'}&nbsp;Sayıya Tamamla
-              </button>
+              </AppButton>
 
-              <button
-                onClick={() => {
-                  setPdfTarget({ type: 'material', rowKey: row.rowKey });
-                  setPdfDraft(row.pdf);
-                  setOpenPdfDlg(true);
-                }}
-                className="btn btn-xs btn-primary"
+              <AppButton
+                size="xs"
+                variant="kurumsalmavi"
+                shape="none"
+                onClick={() => { setPdfTarget({ type: 'material', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
               >
                 PDF
-              </button>
-              <button onClick={() => moveMatUp(row.rowKey)} className="btn btn-xs" title="Yukarı taşı">▲</button>
-              <button onClick={() => moveMatDown(row.rowKey)} className="btn btn-xs" title="Aşağı taşı">▼</button>
-              <button onClick={() => openMatDialog(row.rowKey)} className="btn btn-xs btn-success">Seç</button>
-              <button onClick={() => removeMaterialRow(row.rowKey)} className="btn btn-xs btn-error">Kaldır</button>
+              </AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveMatUp(row.rowKey)} title="Yukarı taşı">▲</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveMatDown(row.rowKey)} title="Aşağı taşı">▼</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => openMatDialog(row.rowKey)}>Seç</AppButton>
+              <AppButton size="xs" variant="kirmizi" shape="none" onClick={() => removeMaterialRow(row.rowKey)}>Kaldır</AppButton>
             </div>
           ]}
         />
@@ -526,20 +529,18 @@ const SistemVaryantDuzenle = () => {
           renderRow={row => [
             row.kumanda_isim || '-',
             <div key="actions" className="flex justify-center flex-wrap gap-2">
-              <button
-                onClick={() => {
-                  setPdfTarget({ type: 'remote', rowKey: row.rowKey });
-                  setPdfDraft(row.pdf);
-                  setOpenPdfDlg(true);
-                }}
-                className="btn btn-xs btn-primary"
+              <AppButton
+                size="xs"
+                variant="kurumsalmavi"
+                shape="none"
+                onClick={() => { setPdfTarget({ type: 'remote', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
               >
                 PDF
-              </button>
-              <button onClick={() => moveRemoteUp(row.rowKey)} className="btn btn-xs" title="Yukarı taşı">▲</button>
-              <button onClick={() => moveRemoteDown(row.rowKey)} className="btn btn-xs" title="Aşağı taşı">▼</button>
-              <button onClick={() => openRemoteDialog(row.rowKey)} className="btn btn-xs btn-success">Seç</button>
-              <button onClick={() => removeRemoteRow(row.rowKey)} className="btn btn-xs btn-error">Kaldır</button>
+              </AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveRemoteUp(row.rowKey)} title="Yukarı taşı">▲</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => moveRemoteDown(row.rowKey)} title="Aşağı taşı">▼</AppButton>
+              <AppButton size="xs" variant="gri" shape="none" onClick={() => openRemoteDialog(row.rowKey)}>Seç</AppButton>
+              <AppButton size="xs" variant="kirmizi" shape="none" onClick={() => removeRemoteRow(row.rowKey)}>Kaldır</AppButton>
             </div>
           ]}
         />
@@ -625,9 +626,9 @@ const Section = ({ title, columns, rows, addRow, renderRow, addButtonLabel }) =>
   <div className="space-y-2">
     <div className="flex justify-between items-center">
       <h2 className="text-xl font-semibold">{title}</h2>
-      <button onClick={addRow} className="btn btn-sm btn-primary">
+      <AppButton size="sm" variant="kurumsalmavi" onClick={addRow}>
         {addButtonLabel ?? `${title.slice(0, -1)} Ekle`}
-      </button>
+      </AppButton>
     </div>
     <div className="overflow-x-auto border border-border rounded-lg">
       <table className="table w-full">
@@ -637,7 +638,7 @@ const Section = ({ title, columns, rows, addRow, renderRow, addButtonLabel }) =>
         <tbody>
           {rows.length > 0
             ? rows.map(r => (
-              <tr key={r.rowKey} className="hover:bg-muted/40">
+              <tr key={r.rowKey} className="hover:bg-muted/40 border-b border-base-300 last:border-b-0">
                 {renderRow(r).map((cell, i) => <td key={i} className="align-top">{cell}</td>)}
               </tr>
             ))

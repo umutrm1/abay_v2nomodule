@@ -6,6 +6,7 @@ import {
   getPdfTitleByKey,
   updatePdfTitle,
   updateProformaRule,
+  getProformaRule
 } from "@/redux/actions/actionsPdf";
 
 /**
@@ -47,6 +48,27 @@ export default function Ayarlar() {
   const [ruleSaving, setRuleSaving] = useState(false);
 
   // İlk açılışta BRAND + seçili TITLE getir
+  // 🔹 Sayfa ilk açıldığında Proforma (Project Code) kuralını getir
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await dispatch(getProformaRule());
+        // Beklenen alanları güvenli şekilde state'e uygula
+        setRule((prev) => ({
+          ...prev,
+          prefix: typeof data?.prefix === "string" ? data.prefix : prev.prefix,
+          separator: typeof data?.separator === "string" ? data.separator : prev.separator,
+          padding: typeof data?.padding === "number" ? data.padding : prev.padding,
+          start_number: typeof data?.start_number === "number" ? data.start_number : prev.start_number,
+        }));
+      } catch (e) {
+        console.error("Proforma kuralı getirilemedi", e);
+        // Sessiz geçiyoruz; mevcut varsayılanlarla devam eder.
+      }
+    })();
+  }, [dispatch]);
+
+
   useEffect(() => {
     (async () => {
       try {
@@ -251,7 +273,7 @@ export default function Ayarlar() {
               onChange={(e) => setSelectedTitleKey(e.target.value)}
             >
               {TITLE_KEYS.map((opt) => (
-                <option key={opt.key} value={opt.key}>{opt.label} ({opt.key})</option>
+                <option key={opt.key} value={opt.key}>{opt.label}</option>
               ))}
             </select>
           </div>
@@ -301,8 +323,16 @@ export default function Ayarlar() {
               type="text"
               className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={rule.prefix}
-              onChange={(e) => setRule((r) => ({ ...r, prefix: e.target.value }))}
-            />
+              onChange={(e) => {
+                const raw = e.target.value || "";
+                // Sadece A–Z: önce uppercase, sonra A–Z dışını temizle
+                const cleaned = raw.toUpperCase().replace(/[^A-Z]/g, "");
+                setRule((r) => ({ ...r, prefix: cleaned }));
+              }}
+              // Ek HTML doğrulaması: yalnızca büyük harf
+              pattern="[A-Z]*"
+              title="Sadece büyük harf kullanın (A–Z)"
+              placeholder="Örn: PRJ"            />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm text-muted-foreground">Ayırıcı (separator)</label>
@@ -317,7 +347,7 @@ export default function Ayarlar() {
             <label className="text-sm text-muted-foreground">Basamak (padding)</label>
             <input
               type="number"
-              min={1}
+              min={0}
               className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
               value={rule.padding}
               onChange={(e) => setRule((r) => ({ ...r, padding: Number(e.target.value || 0) }))}

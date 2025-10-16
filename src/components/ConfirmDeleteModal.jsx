@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 /**
  * Radix (shadcn/ui) tabanlı onay modali.
@@ -55,17 +56,19 @@ export default function ConfirmDeleteModal({
         {/* butonlar */}
         <div className="mt-6 flex justify-end gap-3">
           <DialogClose asChild>
-            <button type="button" className="btn">{cancelText}</button>
+            <AppButton variant="kurumsalmavi" type="button">
+              {cancelText}
+            </AppButton>
           </DialogClose>
 
-          <button
+          <AppButton
+            variant="kirmizi"
             type="button"
-            className={`btn btn-error ${loading ? "loading" : ""}`}
-            disabled={loading}
             onClick={handleConfirm}
+            disabled={loading}
           >
             {confirmText}
-          </button>
+          </AppButton>
         </div>
       </DialogContent>
     </Dialog>

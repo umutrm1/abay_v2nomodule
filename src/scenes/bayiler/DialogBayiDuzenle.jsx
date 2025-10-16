@@ -1,6 +1,14 @@
 // src/scenes/bayiler/DialogBayiDuzenle.jsx
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog.jsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const DialogBayiDuzenle = ({ bayi, onSave }) => {
   const [guncelBayi, setGuncelBayi] = useState({
@@ -9,7 +17,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
     phone: '',
     owner_name: '',
     city: '',
-    status: '' // 'active' | 'suspended' vs… (server ne döndürüyorsa)
+    status: '' // 'active' | 'suspended' vb. (server ne döndürüyorsa)
   });
 
   useEffect(() => {
@@ -28,45 +36,81 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
     setGuncelBayi(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleGuncelle = () => {
+    onSave({ ...guncelBayi, id: bayi.id });
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline btn-info">Düzenle</button>
+        <AppButton  variant="sari" size="sm">
+          Düzenle
+        </AppButton>
       </DialogTrigger>
-      <DialogContent className={"max-w-200"}>
+
+      <DialogContent className="max-w-200">
         <DialogHeader>
           <DialogTitle>Bayi Düzenle: {bayi?.name}</DialogTitle>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <label className="font-semibold">İsim</label>
-          <input name="name" value={guncelBayi.name} onChange={handleChange} className="input input-bordered" />
+          <input
+            name="name"
+            value={guncelBayi.name}
+            onChange={handleChange}
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">E-posta</label>
-          <input name="email" value={guncelBayi.email} onChange={handleChange} className="input input-bordered" />
+          <input
+            name="email"
+            value={guncelBayi.email}
+            onChange={handleChange}
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Telefon</label>
-          <input name="phone" value={guncelBayi.phone} onChange={handleChange} className="input input-bordered" />
+          <input
+            name="phone"
+            value={guncelBayi.phone}
+            onChange={handleChange}
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Sahip</label>
-          <input name="owner_name" value={guncelBayi.owner_name} onChange={handleChange} className="input input-bordered" />
+          <input
+            name="owner_name"
+            value={guncelBayi.owner_name}
+            onChange={handleChange}
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Şehir</label>
-          <input name="city" value={guncelBayi.city} onChange={handleChange} className="input input-bordered" />
+          <input
+            name="city"
+            value={guncelBayi.city}
+            onChange={handleChange}
+            className="input input-bordered"
+          />
 
           <label className="font-semibold">Durum</label>
-          <select name="status" value={guncelBayi.status} onChange={handleChange} className="select select-bordered">
+          <select
+            name="status"
+            value={guncelBayi.status}
+            onChange={handleChange}
+            className="select select-bordered"
+          >
             <option value="">Seçiniz</option>
             <option value="active">Aktif</option>
             <option value="suspended">Askıda</option>
           </select>
         </div>
+
         <DialogClose asChild>
-          <button
-            onClick={() => onSave({ ...guncelBayi, id: bayi.id })}
-            className="btn btn-success"
-          >
+          <AppButton variant="koyumavi" size="md" onClick={handleGuncelle}>
             Güncelle
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

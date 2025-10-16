@@ -1,13 +1,12 @@
-// src/scenes/projeler/MalzemeTable.jsx
 import React from 'react';
+import AppButton from '@/components/ui/AppButton.jsx';
 
 const MalzemeTable = ({
   extraProfiles = [],
   extraGlasses = [],
   extraRequirements = [],
-  extraRemotes = [] // 👈 YENİ
+  extraRemotes = []
 }) => {
-  // Sadece malzemelerden, ölçülü ve adetli olarak ayırıyoruz
   const olculu = extraRequirements.filter(
     req => req.material?.hesaplama_turu === 'olculu'
   );
@@ -41,12 +40,12 @@ const MalzemeTable = ({
                   <td>{p.cut_count}</td>
                   <td>eklenecek</td>
                   <td className="text-right space-x-2">
-                    <button className="btn btn-outline btn-sm">
+                    <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
                       Düzenle
-                    </button>
-                    <button className="btn btn-error btn-sm">
+                    </AppButton>
+                    <AppButton variant="kirmizi" size="sm" shape="none" title="Sil">
                       Sil
-                    </button>
+                    </AppButton>
                   </td>
                 </tr>
               ))}
@@ -79,12 +78,12 @@ const MalzemeTable = ({
                   <td>{g.count}</td>
                   <td>eklenecek</td>
                   <td className="text-right space-x-2">
-                    <button className="btn btn-outline btn-sm">
+                    <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
                       Düzenle
-                    </button>
-                    <button className="btn btn-error btn-sm">
+                    </AppButton>
+                    <AppButton variant="kirmizi" size="sm" shape="none" title="Sil">
                       Sil
-                    </button>
+                    </AppButton>
                   </td>
                 </tr>
               ))}
@@ -117,12 +116,12 @@ const MalzemeTable = ({
                   <td>{m.count}</td>
                   <td>{m.unit_price}</td>
                   <td className="text-right space-x-2">
-                    <button className="btn btn-outline btn-sm">
+                    <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
                       Düzenle
-                    </button>
-                    <button className="btn btn-error btn-sm">
+                    </AppButton>
+                    <AppButton variant="kirmizi" size="sm" shape="none" title="Sil">
                       Sil
-                    </button>
+                    </AppButton>
                   </td>
                 </tr>
               ))}
@@ -153,12 +152,12 @@ const MalzemeTable = ({
                   <td>{m.count}</td>
                   <td>{m.unit_price}</td>
                   <td className="text-right space-x-2">
-                    <button className="btn btn-outline btn-sm">
+                    <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
                       Düzenle
-                    </button>
-                    <button className="btn btn-error btn-sm">
+                    </AppButton>
+                    <AppButton variant="kirmizi" size="sm" shape="none" title="Sil">
                       Sil
-                    </button>
+                    </AppButton>
                   </td>
                 </tr>
               ))}
@@ -197,12 +196,12 @@ const MalzemeTable = ({
                         })} ₺
                       </td>
                       <td className="text-right space-x-2">
-                        <button className="btn btn-outline btn-sm">
+                        <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
                           Düzenle
-                        </button>
-                        <button className="btn btn-error btn-sm">
+                        </AppButton>
+                        <AppButton variant="kirmizi" size="sm" shape="none" title="Sil">
                           Sil
-                        </button>
+                        </AppButton>
                       </td>
                     </tr>
                   );

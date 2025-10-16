@@ -1,4 +1,4 @@
-// src/scenes/projeler/Projeler.jsx
+// src/scenes/projeler/Teklifler.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import * as actions_projeler from "@/redux/actions/actions_projeler.js";
@@ -6,6 +6,8 @@ import DialogProjeEkle from './DialogProjeEkle.jsx';
 import Header from '@/components/mycomponents/Header.jsx';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
+import DialogMusteriSec from '../projeekle/DialogMusteriSec.jsx';
+import AppButton from "@/components/ui/AppButton.jsx";
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -42,47 +44,54 @@ const Teklifler = () => {
   const [isOverlayLoading, setIsOverlayLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
 
-  // 🔹 İKİ AYRI ARAMA ALANI: KOD + AD
-  const [searchCode, setSearchCode] = useState('');   // proje kodu
-  const [searchName, setSearchName] = useState('');   // proje adı
+  const [searchCode, setSearchCode] = useState('');
+  const [searchName, setSearchName] = useState('');
   const debouncedCode = useDebounced(searchCode, 300);
   const debouncedName = useDebounced(searchName, 300);
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  // ❌ Silme modal state
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // 🟦 Taşıma (teklif → proje) modal state
   const [moveOpen, setMoveOpen] = useState(false);
   const [pendingMove, setPendingMove] = useState(null);
   const [moving, setMoving] = useState(false);
 
-  // 🔸 Liste çek: page veya filtreler değiştiğinde
   useEffect(() => {
     setListLoading(true);
     Promise.resolve(
       dispatch(
         actions_projeler.getProjelerFromApi({
           page,
-          limit: 10,
+          limit: Math.min(50, Math.max(1, Number(limit) || 10)),
           name: debouncedName || "",
           code: debouncedCode || "",
-          is_teklif: true,            // ✨ sadece teklifler
+          is_teklif: true,
+          customer_id: selectedCustomer?.id || "",
         })
       )
     ).finally(() => setListLoading(false));
-  }, [dispatch, page, debouncedName, debouncedCode]);
+  }, [dispatch, page, debouncedName, debouncedCode, limit, selectedCustomer?.id]);
 
-  // 🔸 Arama alanları değişince sayfayı 1’e çek
   const onSearchName = (e) => {
     setSearchName(e.target.value);
     setPage(1);
   };
   const onSearchCode = (e) => {
     setSearchCode(e.target.value);
+    setPage(1);
+  };
+
+  const onLimitChange = (e) => {
+    const raw = parseInt(e.target.value, 10);
+    const clamped = isNaN(raw) ? 10 : Math.min(200, Math.max(1, raw));
+    setLimit(clamped);
     setPage(1);
   };
 
@@ -97,22 +106,21 @@ const Teklifler = () => {
 
     try {
       const created = await dispatch(actions_projeler.addProjeToApi(payload));
-      // ✅ listeyi filtrelerle tazele
       await dispatch(actions_projeler.getProjelerFromApi({
         page,
-        limit: 10,
+        limit: Math.min(50, Math.max(1, Number(limit) || 10)),
         name: debouncedName || "",
         code: debouncedCode || "",
         is_teklif: true,
+        customer_id: selectedCustomer?.id || "",
       }));
       const newId = created?.id || created?.data?.id;
       if (newId) navigate(`/sistemsec/${newId}`);
     } finally {
       setIsOverlayLoading(false);
     }
-  }, [dispatch, navigate, page, debouncedName, debouncedCode]);
+  }, [dispatch, navigate, page, debouncedName, debouncedCode, limit, selectedCustomer?.id]);
 
-  // ❌ Silme
   const askDelete = (proje) => {
     setPendingDelete(proje);
     setDeleteOpen(true);
@@ -125,10 +133,11 @@ const Teklifler = () => {
       await dispatch(actions_projeler.deleteProjeOnApi(pendingDelete.id));
       await dispatch(actions_projeler.getProjelerFromApi({
         page,
-        limit: 10,
+        limit: Math.min(50, Math.max(1, Number(limit) || 10)),
         name: debouncedName || "",
         code: debouncedCode || "",
         is_teklif: true,
+        customer_id: selectedCustomer?.id || "",
       }));
     } finally {
       setDeleting(false);
@@ -137,7 +146,6 @@ const Teklifler = () => {
     }
   };
 
-  // 🟦 Teklifi Projeye Taşı
   const askMove = (proje) => {
     setPendingMove(proje);
     setMoveOpen(true);
@@ -147,10 +155,7 @@ const Teklifler = () => {
     if (!pendingMove) return;
     try {
       setMoving(true);
-
-      // Kullanıcının verdiği şemaya sadık payload: sadece is_teklif false, diğerleri aynı.
       const p = pendingMove;
-
       const payload = {
         customer_id: p.customer_id,
         project_name: p.project_name,
@@ -159,23 +164,20 @@ const Teklifler = () => {
         created_at: p.created_at,
         press_price: p.press_price ?? 0,
         painted_price: p.painted_price ?? 0,
-        is_teklif: false, // 🔴 sadece bu değişiyor
+        is_teklif: false,
         paint_status: p.paint_status,
         glass_status: p.glass_status,
         production_status: p.production_status,
       };
 
-      // Not: editProjeOnApi imzası projene göre (id, payload) ya da (payload) olabilir.
-      // Aşağıdaki satır (id, payload) varsayımıyla yazıldı.
       await dispatch(actions_projeler.editProjeOnApi(p.id, payload));
-
-      // Listeyi (hala teklifler) tazele — taşınan kayıt artık teklifte görünmemeli
       await dispatch(actions_projeler.getProjelerFromApi({
         page,
-        limit: 10,
+        limit: Math.min(50, Math.max(1, Number(limit) || 10)),
         name: debouncedName || "",
         code: debouncedCode || "",
         is_teklif: true,
+        customer_id: selectedCustomer?.id || "",
       }));
     } finally {
       setMoving(false);
@@ -185,6 +187,7 @@ const Teklifler = () => {
   };
 
   const totalPages = data.total_pages || 1;
+  const COL_COUNT = 4;
 
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
@@ -198,8 +201,7 @@ const Teklifler = () => {
 
       <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama + Ekle */}
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full">
-          {/* 🔹 SOLDAN SAĞA: PROJE KODU → PROJE ADI */}
+        <div className="flex flex-col md:flex-row items-center gap-3 md:gap-0 w-full justify-evenly">
           <input
             type="text"
             placeholder="Proje koduna göre ara..."
@@ -212,17 +214,61 @@ const Teklifler = () => {
             placeholder="Proje adına göre ara..."
             value={searchName}
             onChange={onSearchName}
-            className="input input-bordered w-full md:max-w-sm"
+            className="input input-bordered w-full md:max-w-sm ml-10"
           />
+
+          <div className="flex items-center gap-2 ml-10">
+            <AppButton
+              variant="gri"
+              size="sm"
+              className="md:!h-10"
+              onClick={() => setCustomerDialogOpen(true)}
+              title="Müşteriye göre filtrele"
+            >
+              Müşteriye Göre Ara
+            </AppButton>
+
+            {selectedCustomer?.id && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-sm">
+                <span className="truncate max-w-[12rem]">
+                  {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
+                </span>
+                <AppButton
+                  size="xs"
+                  variant="gri"
+                  shape="none"
+                  onClick={() => { setSelectedCustomer(null); setPage(1); }}
+                  title="Müşteri filtresini temizle"
+                >
+                  ✕
+                </AppButton>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 ml-10">
+            <label className="text-sm opacity-80">Teklif Sayısı</label>
+            <input
+              type="number"
+              min={1}
+              max={200}
+              value={limit}
+              onChange={onLimitChange}
+              className="input input-bordered input-sm w-24 text-center"
+              title="Sayfa Başına Teklif Sayısı (min:1/max:200)"
+            />
+          </div>
+
           <DialogProjeEkle onSave={handleAddProje} />
         </div>
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full">
+          <table className="table w-full border border-base-500 rounded-lg">
             <thead>
-              <tr>
+              <tr className="border-b border-base-500 dark:border-gray-500">
                 <th>Proje Kodu</th>
+                <th>Müşteri Adı</th>
                 <th>Proje Adı</th>
                 <th className="text-center">İşlemler</th>
               </tr>
@@ -230,52 +276,53 @@ const Teklifler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr>
-                  <td colSpan={3}><Spinner /></td>
+                <tr className="border-b border-base-400 dark:border-gray-500">
+                  <td colSpan={COL_COUNT}><Spinner /></td>
                 </tr>
               </tbody>
             ) : (data.items ?? []).length > 0 ? (
               <tbody>
                 {data.items.map(proje => (
-                  <tr key={proje.id}>
+                  <tr key={proje.id} className="border-b border-base-300 dark:border-gray-500">
                     <td>{proje.project_kodu}</td>
+                    <td>{proje.customer_name || '—'}</td>
                     <td>{proje.project_name}</td>
                     <td className="text-center space-x-2">
-                      {/* 🟦 Projelere Taşı (solda) */}
-                      <button
+                      <AppButton
+                        size="sm"
+                        variant="kurumsalmavi"
                         onClick={() => askMove(proje)}
-                        className="btn btn-primary btn-sm"
                         title="Teklifi projeye taşı"
                       >
                         Projelere Taşı
-                      </button>
+                      </AppButton>
 
-                      {/* ✏️ Düzenle */}
-                      <button
+                      <AppButton
+                        size="sm"
+                        variant="sari"
                         onClick={() => navigate(`/projeduzenle/${proje.id}`)}
-                        className="btn btn-warning btn-sm"
-                        title="Projeyi düzenle"
+                        title="Teklifi düzenle"
                       >
                         Düzenle
-                      </button>
+                      </AppButton>
 
-                      {/* 🗑️ Sil */}
-                      <button
+                      <AppButton
+                        size="sm"
+                        variant="kirmizi"
                         onClick={() => askDelete(proje)}
-                        className="btn btn-error btn-sm"
-                        title="Projeyi sil"
+                        title="Teklifi sil"
                       >
                         Sil
-                      </button>
+                      </AppButton>
                     </td>
                   </tr>
                 ))}
               </tbody>
             ) : (
               <tbody>
-                <tr>
-                  <td colSpan={3} className="text-center text-muted-foreground py-10">
-                    Gösterilecek proje bulunamadı.
+                <tr className="border-b border-base-500">
+                  <td colSpan={COL_COUNT} className="text-center text-muted-foreground py-10">
+                    Gösterilecek teklif bulunamadı.
                   </td>
                 </tr>
               </tbody>
@@ -285,24 +332,22 @@ const Teklifler = () => {
 
         {/* Sayfalama */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-          <button
-            className="btn btn-sm"
+          <AppButton
+            size="sm"
+            variant="kurumsalmavi"
             onClick={() => setPage(1)}
             disabled={data.page === 1}
-            title="İlk sayfa"
           >
             « İlk
-          </button>
-
-          <button
-            className="btn btn-sm"
+          </AppButton>
+          <AppButton
+            size="sm"
+            variant="kurumsalmavi"
             onClick={() => setPage(p => Math.max(p - 1, 1))}
             disabled={!data.has_prev}
-            title="Önceki sayfa"
           >
             ‹ Önceki
-          </button>
-
+          </AppButton>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -326,32 +371,30 @@ const Teklifler = () => {
             />
             <span className="text-sm">/ {totalPages}</span>
           </form>
-
-          <button
-            className="btn btn-sm"
+          <AppButton
+            size="sm"
+            variant="kurumsalmavi"
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={!data.has_next}
-            title="Sonraki sayfa"
           >
             Sonraki ›
-          </button>
-
-          <button
-            className="btn btn-sm"
+          </AppButton>
+          <AppButton
+            size="sm"
+            variant="kurumsalmavi"
             onClick={() => setPage(totalPages)}
             disabled={data.page === totalPages || totalPages <= 1}
-            title="Son sayfa"
           >
             Son »
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      {/* ❌ Silme modali */}
+      {/* Modallar */}
       <ConfirmDeleteModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Projeyi silmek istediğinize emin misiniz?"
+        title="Teklifi silmek istediğinize emin misiniz?"
         description={pendingDelete ? `'${pendingDelete.project_name}' silinecek. Bu işlem geri alınamaz.` : ""}
         confirmText="Evet, sil"
         cancelText="Vazgeç"
@@ -359,16 +402,25 @@ const Teklifler = () => {
         loading={deleting}
       />
 
-      {/* 🟦 Teklifi Projeye Taşı modali — ConfirmDeleteModal yapısı ile */}
       <ConfirmDeleteModal
         open={moveOpen}
         onOpenChange={setMoveOpen}
-        title="Teklifi Projeye Taşımaya Emin Misiniz?"
+        title="Teklifi Projeye Taşımaya Emin misiniz?"
         description={pendingMove ? `'${pendingMove.project_name}' tekliften projeye taşınacak.` : ""}
         confirmText="Evet, Taşı"
         cancelText="Vazgeç"
         onConfirm={handleConfirmMove}
         loading={moving}
+      />
+
+      <DialogMusteriSec
+        open={customerDialogOpen}
+        onOpenChange={setCustomerDialogOpen}
+        onSelect={(row) => {
+          setSelectedCustomer(row);
+          setPage(1);
+          setCustomerDialogOpen(false);
+        }}
       />
     </div>
   );

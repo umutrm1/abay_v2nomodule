@@ -1,4 +1,3 @@
-// src/scenes/kumandalar/DialogKumandaDuzenle.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -8,8 +7,9 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog.jsx";
+import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
+const DialogKumandaDuzenle = ({ kumanda, onSave, children }) => {
   const [form, setForm] = useState({
     kumanda_isim: '',
     kapasite: 0,
@@ -41,9 +41,13 @@ const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="btn btn-sm btn-outline">
-          Düzenle
-        </button>
+        {children ? (
+          children
+        ) : (
+          <AppButton variant="sari" size="sm" shape="none" title="Kumandayı düzenle">
+            Düzenle
+          </AppButton>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-w-md">
@@ -80,9 +84,9 @@ const DialogKumandaDuzenle = ({ kumanda, onSave }) => {
         </div>
 
         <DialogClose asChild>
-          <button onClick={handleSave} className="btn btn-success">
+          <AppButton onClick={handleSave} variant="kurumsalmavi" size="md" shape="none" title="Güncelle ve kapat">
             Güncelle
-          </button>
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>
