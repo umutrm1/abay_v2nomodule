@@ -391,6 +391,36 @@ export function editProjeSystemOnApi(projectId, projectSystemId, editedSystem) {
   };
 }
 
+export function deleteProjeSystemOnApi(projectId, projectSystemId) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/${projectId}/systems/${projectSystemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            accept: "application/json",
+          }
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Sistem silinemedi");
+      }
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return true;
+    } catch (err) {
+      toastError();
+      console.log("Proje düzenlenirken hata oluştu:", err);
+      throw err;
+    }
+  };
+}
+
+
 /* PUT: Proje düzenle (ad, kod, müşteri, renkler) */
 export function editProjeOnApi(id, editedProje) {
   return async (dispatch) => {
