@@ -8,7 +8,7 @@ import DialogSistemDuzenleOnProject from '@/components/DialogSistemDuzenleOnProj
 import AppButton from '@/components/ui/AppButton.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 
-// —— SistemEkle.jsx ile aynı yardımcı fonksiyonlar —— //
+// —— SistemEkle.jsx ile aynı yardımcılar —— //
 const round2 = (v) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return 0;
@@ -37,7 +37,9 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
   const { projectId } = useParams();
 
   const seciliSistemTam =
-    useSelector((state) => state.getSystemFullVariantsOfSystemFromApiReducer) || {};
+    useSelector(
+      (state) => state.getSystemFullVariantsOfSystemFromApiReducer
+    ) || {};
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogLoading, setDialogLoading] = useState(false);
@@ -45,9 +47,9 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
   const [selectedSys, setSelectedSys] = useState(null);
 
   // --- Silme ile ilgili state'ler ---
-  const [confirmOpen, setConfirmOpen] = useState(false);   // onay modal
-  const [deletingId, setDeletingId] = useState(null);      // silinecek project_system_id
-  const [deleting, setDeleting] = useState(false);         // API çağrısı sırasında kilitle
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleEdit = async (sys) => {
     setSelectedSys(sys);
@@ -60,7 +62,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
     }
   };
 
-  // —— DÜZENLE KAYDET: SistemEkle.jsx ile aynı hesaplama yöntemi —— //
+  // —— DÜZENLE KAYDET —— //
   const handleDialogSave = async ({ width_mm, height_mm, quantity }) => {
     if (!selectedSys) return;
     try {
@@ -78,11 +80,11 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
       };
 
       // ——— PROFİLLER ———
-      const profiles = (seciliSistemTam.profile_templates || []).map((tpl) => {
+      const profiles = (seciliSistemTam.profile_templates || []).map((tpl, idx) => {
         const cut_length_mm = Math.round(guvenliHesapla(tpl.formula_cut_length, scope));
-        const cut_count    = Math.round(guvenliHesapla(tpl.formula_cut_count,   scope));
-        const birimAgirlik = Number(tpl.profile?.birim_agirlik || 0);
-        const toplamKg     = (cut_length_mm / 1000) * cut_count * birimAgirlik;
+        const cut_count     = Math.round(guvenliHesapla(tpl.formula_cut_count,   scope));
+        const birimAgirlik  = Number(tpl.profile?.birim_agirlik || 0);
+        const toplamKg      = (cut_length_mm / 1000) * cut_count * birimAgirlik;
         const total_weight_kg = round2(toplamKg);
 
         return {
@@ -90,11 +92,14 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
           cut_length_mm,
           cut_count,
           total_weight_kg,
+          order_index: tpl?.order_index,
+          is_painted: tpl?.is_painted ?? false,
+          pdf: tpl?.pdf,
         };
       });
 
       // ——— CAMLAR ———
-      const glasses = (seciliSistemTam.glass_templates || []).map((tpl) => {
+      const glasses = (seciliSistemTam.glass_templates || []).map((tpl, idx) => {
         const gW = Math.round(guvenliHesapla(tpl.formula_width,  scope));
         const gH = Math.round(guvenliHesapla(tpl.formula_height, scope));
         const gC = Math.round(guvenliHesapla(tpl.formula_count,  scope));
@@ -106,19 +111,19 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
           height_mm: gH,
           count: gC,
           area_m2,
+          order_index: tpl?.order_index,
+          pdf: tpl?.pdf,
         };
       });
 
       // ——— MALZEMELER ———
-      const materials = (seciliSistemTam.material_templates || []).map((tpl) => {
+      const materials = (seciliSistemTam.material_templates || []).map((tpl, idx) => {
         const rq = guvenliHesapla(tpl.formula_quantity,   scope);
         const rl = guvenliHesapla(tpl.formula_cut_length, scope);
 
         let count;
         let cut_length_mm;
-
         if (tpl?.type === 'chunk_by_length') {
-          // toplam gereksinimi parça boyuna böler
           ({ count, cut_length_mm } = applyChunkByLength(tpl, rl));
         } else {
           count = Math.round(rq);
@@ -129,8 +134,22 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
           material_id: tpl.material_id,
           count,
           cut_length_mm,
+          type: tpl?.type,
+          piece_length_mm: tpl?.piece_length_mm,
+          unit_price: tpl?.unit_price,
+          order_index: tpl?.order_index,
+          pdf: tpl?.pdf,
         };
       });
+
+      // ——— REMOTELAR ———
+      const remotes = (seciliSistemTam.remote_templates || []).map((tpl, idx) => ({
+        remote_id: tpl.remote_id,
+        count: 0,
+        order_index: tpl?.order_index,
+        unit_price: tpl.unit_price,
+        pdf: tpl?.pdf,
+      }));
 
       const editedSystem = {
         project_system_id: selectedSys.project_system_id,
@@ -141,6 +160,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         profiles,
         glasses,
         materials,
+        remotes,
       };
 
       await dispatch(editProjeSystemOnApi(projectId, selectedSys.project_system_id, editedSystem));
@@ -154,7 +174,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
 
   // --- Sil akışı ---
   const requestDelete = (sys) => {
-    // 1) Sil butonuna basıldı: hedef id'yi al, modal'ı aç
     setDeletingId(sys.project_system_id);
     setConfirmOpen(true);
   };
@@ -163,11 +182,8 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
     if (!deletingId) return;
     try {
       setDeleting(true);
-      // 2) API çağrısı: başarılıysa actions içindeki toastSuccess/refresh zaten tetikleniyor
       await dispatch(deleteProjeSystemOnApi(projectId, deletingId));
-      // 3) Listeyi yenile (yine de garanti olsun)
       onRefresh?.();
-      // 4) Modal state reset
       setConfirmOpen(false);
       setDeletingId(null);
     } finally {

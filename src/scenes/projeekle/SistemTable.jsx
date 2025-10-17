@@ -40,7 +40,6 @@ function applyChunkByLength(tpl, rl) {
 
 const SistemTable = ({ systems = [], onRefresh }) => {
   const dispatch = useDispatch();
-  // route param adını SistemEkle ile aynı tuttuk
   const { id } = useParams();
 
   // ——— Variant detay reducer’ı (düzenle formülleri için gerekli) ———
@@ -75,14 +74,13 @@ const SistemTable = ({ systems = [], onRefresh }) => {
     setDialogOpen(true);
     setDialogLoading(true);
     try {
-      // SistemEkleTables’taki gibi önce variant detaylarını çekiyoruz
       await dispatch(getSystemFullVariantsOfSystemFromApi(sys.system_variant_id));
     } finally {
       setDialogLoading(false);
     }
   };
 
-  // ——— DÜZENLE KAYDET: formülleri hesapla → PUT (SistemEkle.jsx ile aynı yöntem) ———
+  // ——— DÜZENLE KAYDET ———
   const handleDialogSave = async ({ width_mm, height_mm, quantity }) => {
     if (!selectedSys) return;
 
@@ -101,23 +99,27 @@ const SistemTable = ({ systems = [], onRefresh }) => {
       };
 
       // ——— PROFİLLER ———
-      const profiles = (seciliSistemTam.profile_templates || []).map((tpl) => {
+      const profiles = (seciliSistemTam.profile_templates || []).map((tpl, idx) => {
         const cut_length_mm = Math.round(guvenliHesapla(tpl.formula_cut_length, scope));
-        const cut_count    = Math.round(guvenliHesapla(tpl.formula_cut_count,   scope));
-        const birimAgirlik = Number(tpl.profile?.birim_agirlik || 0);
-        const toplamKg     = (cut_length_mm / 1000) * cut_count * birimAgirlik;
+        const cut_count     = Math.round(guvenliHesapla(tpl.formula_cut_count,   scope));
+        const birimAgirlik  = Number(tpl.profile?.birim_agirlik || 0);
+        const toplamKg      = (cut_length_mm / 1000) * cut_count * birimAgirlik;
         const total_weight_kg = round2(toplamKg);
 
         return {
           profile_id: tpl.profile_id,
           cut_length_mm,
           cut_count,
-          total_weight_kg
+          total_weight_kg,
+          // meta alanlar tamamen tpl'den ya da index'ten
+          order_index: tpl?.order_index,
+          is_painted: tpl?.is_painted ?? false,
+          pdf: tpl?.pdf,
         };
       });
 
       // ——— CAMLAR ———
-      const glasses = (seciliSistemTam.glass_templates || []).map((tpl) => {
+      const glasses = (seciliSistemTam.glass_templates || []).map((tpl, idx) => {
         const gW = Math.round(guvenliHesapla(tpl.formula_width,  scope));
         const gH = Math.round(guvenliHesapla(tpl.formula_height, scope));
         const gC = Math.round(guvenliHesapla(tpl.formula_count,  scope));
@@ -128,20 +130,20 @@ const SistemTable = ({ systems = [], onRefresh }) => {
           width_mm: gW,
           height_mm: gH,
           count: gC,
-          area_m2
+          area_m2,
+          order_index: tpl?.order_index,
+          pdf: tpl?.pdf,
         };
       });
 
       // ——— MALZEMELER ———
-      const materials = (seciliSistemTam.material_templates || []).map((tpl) => {
+      const materials = (seciliSistemTam.material_templates || []).map((tpl, idx) => {
         const rq = guvenliHesapla(tpl.formula_quantity,   scope);
         const rl = guvenliHesapla(tpl.formula_cut_length, scope);
 
         let count;
         let cut_length_mm;
-
         if (tpl?.type === 'chunk_by_length') {
-          // toplam gereksinimi parça boyuna böler (SistemEkle ile aynı)
           ({ count, cut_length_mm } = applyChunkByLength(tpl, rl));
         } else {
           count = Math.round(rq);
@@ -151,10 +153,26 @@ const SistemTable = ({ systems = [], onRefresh }) => {
         return {
           material_id: tpl.material_id,
           count,
-          cut_length_mm
+          cut_length_mm,
+          // meta alanlar doğrudan tpl’den
+          type: tpl?.type,
+          piece_length_mm: tpl?.piece_length_mm,
+          unit_price: tpl?.unit_price,
+          order_index: tpl?.order_index,
+          pdf: tpl?.pdf,
         };
       });
 
+      // ——— REMOTELAR ———
+      const remotes = (seciliSistemTam.remote_templates || []).map((tpl, idx) => ({
+        remote_id: tpl.remote_id,
+        count: 0, // ekle/düzenle mantığında default 0
+        order_index: tpl?.order_index,
+        unit_price: tpl.unit_price,
+        pdf: tpl?.pdf,
+      }));
+
+      // ——— edited payload ———
       const editedSystem = {
         project_system_id: selectedSys.project_system_id,
         system_variant_id: selectedSys.system_variant_id,
@@ -163,7 +181,8 @@ const SistemTable = ({ systems = [], onRefresh }) => {
         quantity: Q,
         profiles,
         glasses,
-        materials
+        materials,
+        remotes,
       };
 
       await dispatch(
