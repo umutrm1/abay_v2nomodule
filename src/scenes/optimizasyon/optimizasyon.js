@@ -17,8 +17,8 @@ const optimizasyonYap = (siparis, OptimizasyonSonuclar = []) => {
     const profiller = urun.hesaplananGereksinimler?.profiller || [];
     profiller.forEach((entry) => {
       const profilId = entry.profil_id;
-      const profilIsim = entry.profil.profil_isim;
-      const stockLength = entry.profil.boy_uzunluk;
+      const profilIsim = entry.profil?.profil_isim;
+      const stockLength = entry.profil?.boy_uzunluk;
       const { kesim_olcusu: cutLength, kesim_adedi: cutQty } = entry.hesaplanan_degerler || {};
       if (typeof cutLength !== 'number' || typeof cutQty !== 'number') return;
 
@@ -27,8 +27,6 @@ const optimizasyonYap = (siparis, OptimizasyonSonuclar = []) => {
         grupMap.set(key, { profilId, profilIsim, stockLength, pieces: [] });
       }
       const grup = grupMap.get(key);
-      // Aynı profilde farklı stockLength varsa en küçük toleransı alacak şekilde bırakabilirsiniz
-      // burada hepsi aynı olduğunu varsayıyoruz
       for (let i = 0; i < cutQty; i++) {
         grup.pieces.push(cutLength);
       }
@@ -43,66 +41,59 @@ const optimizasyonYap = (siparis, OptimizasyonSonuclar = []) => {
 
     const fireTolerance = Math.min(...remaining);
 
-function findBestCombination(piecesArr, stockLen, fireTol) {
-  let bestCombo = [];
-  let bestWaste = stockLen;
+    function findBestCombination(piecesArr, stockLen, fireTol) {
+      let bestCombo = [];
+      let bestWaste = stockLen;
 
-  for (let i = 0; i < piecesArr.length; i++) {
-    const used = new Set([i]);
-    const combo = [piecesArr[i]];
-    let total = piecesArr[i];
+      for (let i = 0; i < piecesArr.length; i++) {
+        const used = new Set([i]);
+        const combo = [piecesArr[i]];
+        let total = piecesArr[i];
 
-    // >>> YENİ: Bu i için "önceki kombinasyon"u izlemek
-    // (fire >= 5 olan son ara durumu yakalayacağız)
-    let lastAcceptableCombo = combo.slice(); // başlangıçta ilk elemanlı durum
-    let lastAcceptableWaste = stockLen - total;
-    if (lastAcceptableWaste < 5) {
-      // başlangıç hali 5'ten küçükse, henüz "kabul edilebilir önceki" yok say
-      lastAcceptableCombo = [];
-      lastAcceptableWaste = Infinity;
-    }
-    // <<< YENİ
-
-    for (let j = 0; j < piecesArr.length; j++) {
-      if (used.has(j)) continue;
-      if (total + piecesArr[j] <= stockLen) {
-        combo.push(piecesArr[j]);
-        total += piecesArr[j];
-        used.add(j);
-
-        // >>> YENİ: her eklemeden sonra ara fire'ı kontrol et
-        const interimWaste = stockLen - total;
-        if (interimWaste >= 5 && interimWaste < lastAcceptableWaste) {
-          lastAcceptableWaste = interimWaste;
-          lastAcceptableCombo = combo.slice(); // o ana kadarki kombinasyonu kaydet
+        // >>> İLERİ STRATEJİ: "kabul edilebilir" son ara kombinasyonu izle
+        let lastAcceptableCombo = combo.slice();
+        let lastAcceptableWaste = stockLen - total;
+        if (lastAcceptableWaste < 5) {
+          lastAcceptableCombo = [];
+          lastAcceptableWaste = Infinity;
         }
-        // <<< YENİ
+        // <<<
+
+        for (let j = 0; j < piecesArr.length; j++) {
+          if (used.has(j)) continue;
+          if (total + piecesArr[j] <= stockLen) {
+            combo.push(piecesArr[j]);
+            total += piecesArr[j];
+            used.add(j);
+
+            const interimWaste = stockLen - total;
+            if (interimWaste >= 5 && interimWaste < lastAcceptableWaste) {
+              lastAcceptableWaste = interimWaste;
+              lastAcceptableCombo = combo.slice();
+            }
+          }
+          if (stockLen - total <= fireTol) break;
+        }
+
+        const waste = stockLen - total;
+
+        // Nihai waste < 5 ise "bir önceki en iyi ara" kombinasyonu kabul et
+        if (waste < 5 && lastAcceptableCombo.length) {
+          return { combo: lastAcceptableCombo, waste: lastAcceptableWaste };
+        }
+
+        if (waste <= fireTol) {
+          return { combo, waste };
+        }
+
+        if (waste < bestWaste) {
+          bestWaste = waste;
+          bestCombo = combo;
+        }
       }
-      if (stockLen - total <= fireTol) break;
+
+      return { combo: bestCombo, waste: bestWaste };
     }
-
-    const waste = stockLen - total;
-
-    // >>> YENİ KURAL: nihai waste < 5 ise, "bir önceki kombinasyon"u kabul et
-    if (waste < 5 && lastAcceptableCombo.length) {
-      return { combo: lastAcceptableCombo, waste: lastAcceptableWaste };
-    }
-    // <<< YENİ
-
-    // Orijinal erken kabul (ama artık nihai waste >= 5 ise zaten buradan döner)
-    if (waste <= fireTol) {
-      return { combo, waste };
-    }
-
-    // Orijinal "en iyi" karşılaştırma (burada 5 koşulu yok; ilk dosyadaki davranış korunuyor)
-    if (waste < bestWaste) {
-      bestWaste = waste;
-      bestCombo = combo;
-    }
-  }
-
-  return { combo: bestCombo, waste: bestWaste };
-}
 
     const stocks = [];
     while (remaining.length) {
@@ -113,16 +104,28 @@ function findBestCombination(piecesArr, stockLen, fireTol) {
         const idx = remaining.indexOf(len);
         if (idx >= 0) remaining.splice(idx, 1);
       });
-      stocks.push({ cuts: combo, waste });
+      // Kesimler ve fire'ı nesne halinde sakla (PDF'de de işimize yarayacak)
+      stocks.push({ cuts: combo.slice(), waste });
     }
+
+    // Son boyun kesim toplamını hesapla (+50 mm eklenecek)
+    const lastStock = stocks[stocks.length - 1] || { cuts: [] };
+    const lastCutsSum = (lastStock.cuts || []).reduce((a, b) => a + b, 0);
+    const lastCutsSumPlus50 = lastCutsSum + 50;
 
     // Sonuçları formate et
     const sonuc = {
       profilId,
       profilIsim,
       toplamBoySayisi: stocks.length,
+      // Metin (geri uyumluluk için):
       boyKesimler: stocks.map((st, i) =>
-        `Boy ${i + 1}: Kesimler -> ${st.cuts.join(", ")} | Fire: ${st.waste} mm`),
+        `Boy ${i + 1}: Kesimler -> ${st.cuts.join(", ")} | Fire: ${st.waste} mm`
+      ),
+      // Makine-okunur detay (PDF alt satırı için):
+      boyKesimlerDetay: stocks.map(st => ({ cuts: st.cuts.slice(), waste: st.waste })),
+      sonBoyToplam: lastCutsSum,
+      sonBoyToplamArti50: lastCutsSumPlus50
     };
 
     OptimizasyonSonuclar.push(sonuc);

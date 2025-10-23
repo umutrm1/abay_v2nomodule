@@ -43,7 +43,6 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     return doc;
   }
   function setFontSafe(doc, family, style = "bold") {
-    // varsayılan stili bold yaptık; her çağrıda bold denenecek
     try {
       const list = doc.getFontList?.() || {};
       const styles = list?.[family];
@@ -111,7 +110,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     doc.setLineWidth(0.8);
     doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
-    // LOGO: public/logo.png, orantı korunur ve ortalanır
+    // LOGO: public/logo.png
     try {
       const resp = await fetch("/logo.png");
       if (resp.ok) {
@@ -130,9 +129,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
         img.src = leftImg;
         await new Promise(r => { img.onload = r; });
 
-        const imgW = img.width;
-        const imgH = img.height;
-        const ratio = imgW / imgH;
+        const ratio = img.width / img.height;
 
         let drawW = boxW;
         let drawH = drawW / ratio;
@@ -242,6 +239,33 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
   };
   const results = optimizasyonYap(siparis);
 
+  // ==== FIRE (mm) TOPLAMLARI ve BİRİM AĞIRLIKLAR ====
+  // profilId -> { birim_agirlik(kg/m), profil_kodu }
+  const profileMetaMap = new Map();
+  for (const sys of filteredRequirements.systems || []) {
+    for (const p of sys.profiles || []) {
+      profileMetaMap.set(p.profile_id, {
+        birim_agirlik: Number(p.profile?.birim_agirlik || 0),
+        profil_kodu: p.profile?.profil_kodu || ""
+      });
+    }
+  }
+
+  // profilId -> toplam fire (mm)
+  const fireMmByProfile = new Map();
+  results.forEach(res => {
+    let sumMm = 0;
+    if (Array.isArray(res.boyKesimlerDetay) && res.boyKesimlerDetay.length) {
+      sumMm = res.boyKesimlerDetay.reduce((acc, b) => acc + Number(b.waste || 0), 0);
+    } else if (Array.isArray(res.boyKesimler) && res.boyKesimler.length) {
+      for (const line of res.boyKesimler) {
+        const m = String(line).match(/Fire:\s*(\d+)\s*mm/i);
+        if (m) sumMm += Number(m[1] || 0);
+      }
+    }
+    fireMmByProfile.set(res.profilId, sumMm);
+  });
+
   // kesit görselleri
   const imageMap = {};
   await Promise.all(
@@ -256,17 +280,25 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
   const leftMargin = 40;
   const rightMargin = 40;
 
-  if (type === 'detaysiz') {
-    const head = [['Profil Kodu', 'Profil Kesit', 'Profil İsmi', 'Boy Sayısı']];
+  let tableEndY = cursorY; // tablo alt sınırı (kutu nereye çizilecek?)
 
-    // body üret (filtrelenmiş requirements üstünden kodu bul)
+  if (type === 'detaysiz') {
+    // ---------- DETAYSIZ: Profil toplamları ----------
+    const head = [['Profil Kodu', 'Profil Kesit', 'Profil İsmi', 'Boy Sayısı', 'Fire(kg)']];
+
     const body = results.map(res => {
+      // kod
       let kod = '';
       for (const sys of filteredRequirements.systems || []) {
         const entry = (sys.profiles || []).find(p => p.profile_id === res.profilId);
         if (entry) { kod = entry.profile?.profil_kodu || ''; break; }
       }
-      return [kod, '', res.profilIsim, String(res.toplamBoySayisi)];
+      // toplam fire kg = (toplam_fire_mm / 1000) * birim_agirlik
+      const birimAg = Number(profileMetaMap.get(res.profilId)?.birim_agirlik || 0);
+      const toplamFireMm = Number(fireMmByProfile.get(res.profilId) || 0);
+      const toplamFireKg = (toplamFireMm / 1000) * birimAg;
+
+      return [kod, '', res.profilIsim, String(res.toplamBoySayisi), toplamFireKg.toFixed(2)];
     });
 
     if (body.length > 0) {
@@ -286,9 +318,11 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
         columnStyles: {
           0: { cellWidth: 80 },
           1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" },
-          2: { cellWidth: 316 },
-          3: { cellWidth: 80 }
+          2: { cellWidth: 266 }, // isim (düşürüldü)
+          3: { cellWidth: 65 },  // boy sayısı (düşürüldü)
+          4: { cellWidth: 65 }   // Fire(kg)   (düşürüldü)
         },
+        
 
         didParseCell: (data) => {
           if (data.section !== 'body' || data.column.index !== 1) return;
@@ -329,26 +363,44 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
 
         margin: { left: leftMargin, right: rightMargin }
       });
+
+      tableEndY = (doc.lastAutoTable?.finalY ?? cursorY);
     }
 
   } else {
-    const head = [['Profil Kodu', 'Profil Kesit', 'Profil İsmi', 'Boy No', 'Kesimler', 'Fire (mm)']];
+    // ---------- DETAYLI: Her boy satırı için fire kg ----------
+    const head = [['Profil Kodu', 'Profil Kesit', 'Profil İsmi', 'Boy No', 'Kesimler', 'Fire (mm)', 'Fire(kg)']];
     const body = [];
     const rowProfileIds = [];
 
     results.forEach(res => {
+      // ortak meta
+      const birimAg = Number(profileMetaMap.get(res.profilId)?.birim_agirlik || 0);
+
       let kod = '';
       for (const sys of filteredRequirements.systems || []) {
         const entry = (sys.profiles || []).find(p => p.profile_id === res.profilId);
         if (entry) { kod = entry.profile?.profil_kodu || ''; break; }
       }
-      (res.boyKesimler || []).forEach(line => {
-        const m = String(line).match(/Boy\s*(\d+):\s*Kesimler\s*->\s*(.*?)\s*\|\s*Fire:\s*(\d+)\s*mm/i);
-        if (m) {
-          body.push([kod, '', res.profilIsim, m[1], m[2], m[3]]);
+
+      if (Array.isArray(res.boyKesimlerDetay) && res.boyKesimlerDetay.length) {
+        res.boyKesimlerDetay.forEach((st, idx) => {
+          const wasteMm = Number(st.waste || 0);
+          const fireKg = (wasteMm / 1000) * birimAg;
+          body.push([kod, '', res.profilIsim, String(idx + 1), (st.cuts || []).join(', '), String(wasteMm), fireKg.toFixed(2)]);
           rowProfileIds.push(res.profilId);
-        }
-      });
+        });
+      } else {
+        (res.boyKesimler || []).forEach(line => {
+          const m = String(line).match(/Boy\s*(\d+):\s*Kesimler\s*->\s*(.*?)\s*\|\s*Fire:\s*(\d+)\s*mm/i);
+          if (m) {
+            const wasteMm = Number(m[3] || 0);
+            const fireKg = (wasteMm / 1000) * birimAg;
+            body.push([kod, '', res.profilIsim, m[1], m[2], m[3], fireKg.toFixed(2)]);
+            rowProfileIds.push(res.profilId);
+          }
+        });
+      }
     });
 
     if (body.length > 0) {
@@ -367,7 +419,8 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
         headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
         columnStyles: {
           0: { cellWidth: 50 },
-          1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" }
+          1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" },
+          // diğer kolonlar otomatik; genişlikler toplam sayfaya göre dağıtılır
         },
 
         didParseCell: (data) => {
@@ -409,8 +462,46 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
 
         margin: { left: leftMargin, right: rightMargin }
       });
+
+      tableEndY = (doc.lastAutoTable?.finalY ?? cursorY);
     }
   }
+
+  // ==== TOPLAM FIRE (kg) ====
+  // Formül: (fire_mm / 1000) * birim_agirlik(kg/m)  -> kg
+  let toplamFireKg = 0;
+  for (const [profilId, fireMm] of fireMmByProfile.entries()) {
+    const meta = profileMetaMap.get(profilId) || { birim_agirlik: 0 };
+    const metre = Number(fireMm || 0) / 1000; // mm -> m
+    const kg = metre * Number(meta.birim_agirlik || 0); // kg
+    toplamFireKg += kg;
+  }
+
+  // Değeri kutu içinde, tablonun altına sağ tarafa yazdır
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const fontSize = 9;
+  const padX2 = 6, padY2 = 6;
+  const boxW = 220; // sağda kompakt kutu
+  const colX = pageWidth - rightMargin - boxW;
+  const label = `Toplam Fire(kg) : ${toplamFireKg.toFixed(2)}`;
+  const lines = doc.splitTextToSize(label, boxW - 2 * padX2);
+  const lineFactor = typeof doc.getLineHeightFactor === "function" ? doc.getLineHeightFactor() : 1.15;
+  const contentH = lines.length * (fontSize * lineFactor);
+  const boxH = Math.max(22, contentH + 2 * padY2);
+
+  // Yeni sayfaya taşma kontrolü
+  let drawY = tableEndY + 8;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (drawY + boxH + 20 > pageHeight) {
+    doc.addPage();
+    drawY = 40; // yeni sayfada üstten makul boşluk
+  }
+
+  doc.setLineWidth(0.8);
+  doc.rect(colX, drawY, boxW, boxH, "S");
+  setFontSafe(doc, 'Roboto', 'bold');
+  doc.setFontSize(fontSize);
+  doc.text(lines, colX + padX2, drawY + padY2 + fontSize);
 
   openPdf(doc);
 }

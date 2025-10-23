@@ -262,7 +262,8 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
           profil: {
             profil_isim: p.profile?.profil_isim,
             boy_uzunluk: p.profile?.boy_uzunluk,
-            birim_agirlik: p.profile?.birim_agirlik
+            birim_agirlik: p.profile?.birim_agirlik,
+            profil_kodu: p.profile?.profil_kodu
           },
           hesaplanan_degerler: {
             kesim_olcusu: p.cut_length_mm,
@@ -295,8 +296,8 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
   // tablo başlıkları
   const head = [['Profil Kodu', 'Profil Kesit', 'Profil Adı', 'Adet', 'Boy (mm)', 'Birim Kilo (kg)', 'Toplam Kilo (kg)']];
 
-  // body
-  const body = optimSonuclar.map(res => {
+  // body: Her profil için 2 satır üret: (1) ana satır, (2) alt bilgi satırı
+  const body = optimSonuclar.flatMap(res => {
     const entry = (filteredRequirements.systems || []).flatMap(s => s.profiles).find(p => p.profile_id === res.profilId);
     const kod = entry?.profile?.profil_kodu || '-';
     const isim = entry?.profile?.profil_isim || '-';
@@ -304,7 +305,22 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
     const birimKg = Number(entry?.profile?.birim_agirlik || 0);
     const adet = Number(res?.toplamBoySayisi || 0);
     const toplamKg = adet * boy / 1000 * birimKg;
-    return [kod, '', isim, adet, boy, birimKg.toFixed(2), toplamKg.toFixed(2)];
+
+    // Alt satır metni: son boy kesimleri toplamı + 50 mm
+    const lastCuts = (res?.boyKesimlerDetay?.[res.boyKesimlerDetay.length - 1]?.cuts) || [];
+    const lastCutsText = lastCuts.length ? lastCuts.join(", ") : "-";
+    const arti50 = Number(res?.sonBoyToplamArti50 ?? 0);
+
+    const mainRow = [kod, '', isim, adet, boy, birimKg.toFixed(2), toplamKg.toFixed(2)];
+
+    const subRowCell = {
+      content: `↳ Son boy kesimleri toplamı + 50 = ${arti50} mm  (Son boy kesimler: ${lastCutsText})`,
+      colSpan: 7,
+      styles: { halign: 'left', font: 'Roboto', fontStyle: 'bold', fontSize: 9, cellPadding: { top: 3, right: 6, bottom: 3, left: 10 } }
+    };
+    const subRow = [subRowCell];
+
+    return [mainRow, subRow];
   });
 
   if (body.length > 0) {
@@ -330,10 +346,18 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
         1: { cellWidth: (IMG_MAX_W + 2 * IMG_PAD), halign: 'center', valign: 'middle' }
       },
 
-      // 1) satır yüksekliğini görsel boyuna göre ayarla
+      // 1) satır yüksekliğini görsel boyuna göre ayarla (yalnızca ANA satırda, alt satıra dokunma)
       didParseCell: (data) => {
-        if (data.section !== 'body' || data.column.index !== 1) return;
-        const resObj = optimSonuclar[data.row.index];
+        if (data.section !== 'body') return;
+        // Alt satırlar tek hücre ve colSpan=7 olduğu için column.index 1 asla olmayacak; bu kontrol zaten alt satırı pas geçer.
+        if (data.column.index !== 1) return;
+
+        const logicalRowIndex = data.row.index; // autoTable iç sıralaması
+        // Her profil 2 satır: 0=ana, 1=alt; 2=ana, 3=alt; ...
+        // Görsel sadece ANA satırlara çizilecek (çift indeks)
+        if (logicalRowIndex % 2 === 1) return;
+
+        const resObj = optimSonuclar[Math.floor(logicalRowIndex / 2)];
         const pid = resObj?.profilId;
         const img = pid != null ? imageMap[pid] : null;
         if (typeof img !== 'string' || !img.startsWith('data:image')) return;
@@ -347,10 +371,15 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
         } catch {}
       },
 
-      // 2) çizimde: max-width’e göre merkezde çiz
+      // 2) çizimde: max-width’e göre merkezde çiz (yalnızca ANA satır)
       didDrawCell: data => {
-        if (data.section !== 'body' || data.column.index !== 1) return;
-        const resObj = optimSonuclar[data.row.index];
+        if (data.section !== 'body') return;
+        if (data.column.index !== 1) return;
+
+        const logicalRowIndex = data.row.index;
+        if (logicalRowIndex % 2 === 1) return; // alt satır değil
+
+        const resObj = optimSonuclar[Math.floor(logicalRowIndex / 2)];
         const pid = resObj?.profilId;
         const img = pid != null ? imageMap[pid] : null;
         if (typeof img !== 'string' || !img.startsWith('data:image')) return;
@@ -405,6 +434,7 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
       if (!entry) return sum;
       const boy = Number(entry?.profile?.boy_uzunluk || 0);
       const birimKg = Number(entry?.profile?.birim_agirlik || 0);
+      // DİKKAT: adet = toplamBoySayisi (boy sayısı), yani kaç stock kullanıldıysa
       const adet = Number(res?.toplamBoySayisi || 0);
       const toplam = adet * boy / 1000 * birimKg; // kg
       return sum + toplam;
