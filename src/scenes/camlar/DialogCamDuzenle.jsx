@@ -10,39 +10,39 @@ import {
 import AppButton from "@/components/ui/AppButton.jsx";
 
 const DialogCamDuzenle = ({ cam, onSave, children }) => {
-  // 1) Düzenlenen cam verisi için state
+  // 🧱 Düzenleme state'i: thickness_mm varsayılanı 1 (Tek Cam)
   const [form, setForm] = useState({
     cam_isim: '',
-    thickness_mm: 0
+    thickness_mm: 1
   });
 
-  // 2) Props değişince formu ön-doldur
+  // 🔄 cam prop'u gelince formu doldur
   useEffect(() => {
     if (cam) {
       setForm({
         cam_isim: cam.cam_isim || '',
-        thickness_mm: cam.thickness_mm || 0
+        // Backend'ten 1/2 geliyorsa direkt kullan; yoksa emniyetli olarak 1
+        thickness_mm: Number(cam.thickness_mm) === 2 ? 2 : 1
       });
     }
   }, [cam]);
 
-  // 3) Input değişim handler
+  // 🧠 Ortak handler
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) : value
+      [name]: type === 'number' ? Number(value) : value
     }));
   };
 
-  // 4) Güncelle: onSave ile id dahil gönder
+  // 💾 Güncelle: id ile birlikte yolla
   const handleSave = () => {
     onSave({ id: cam.id, ...form });
   };
 
   return (
     <Dialog>
-      {/* Tetikleyici: children verilmişse onu kullan; yoksa varsayılan AppButton */}
       <DialogTrigger asChild>
         {children ? (
           children
@@ -64,24 +64,31 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <label>Cam İsmi</label>
+          <label htmlFor="cam_isim">Cam İsmi</label>
           <input
+            id="cam_isim"
             name="cam_isim"
             value={form.cam_isim}
             onChange={handleChange}
             className="input input-bordered"
           />
-          <label>Kalınlık (mm)</label>
-          <input
-            type="number"
+
+          <label htmlFor="thickness_mm">Cam Türü</label>
+          {/* 🔁 number yerine select: form.thickness_mm değeri 1/2 */}
+          <select
+            id="thickness_mm"
             name="thickness_mm"
-            value={form.thickness_mm}
-            onChange={handleChange}
-            className="input input-bordered"
-          />
+            value={String(form.thickness_mm)}
+            onChange={(e) =>
+              setForm(prev => ({ ...prev, thickness_mm: Number(e.target.value) }))
+            }
+            className="select select-bordered"
+          >
+            <option value="1">Tek Cam</option>
+            <option value="2">Çift Cam</option>
+          </select>
         </div>
 
-        {/* Kapat/Güncelle: AppButton ile */}
         <DialogClose asChild>
           <AppButton
             onClick={handleSave}

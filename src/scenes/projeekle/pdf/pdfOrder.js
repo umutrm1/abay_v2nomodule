@@ -32,10 +32,10 @@ async function createPdfDoc() {
   doc.addFileToVFS("Roboto-Bold.ttf", bold64);
   doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
 
-  doc.setFont("Roboto", "normal");
+  doc.setFont("Roboto", "bold");
   return doc;
 }
-function setFontSafe(doc, family, style = "normal") {
+function setFontSafe(doc, family, style = "bold") {
   try {
     const list = doc.getFontList?.() || {};
     const styles = list?.[family];
@@ -82,7 +82,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // SOL kutu (logo alanı)
   const leftRequestedW = Number(headerCfg?.leftImage?.width || 260);
   const leftX = leftMargin;
-  const topY = 40;
+  const topY = 5;
 
   // SAĞ blok (firma kutuları)
   const rightX = leftX + leftRequestedW;
@@ -91,7 +91,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   // Başlık — MERKEZDE
   if (headerCfg?.rightBox?.title) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
     const titleH = titleFontSize * lineFactor + 2 * padY;
@@ -108,7 +108,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // Firma satırları
   const rLines = Array.isArray(headerCfg?.rightBox?.lines) ? headerCfg.rightBox.lines : [];
   for (const line of rLines) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     const txt = (line.type === "labelValue")
       ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
       : (String(line.text || line.value || line.href || ""));
@@ -191,7 +191,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   let bottomY = rightBottomY;
   if (rows.length) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(baseFontSize);
     const lfac = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
 
@@ -279,14 +279,14 @@ export async function generateOrderPdf(ctx, pdfConfig = {}, brandConfig = {}) {
     // 3) InfoRows'un hemen altında bitişik "Sistem / En / Boy / Adet" kutusu
     const pageW = doc.internal.pageSize.getWidth();
     const leftMargin = 40, rightMargin = 40;
-    const boxX = leftMargin, boxW = pageW - leftMargin - rightMargin, boxH = 26;
+    const boxX = leftMargin, boxW = pageW - leftMargin - rightMargin, boxH = 22;
 
 // (kutuyu zaten çiziyorsun)
 doc.setLineWidth(0.8);
 doc.rect(boxX, cursorY, boxW, boxH, "S");
 
 // --- TEK KOLON / TEK SATIR METİN ---
-setFontSafe(doc, fontName, "normal");
+setFontSafe(doc, fontName, "bold");
 
 // 1) Birleştirilmiş özet metni hazırla
 const sysName = `${(sys.system?.name || "").toString()} ${sys.name || ""}`.trim();
@@ -295,9 +295,9 @@ const summary = `Sistem: ${sysName}   En: ${sys.width_mm} mm   Boy: ${sys.height
 // 2) Metin tek satıra sığsın diye dinamik font küçültme
 const lfac = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
 const padX = 8; // sağ/sol iç boşluk (kutunun içine taşmasın)
-let fs = 10;    // başlangıç fontu
+let fs = 9;    // başlangıç fontu
 doc.setFontSize(fs);
-while (doc.getTextWidth(summary) > (boxW - 2 * padX) && fs > 7) {
+while (doc.getTextWidth(summary) > (boxW - 2 * padX) && fs > 6) {
   fs -= 1;
   doc.setFontSize(fs);
 }
@@ -351,12 +351,12 @@ autoTable(doc, {
   head, body,
   theme: "grid",
   styles: {
-    font: 'Roboto', fontSize: 10, halign: 'center', valign: 'middle',
+    font: 'Roboto',fontStyle: 'bold', fontSize: 9, halign: 'center', valign: 'middle',
     textColor: [0, 0, 0], lineColor: [0, 0, 0]
   },
   tableLineColor: [0, 0, 0],
   tableLineWidth: 0.5,
-  headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
+  headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
 
   // Profil Kesit sütunu genişliği = IMG_MAX_W + 2*IMG_PAD
   columnStyles: { 1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } },
@@ -416,14 +416,14 @@ autoTable(doc, {
         body: olculu.map(m => [m.material?.diger_malzeme_isim || m.material?.name || "-", m.cut_length_mm, m.count]),
         theme: "grid",
         styles: {
-          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          font: 'Roboto', fontStyle: 'bold',fontSize: 9, minCellHeight: 18,
           halign: 'center', valign: 'middle',
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0]
         },
         tableLineColor: [0, 0, 0],
         tableLineWidth: 0.5,
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+        headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
   lineWidth: 0.5     },
         margin: { left: leftMargin, right: rightMargin }
       });
@@ -437,14 +437,14 @@ autoTable(doc, {
         body: adetli.map(m => [m.material?.diger_malzeme_isim || m.material?.name || "-", m.count]),
         theme: "grid",
         styles: {
-          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          font: 'Roboto', fontStyle: 'bold',fontSize: 9, minCellHeight: 22,
           halign: 'center', valign: 'middle',
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0]
         },
         tableLineColor: [0, 0, 0],
         tableLineWidth: 0.5,
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
+        headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
   lineWidth: 0.5     },
         margin: { left: leftMargin, right: rightMargin }
       });
@@ -458,14 +458,14 @@ autoTable(doc, {
       ) / 1000;
 
     const rightBoxW = 200;
-    const rightBoxH = 26;
+    const rightBoxH = 18;
     const rx = pageW - rightMargin - rightBoxW;
     const ry = cursorY; // bitişik
 
     doc.setLineWidth(0.8);
     doc.rect(rx, ry, rightBoxW, rightBoxH, "S");
     setFontSafe(doc, fontName, "bold");
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.text(`Toplam Profil Kg: ${toplamProfilKg.toFixed(2)}`, rx + rightBoxW / 2, ry + rightBoxH / 2 + 3, { align: "center" });
 
     cursorY += rightBoxH; // (ileride başka öğe eklemek istersen)

@@ -7,6 +7,8 @@ import { ReactComponent as PencilRuler } from '../../icons/pencil-ruler_v2.svg';
 import * as math from 'mathjs';
 import SistemEkleTables from './SistemEkleTables.jsx';
 import AppButton from '@/components/ui/AppButton.jsx';
+import PagedSelectDialog from '@/scenes/projeekle/PagedSelectDialog';
+import { getGlassColorFromApi, getDefaultColorOne, getDefaultColorTwo } from '@/redux/actions/actions_boyalar.js';
 
 const round2 = (v) => {
   const n = Number(v);
@@ -20,7 +22,12 @@ const Spinner = () => (
   </div>
 );
 
-const SistemEkle = () => {
+
+const EMPTY_PAGE = { items: [], total: 0, page: 1, limit: 5, total_pages: 1, has_next: false, has_prev: false };
+const LIMIT = 5;
+
+
+ const SistemEkle = () => {
   const { projectId, variantId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -32,8 +39,23 @@ const SistemEkle = () => {
   const [sistemYukseklik, setSistemYukseklik] = useState(0);
   const [sistemAdet, setSistemAdet] = useState(0);
 
+   const [colorDialogOpen, setColorDialogOpen] = useState(false);
+   const [whichColorSelecting, setWhichColorSelecting] = useState(null); // 1 veya 2
+   const [renk1Id, setRenk1Id] = useState(null);
+   const [renk1Name, setRenk1Name] = useState('-');
+   const [renk2Id, setRenk2Id] = useState(null);
+   const [renk2Name, setRenk2Name] = useState('-');
+
+
   const requirements = useSelector(s => s.getProjeRequirementsFromApiReducer) || { systems: [], extra_requirements: [] };
   const seciliSistemTam = useSelector(s => s.getSystemFullVariantsOfSystemFromApiReducer) || {};
+
+  const colorsPage = useSelector(s => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
+   const fetchPage = React.useCallback(
+     (page, q) => dispatch(getGlassColorFromApi(page, q, LIMIT)),
+     [dispatch]
+   );
+
 
   const handleNumberChange = (setter) => (e) => {
     const v = e.target.value;
@@ -49,6 +71,21 @@ const SistemEkle = () => {
       try {
         await dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
         await dispatch(getProjeRequirementsFromApi(projectId));
+       // Varsayılan renkleri getir
+       try {
+         const d1 = await dispatch(getDefaultColorOne());
+         if (d1?.id) {
+           setRenk1Id(d1.id);
+           setRenk1Name(d1.name ?? 'Renk 1');
+         }
+       } catch {}
+       try {
+         const d2 = await dispatch(getDefaultColorTwo());
+         if (d2?.id) {
+           setRenk2Id(d2.id);
+           setRenk2Name(d2.name ?? 'Renk 2');
+         }
+       } catch {}
       } finally {
         setIsLoadingInit(false);
       }
@@ -119,7 +156,9 @@ const SistemEkle = () => {
           count,
           area_m2,
           order_index: index + 1,
-          pdf: tpl.pdf
+          pdf: tpl.pdf,
+         ...(renk1Id ? { glass_color_id_1: renk1Id } : {}),
+         ...(renk2Id ? { glass_color_id_2: renk2Id } : {}),
         };
       }),
       materials: (seciliSistemTam.material_templates || []).map((tpl, i) => {
@@ -220,7 +259,29 @@ const SistemEkle = () => {
                 placeholder="Adet"
                 className="input input-bordered w-full max-w-xs"
               />
+                       <div className="flex items-center gap-2 ml-auto">
+           <AppButton
+             variant="kurumsalmavi"
+             size="sm"
+             onClick={() => { setWhichColorSelecting(1); setColorDialogOpen(true); }}
+             title="Renk 1 seç"
+           >
+             Renk 1
+           </AppButton>
+           <span className="text-xs text-muted-foreground">({renk1Name})</span>
+
+           <AppButton
+             variant="kurumsalmavi"
+             size="sm"
+             onClick={() => { setWhichColorSelecting(2); setColorDialogOpen(true); }}
+             title="Renk 2 seç"
+           >
+             Renk 2
+           </AppButton>
+           <span className="text-xs text-muted-foreground">({renk2Name})</span>
+         </div>
             </div>
+            
           </div>
 
           <AppButton
@@ -255,6 +316,28 @@ const SistemEkle = () => {
       ) : (
         <SistemEkleTables onRefresh={refreshRequirements} systems={requirements.systems} />
       )}
+     {/* Cam rengi seçim modali (DialogCamRenkSec ile aynı PagedSelectDialog) */}
+     <PagedSelectDialog
+       title="Cam Rengi Seç"
+       open={colorDialogOpen}
+       onOpenChange={setColorDialogOpen}
+       data={Array.isArray(colorsPage) ? { ...EMPTY_PAGE, items: colorsPage } : colorsPage}
+       fetchPage={fetchPage}
+       columns={[{ key: 'name', label: 'Renk Adı' }]}
+       searchPlaceholder="Renk adına göre ara…"
+       onSelect={(row) => {
+         if (!row?.id) return;
+         if (whichColorSelecting === 1) {
+           setRenk1Id(row.id);
+           setRenk1Name(row.name ?? 'Renk 1');
+         } else if (whichColorSelecting === 2) {
+           setRenk2Id(row.id);
+           setRenk2Name(row.name ?? 'Renk 2');
+         }
+         setColorDialogOpen(false);
+         setWhichColorSelecting(null);
+       }}
+     />
     </div>
   );
 };

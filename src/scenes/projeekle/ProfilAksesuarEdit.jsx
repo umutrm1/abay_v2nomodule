@@ -9,7 +9,7 @@ import { generateProfileAccessoryPdf } from "./pdf/pdfProfileAccessory.js";
 import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-// Tema uyumlu spinner
+/* ───────── Tema uyumlu spinner ───────── */
 const Spinner = () => (
   <div className="flex justify-center items-center py-10 w-full h-full">
     <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin"></div>
@@ -437,7 +437,8 @@ export default function ProfilAksesuarEdit() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="grid grid-rows-[60px_1fr] h-full">
+    <div className="grid grid-rows-[60px_1fr] h-full bg-background text-foreground">
+      {/* Üst bar */}
       <div className="flex items-center justify-between px-5">
         <Header title={`Profil Aksesuar – ${proje?.project_kodu || ""} ${proje?.project_name || ""}`} />
         <div className="flex gap-2">
@@ -456,35 +457,36 @@ export default function ProfilAksesuarEdit() {
         </div>
       </div>
 
-      <div className="bg-white w-full border-gray-200 border rounded-2xl p-5 h-full flex flex-col gap-4 overflow-hidden">
+      {/* İçerik kartı */}
+      <div className="w-full border border-border rounded-2xl p-5 h-full flex flex-col gap-4 overflow-hidden bg-card">
         {/* Toplamlar */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="p-3 border rounded-xl">
-            <label className="block text-xs mb-1">TOPLAM</label>
+          <div className="p-3 border border-border rounded-xl bg-card">
+            <label className="block text-xs mb-1 text-muted-foreground">TOPLAM</label>
             <input
               type="number"
               step="0.01"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full bg-background text-foreground placeholder:text-muted-foreground border-border"
               value={totals.toplam}
               onChange={(e) => setTotals((t) => ({ ...t, toplam: toNum(e.target.value) }))}
             />
           </div>
-          <div className="p-3 border rounded-xl bg-blue-50">
-            <label className="block text-xs mb-1">KDV</label>
+          <div className="p-3 border border-border rounded-xl bg-muted">
+            <label className="block text-xs mb-1 text-muted-foreground">KDV</label>
             <input
               type="number"
               step="0.01"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full bg-background text-foreground placeholder:text-muted-foreground border-border"
               value={totals.kdv}
               onChange={(e) => setTotals((t) => ({ ...t, kdv: toNum(e.target.value) }))}
             />
           </div>
-          <div className="p-3 border rounded-xl">
-            <label className="block text-xs mb-1">GENEL TOPLAM</label>
+          <div className="p-3 border border-border rounded-xl bg-card">
+            <label className="block text-xs mb-1 text-muted-foreground">GENEL TOPLAM</label>
             <input
               type="number"
               step="0.01"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full bg-background text-foreground placeholder:text-muted-foreground border-border"
               value={totals.genelToplam}
               onChange={(e) => setTotals((t) => ({ ...t, genelToplam: toNum(e.target.value) }))}
               onBlur={recalcTotals}
@@ -493,10 +495,10 @@ export default function ProfilAksesuarEdit() {
         </div>
 
         {/* Tablo */}
-        <div className="overflow-auto border rounded-xl">
+        <div className="overflow-auto border border-border rounded-xl">
           <table className="table table-zebra w-full text-sm">
-            <thead className="sticky top-0 bg-gray-100 z-10">
-              <tr>
+            <thead className="sticky top-0 bg-muted z-10">
+              <tr className="text-foreground">
                 <th className="whitespace-nowrap">Profil Kodu</th>
                 <th className="whitespace-nowrap">Profil Kesit</th>
                 <th className="whitespace-nowrap">Profil / Malzeme / Kumanda</th>
@@ -523,7 +525,7 @@ export default function ProfilAksesuarEdit() {
                         />
                       </div>
                     ) : (
-                      <span className="text-xs opacity-50">—</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="min-w-[220px]">{r.ad}</td>
@@ -531,7 +533,7 @@ export default function ProfilAksesuarEdit() {
                     <input
                       type="number"
                       step="1"
-                      className="input input-bordered w-24"
+                      className="input input-bordered w-24 bg-background text-foreground placeholder:text-muted-foreground border-border"
                       value={r.adet}
                       onChange={(e) => onCellChange(i, "adet", e.target.value)}
                     />
@@ -540,7 +542,7 @@ export default function ProfilAksesuarEdit() {
                     <input
                       type="number"
                       step="0.001"
-                      className="input input-bordered w-24"
+                      className="input input-bordered w-24 bg-background text-foreground placeholder:text-muted-foreground border-border"
                       value={r.boy_m}
                       onChange={(e) => onCellChange(i, "boy_m", e.target.value)}
                     />
@@ -549,7 +551,7 @@ export default function ProfilAksesuarEdit() {
                     <input
                       type="number"
                       step="0.001"
-                      className="input input-bordered w-24"
+                      className="input input-bordered w-24 bg-background text-foreground placeholder:text-muted-foreground border-border"
                       value={r.birimKg}
                       onChange={(e) => onCellChange(i, "birimKg", e.target.value)}
                     />
@@ -558,7 +560,7 @@ export default function ProfilAksesuarEdit() {
                     <input
                       type="number"
                       step="0.00001"
-                      className="input input-bordered w-28"
+                      className="input input-bordered w-28 bg-background text-foreground placeholder:text-muted-foreground border-border"
                       value={r.toplamKg}
                       onChange={(e) => onCellChange(i, "toplamKg", e.target.value)}
                     />
@@ -567,7 +569,7 @@ export default function ProfilAksesuarEdit() {
                     <input
                       type="number"
                       step="0.01"
-                      className="input input-bordered w-24"
+                      className="input input-bordered w-24 bg-background text-foreground placeholder:text-muted-foreground border-border"
                       value={r.birimFiyat}
                       onChange={(e) => onCellChange(i, "birimFiyat", e.target.value)}
                     />
@@ -576,7 +578,7 @@ export default function ProfilAksesuarEdit() {
                     <input
                       type="number"
                       step="0.01"
-                      className="input input-bordered w-28"
+                      className="input input-bordered w-28 bg-background text-foreground placeholder:text-muted-foreground border-border"
                       value={r.toplamFiyat}
                       onChange={(e) => onCellChange(i, "toplamFiyat", e.target.value)}
                     />

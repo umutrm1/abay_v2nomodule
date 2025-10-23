@@ -1,3 +1,4 @@
+// @/scenes/projeler/SistemTable.jsx
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -68,6 +69,18 @@ const SistemTable = ({ systems = [], onRefresh }) => {
     fullName(a).toLowerCase().localeCompare(fullName(b).toLowerCase())
   );
 
+  // Satırdaki mevcut R1/R2’yi diyaloga geçirmek için
+  const extractInitialColors = (sys) => {
+    const g = Array.isArray(sys?.glasses) && sys.glasses.length > 0 ? sys.glasses[0] : null;
+    if (!g) return undefined;
+    const id1 = g?.glass_color_obj_1?.id ?? g?.glass_color_id_1 ?? null;
+    const id2 = g?.glass_color_obj_2?.id ?? g?.glass_color_id_2 ?? null;
+    const name1 = g?.glass_color_obj_1?.name ?? g?.glass_color_1 ?? (id1 ? "Renk 1" : "-");
+    const name2 = g?.glass_color_obj_2?.name ?? g?.glass_color_2 ?? (id2 ? "Renk 2" : "-");
+    if (id1 || id2) return { id1, name1, id2, name2 };
+    return undefined;
+  };
+
   // ——— DÜZENLE: önce gerekli variantı getir, sonra dialogu aç ———
   const handleEdit = async (sys) => {
     setSelectedSys(sys);
@@ -81,7 +94,7 @@ const SistemTable = ({ systems = [], onRefresh }) => {
   };
 
   // ——— DÜZENLE KAYDET ———
-  const handleDialogSave = async ({ width_mm, height_mm, quantity }) => {
+  const handleDialogSave = async ({ width_mm, height_mm, quantity, glass_color_id_1, glass_color_id_2 }) => {
     if (!selectedSys) return;
 
     try {
@@ -99,7 +112,7 @@ const SistemTable = ({ systems = [], onRefresh }) => {
       };
 
       // ——— PROFİLLER ———
-      const profiles = (seciliSistemTam.profile_templates || []).map((tpl, idx) => {
+      const profiles = (seciliSistemTam.profile_templates || []).map((tpl) => {
         const cut_length_mm = Math.round(guvenliHesapla(tpl.formula_cut_length, scope));
         const cut_count     = Math.round(guvenliHesapla(tpl.formula_cut_count,   scope));
         const birimAgirlik  = Number(tpl.profile?.birim_agirlik || 0);
@@ -111,7 +124,6 @@ const SistemTable = ({ systems = [], onRefresh }) => {
           cut_length_mm,
           cut_count,
           total_weight_kg,
-          // meta alanlar tamamen tpl'den ya da index'ten
           order_index: tpl?.order_index,
           is_painted: tpl?.is_painted ?? false,
           pdf: tpl?.pdf,
@@ -119,7 +131,7 @@ const SistemTable = ({ systems = [], onRefresh }) => {
       });
 
       // ——— CAMLAR ———
-      const glasses = (seciliSistemTam.glass_templates || []).map((tpl, idx) => {
+      const glasses = (seciliSistemTam.glass_templates || []).map((tpl) => {
         const gW = Math.round(guvenliHesapla(tpl.formula_width,  scope));
         const gH = Math.round(guvenliHesapla(tpl.formula_height, scope));
         const gC = Math.round(guvenliHesapla(tpl.formula_count,  scope));
@@ -133,11 +145,13 @@ const SistemTable = ({ systems = [], onRefresh }) => {
           area_m2,
           order_index: tpl?.order_index,
           pdf: tpl?.pdf,
+          ...(glass_color_id_1 ? { glass_color_id_1 } : {}),
+          ...(glass_color_id_2 ? { glass_color_id_2 } : {}),
         };
       });
 
       // ——— MALZEMELER ———
-      const materials = (seciliSistemTam.material_templates || []).map((tpl, idx) => {
+      const materials = (seciliSistemTam.material_templates || []).map((tpl) => {
         const rq = guvenliHesapla(tpl.formula_quantity,   scope);
         const rl = guvenliHesapla(tpl.formula_cut_length, scope);
 
@@ -154,7 +168,6 @@ const SistemTable = ({ systems = [], onRefresh }) => {
           material_id: tpl.material_id,
           count,
           cut_length_mm,
-          // meta alanlar doğrudan tpl’den
           type: tpl?.type,
           piece_length_mm: tpl?.piece_length_mm,
           unit_price: tpl?.unit_price,
@@ -164,9 +177,9 @@ const SistemTable = ({ systems = [], onRefresh }) => {
       });
 
       // ——— REMOTELAR ———
-      const remotes = (seciliSistemTam.remote_templates || []).map((tpl, idx) => ({
+      const remotes = (seciliSistemTam.remote_templates || []).map((tpl) => ({
         remote_id: tpl.remote_id,
-        count: 0, // ekle/düzenle mantığında default 0
+        count: 0,
         order_index: tpl?.order_index,
         unit_price: tpl.unit_price,
         pdf: tpl?.pdf,
@@ -292,6 +305,7 @@ const SistemTable = ({ systems = [], onRefresh }) => {
           height_mm: selectedSys?.height_mm,
           quantity: selectedSys?.quantity
         }}
+        initialColors={selectedSys ? extractInitialColors(selectedSys) : undefined}
         loading={dialogLoading}
         saving={savingEdit}
         onSave={handleDialogSave}

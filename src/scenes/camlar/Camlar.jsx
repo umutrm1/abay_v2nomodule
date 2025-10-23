@@ -115,6 +115,15 @@ const Camlar = () => {
     }
   };
 
+
+// thickness_mm -> metin
+const camTuru = (v) => {
+  if (Number(v) === 1) return "Tek Cam";
+  if (Number(v) === 2) return "Çift Cam";
+  return "—";
+};
+
+
   const totalPages = data.total_pages || 1;
 
   return (
@@ -151,61 +160,65 @@ const Camlar = () => {
         </div>
 
         {/* Tablo */}
-        <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
-            <thead>
-              <tr className="border-b border-base-500 dark:border-gray-500">
-                <th>Cam İsmi</th>
-                <th className="text-center">İşlemler</th>
-              </tr>
-            </thead>
+<div className="overflow-x-auto">
+  <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+    <thead>
+      <tr className="border-b border-base-500 dark:border-gray-500">
+        <th>Cam İsmi</th>
+        <th className="text-center">Cam Türü</th> {/* ✅ yeni sütun */}
+        <th className="text-center">İşlemler</th>
+      </tr>
+    </thead>
 
-            {isLoading ? (
-              <tbody>
-                <tr className="border-b border-base-400 dark:border-gray-500">
-                  <td colSpan={2}>
-                    <Spinner />
-                  </td>
-                </tr>
-              </tbody>
-            ) : (data.items?.length > 0 ? (
-              <tbody>
-                {data.items.map(cam => (
-                  <tr key={cam.id} className="border-b border-base-300 dark:border-gray-500">
-                    <td>{cam.cam_isim}</td>
-                    <td className="text-center space-x-2">
-                      {/* Düzenle: sari, sm, dikdörtgen */}
-                      <DialogCamDuzenle cam={cam} onSave={handleEditCam} asChild>
-                        <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
-                          Düzenle
-                        </AppButton>
-                      </DialogCamDuzenle>
+    {isLoading ? (
+      <tbody>
+        <tr className="border-b border-base-400 dark:border-gray-500">
+          <td colSpan={3}>
+            <Spinner />
+          </td>
+        </tr>
+      </tbody>
+    ) : (data.items?.length > 0 ? (
+      <tbody>
+        {data.items.map(cam => (
+          <tr key={cam.id} className="border-b border-base-300 dark:border-gray-500">
+            <td>{cam.cam_isim}</td>
+            <td className="text-center">{camTuru(cam.thickness_mm)}</td> {/* ✅ tür */}
+            <td className="text-center space-x-2">
+              <DialogCamDuzenle cam={cam} onSave={handleEditCam} asChild>
+                <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
+                  Düzenle
+                </AppButton>
+              </DialogCamDuzenle>
 
-                      {/* Sil: kirmizi, sm, dikdörtgen */}
-                      <AppButton
-                        variant="kirmizi"
-                        size="sm"
-                        shape="none"
-                        onClick={() => askDelete(cam)}
-                        title="Sil"
-                      >
-                        Sil
-                      </AppButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            ) : (
-              <tbody>
-                <tr>
-                  <td colSpan={2} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
-                    Veri bulunamadı
-                  </td>
-                </tr>
-              </tbody>
-            ))}
-          </table>
-        </div>
+              <AppButton
+                variant="kirmizi"
+                size="sm"
+                shape="none"
+                onClick={() => askDelete(cam)}
+                title="Sil"
+              >
+                Sil
+              </AppButton>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    ) : (
+      <tbody>
+        <tr>
+          <td
+            colSpan={3}
+            className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4"
+          >
+            Veri bulunamadı
+          </td>
+        </tr>
+      </tbody>
+    ))}
+  </table>
+</div>
+
 
         {/* Sayfalama */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">

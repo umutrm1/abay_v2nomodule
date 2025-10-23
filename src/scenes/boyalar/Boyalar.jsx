@@ -6,7 +6,9 @@ import {
   getGlassColorFromApi,
   addColorToApi,
   editColorInApi,
-  deleteColorFromApi
+  deleteColorFromApi,
+  makeDefaultColorOne,
+  makeDefaultColorTwo
 } from '@/redux/actions/actions_boyalar.js';
 import Header from '@/components/mycomponents/Header.jsx';
 import DialogProfilBoyaEkle from './DialogProfilBoyaEkle.jsx';
@@ -15,6 +17,7 @@ import DialogCamBoyaEkle from './DialogCamBoyaEkle.jsx';
 import DialogCamBoyaDuzenle from './DialogCamBoyaDuzenle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 import AppButton from '@/components/ui/AppButton.jsx';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -37,7 +40,7 @@ const Boyalar = () => {
 
   // Reducer'ların obje döndüğünü varsayıyoruz:
   const profileData = useSelector(s => s.getProfileColorsFromApiReducer) || EMPTY_PAGE;
-  const glassData   = useSelector(s => s.getGlassColorsFromApiReducer)   || EMPTY_PAGE;
+  const glassData = useSelector(s => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
 
   // Arama
   const [profileSearch, setProfileSearch] = useState('');
@@ -59,7 +62,10 @@ const Boyalar = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null); // { kind: 'profile'|'glass', data: color }
   const [deleting, setDeleting] = useState(false);
-
+  // Varsayılan atama modal state
+  const [defaultOpen, setDefaultOpen] = useState(false);
+  const [defaultTarget, setDefaultTarget] = useState(null); // { id, name, ... }
+  const [defaultLoading, setDefaultLoading] = useState(false);
   // Liste fetch — Profil
   useEffect(() => {
     setLoadingProfile(true);
@@ -149,6 +155,63 @@ const Boyalar = () => {
       // Modal kapatma: ConfirmDeleteModal içinden onOpenChange(false) ile
     }
   };
+  // Modalı aç
+  const askSetDefaultGlass = (color) => {
+    setDefaultTarget(color);
+    setDefaultOpen(true);
+  };
+
+  // Varsayılan 1 atama
+  const handleSetDefaultOne = async () => {
+    if (!defaultTarget) return;
+    try {
+      setDefaultLoading(true);
+      await dispatch(makeDefaultColorOne(defaultTarget.id));
+      await refetchGlasses(); // listeyi güncelle
+      setDefaultOpen(false);
+    } finally {
+      setDefaultLoading(false);
+    }
+  };
+
+  // Varsayılan 2 atama
+  const handleSetDefaultTwo = async () => {
+    if (!defaultTarget) return;
+    try {
+      setDefaultLoading(true);
+      await dispatch(makeDefaultColorTwo(defaultTarget.id));
+      await refetchGlasses();
+      setDefaultOpen(false);
+    } finally {
+      setDefaultLoading(false);
+    }
+  };
+
+  // İsim yanındaki BADGE render helper
+  const renderDefaultBadge = (color) => {
+    if (color?.is_default && color?.is_default_2) {
+      return (
+        <span className="badge badge-success ml-2 whitespace-nowrap">
+          Varsayılan 1 ve 2 Olarak Atandı
+        </span>
+      );
+    }
+    if (color?.is_default) {
+      return (
+        <span className="badge badge-success ml-2 whitespace-nowrap">
+          Varsayılan 1 Olarak Atandı
+        </span>
+      );
+    }
+    if (color?.is_default_2) {
+      return (
+        <span className="badge badge-success ml-2 whitespace-nowrap">
+          Varsayılan 2 Olarak Atandı
+        </span>
+      );
+    }
+    return null;
+  };
 
   const profileTotalPages = profileData.total_pages || 1;
   const glassTotalPages = glassData.total_pages || 1;
@@ -208,6 +271,7 @@ const Boyalar = () => {
                       profileData.items.map(color => (
                         <tr key={color.id} className="border-b border-base-300 dark:border-gray-500">
                           <td>{color.name}</td>
+
                           <td className="text-center space-x-2">
                             <DialogProfilBoyaDuzenle
                               color={color}
@@ -355,12 +419,23 @@ const Boyalar = () => {
                     {glassData.items?.length > 0 ? (
                       glassData.items.map(color => (
                         <tr key={color.id} className="border-b border-base-300 dark:border-gray-500">
-                          <td>{color.name}</td>
+                          <td className="flex items-center gap-1">
+                            <span>{color.name}</span>
+                            {renderDefaultBadge(color)}
+                          </td>
                           <td className="text-center space-x-2">
                             <DialogCamBoyaDuzenle
                               color={color}
                               onSave={handleEditGlass}
                             />
+                            <AppButton
+                              size="sm"
+                              variant="yesil"
+                              onClick={() => askSetDefaultGlass(color)}
+                              title="Bu rengi Varsayılan olarak ata"
+                            >
+                              Varsayılan Ata
+                            </AppButton>
                             <AppButton
                               size="sm"
                               variant="kirmizi"
@@ -469,6 +544,45 @@ const Boyalar = () => {
         onConfirm={handleConfirmDelete}
         loading={deleting}
       />
+      {/* Varsayılan Ata Modal */}
+      <Dialog open={defaultOpen} onOpenChange={setDefaultOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Varsayılan Ata</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 text-sm opacity-80">
+            {defaultTarget ? (
+              <p>
+                <b>{defaultTarget.name}</b> rengi için varsayılan atama yapın.
+              </p>
+            ) : (
+              <p>Bir renk seçin.</p>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+            <AppButton
+              variant="kurumsalmavi"
+              onClick={handleSetDefaultOne}
+              loading={defaultLoading}
+              disabled={!defaultTarget || defaultLoading}
+            >
+              Varsayılan 1 ata
+            </AppButton>
+            <AppButton
+              variant="mor"
+              onClick={handleSetDefaultTwo}
+              loading={defaultLoading}
+              disabled={!defaultTarget || defaultLoading}
+            >
+              Varsayılan 2 ata
+            </AppButton>
+            <DialogClose asChild>
+              <AppButton variant="gri">Vazgeç</AppButton>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

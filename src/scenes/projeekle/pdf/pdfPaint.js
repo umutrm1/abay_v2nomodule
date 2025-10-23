@@ -2,6 +2,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
+
 /* ───── yardımcılar ───── */
 function arrayBufferToBase64(buf) {
   return new Promise((resolve, reject) => {
@@ -27,15 +28,17 @@ async function createPdfDoc() {
   const bold64 = await fetchFontBase64("Roboto-Bold.ttf");
   doc.addFileToVFS("Roboto-Bold.ttf", bold64);
   doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
-  doc.setFont("Roboto", "normal");
+  // başlangıç fontu: BOLD
+  doc.setFont("Roboto", "bold");
   return doc;
 }
-function setFontSafe(doc, family, style = "normal") {
+function setFontSafe(doc, family, style = "bold") {
   try {
     const list = doc.getFontList?.() || {};
     const styles = list?.[family];
     if (Array.isArray(styles)) {
       if (styles.includes(style)) { doc.setFont(family, style); return; }
+      if (styles.includes("bold")) { doc.setFont(family, "bold"); return; }
       if (styles.includes("normal")) { doc.setFont(family, "normal"); return; }
     }
   } catch { }
@@ -59,29 +62,29 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const pageW = doc.internal.pageSize.getWidth();
   const leftMargin = 40, rightMargin = 40;
   const padX = 8, padY = 6;
-  const baseFontSize = 10, titleFontSize = 12;
+  const baseFontSize = 9, titleFontSize = 9; // tüm font size 9
   const lineFactor = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
   const fontName = (doc.getFontList?.()["Roboto"] ? "Roboto" : (doc.getFont().fontName || "helvetica"));
 
   // sol kutu
   const leftRequestedW = Number(headerCfg?.leftImage?.width || 260);
-  const leftX = leftMargin, topY = 40;
+  const leftX = leftMargin, topY = 5; // topY 5
 
   // sağ blok
   const rightX = leftX + leftRequestedW;
   const rightW = Math.max(180, pageW - rightMargin - rightX);
   let rightCursorY = topY;
 
-  // (4) Brand title hep merkezde
+  // Brand title merkezde
   if (headerCfg?.rightBox?.title) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
     const titleH = titleFontSize * lineFactor + 2 * padY;
     doc.setLineWidth(0.8);
     doc.rect(rightX, rightCursorY, rightW, titleH, "S");
     const centerX = rightX + rightW / 2;
-    const centerY = rightCursorY + titleH / 2 + titleFontSize / 3; // optik dengeleme
+    const centerY = rightCursorY + titleH / 2 + titleFontSize / 3;
     doc.text(t, centerX, centerY, { align: "center" });
     rightCursorY += titleH;
   }
@@ -89,7 +92,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // sağ bilgi satırları (varsa)
   const rLines = Array.isArray(headerCfg?.rightBox?.lines) ? headerCfg.rightBox.lines : [];
   for (const line of rLines) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     const txt = (line.type === "labelValue")
       ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
       : (String(line.text || line.value || line.href || ""));
@@ -112,7 +115,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   doc.setLineWidth(0.8);
   doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
-  // (3) Logo: sadece public/logo.png, orantılı ve ortalanmış şekilde
+  // Logo (public/logo.png)
   try {
     const resp = await fetch("/logo.png");
     if (resp.ok) {
@@ -131,9 +134,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
       img.src = leftImg;
       await new Promise(r => { img.onload = r; });
 
-      const imgW = img.width;
-      const imgH = img.height;
-      const ratio = imgW / imgH;
+      const ratio = img.width / img.height;
 
       let drawW = boxW;
       let drawH = drawW / ratio;
@@ -175,14 +176,13 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   let bottomY = rightBottom;
   if (rows.length) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(baseFontSize);
     const lfac = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
 
     let gy = bottomY;
     for (const rowItems of rows) {
       const cellW = gridW / rowItems.length;
-      // satır yüksekliği ölç
       let rowMaxH = 22;
       const prepared = rowItems.map(it => {
         const label = String(it.label ?? "");
@@ -200,7 +200,6 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
         return { it, lines };
       });
 
-      // çizim
       let cx = gridLeftX;
       for (const m of prepared) {
         doc.setLineWidth(0.8);
@@ -239,20 +238,21 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
   const doc = await createPdfDoc();
   const header = await drawSplitHeader(doc, brandConfig, pdfConfig, ctx);
 
-  // (5) infoRows biter bitmez tablo başlasın (hiç ekstra boşluk yok)
+  // infoRows biter bitmez tablo başlasın
   let cursorY = header.bottomY;
 
-  /* (2) PDF filtresi: yalnızca pdf.boyaCiktisi === true olan profiller */
-const filteredRequirements = {
-  ...requirements,
-  systems: (requirements?.systems || []).map(sys => ({
-    ...sys,
-    profiles: (sys?.profiles || [])
-      .filter(p => p?.pdf?.boyaCiktisi === true)
-      .slice()
-      .sort((a, b) => (a?.order_index ?? 0) - (b?.order_index ?? 0))
-  }))
-};
+  /* PDF filtresi: yalnızca pdf.boyaCiktisi === true olan profiller */
+  const filteredRequirements = {
+    ...requirements,
+    systems: (requirements?.systems || []).map(sys => ({
+      ...sys,
+      profiles: (sys?.profiles || [])
+        .filter(p => p?.pdf?.boyaCiktisi === true)
+        .slice()
+        .sort((a, b) => (a?.order_index ?? 0) - (b?.order_index ?? 0))
+    }))
+  };
+
   // opt. girdisi (filtrelenmiş profiller)
   const siparis = {
     urunler: (filteredRequirements.systems || []).map(sys => ({
@@ -273,8 +273,7 @@ const filteredRequirements = {
     }))
   };
 
-  // optimizasyon (varsa)
-  // optimizasyon (import ile)
+  // optimizasyon
   let optimSonuclar = [];
   try {
     optimSonuclar = optimizasyonYap(siparis);
@@ -283,21 +282,20 @@ const filteredRequirements = {
     optimSonuclar = [];
   }
 
-  // kesit görselleri (yalnızca body’de kullanılacak profiller için)
+  // kesit görselleri
   const imageMap = {};
   await Promise.all(
     optimSonuclar.map(res => {
-      // filteredRequirements üzerinden kod/isim bulacağız; id’yi kullanıp görsel al
       const entry = (filteredRequirements.systems || []).flatMap(s => s.profiles).find(p => p.profile_id === res.profilId);
       if (!entry) return Promise.resolve();
       return dispatch(getProfilImageFromApi(entry.profile_id)).then(d => { imageMap[res.profilId] = d; }).catch(() => { });
     })
   );
 
-  // tablo başlıkları aynı
+  // tablo başlıkları
   const head = [['Profil Kodu', 'Profil Kesit', 'Profil Adı', 'Adet', 'Boy (mm)', 'Birim Kilo (kg)', 'Toplam Kilo (kg)']];
 
-  // (2) body: yalnız filtrelenmiş kayıtlardan
+  // body
   const body = optimSonuclar.map(res => {
     const entry = (filteredRequirements.systems || []).flatMap(s => s.profiles).find(p => p.profile_id === res.profilId);
     const kod = entry?.profile?.profil_kodu || '-';
@@ -309,36 +307,30 @@ const filteredRequirements = {
     return [kod, '', isim, adet, boy, birimKg.toFixed(2), toplamKg.toFixed(2)];
   });
 
-  // (2) satır yoksa tablo hiç çizme
   if (body.length > 0) {
-    const IMG_MAX_W = 35;   // pt cinsinden maksimum genişlik (A4 pt: 595 x 842)
-    const IMG_PAD   = 2;    // hücre içi kenar boşluğu
-   
+    const IMG_MAX_W = 35;
+    const IMG_PAD   = 2;
+
     autoTable(doc, {
       startY: cursorY,
       head,
       body,
       theme: 'grid',
-        styles: {
-          font: 'Roboto', fontSize: 10, minCellHeight: 22,
-          halign: 'center', valign: 'middle',
-          textColor: [0, 0, 0],
-          lineColor: [0, 0, 0]
-        },
-        tableLineColor: [0, 0, 0],
-        tableLineWidth: 0.5,
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
-  lineWidth: 0.5     },
-        tableLineColor: [0, 0, 0],
-        tableLineWidth: 0.5,
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
-  lineWidth: 0.5     },
+      styles: {
+        font: 'Roboto', fontStyle: 'bold', fontSize: 9, minCellHeight: 22,
+        halign: 'center', valign: 'middle',
+        textColor: [0, 0, 0],
+        lineColor: [0, 0, 0]
+      },
+      tableLineColor: [0, 0, 0],
+      tableLineWidth: 0.5,
+      headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
       columnStyles: {
         // Profil Kesit kolonu = index 1
-        // Hücre genişliği, görüntünün max-width + padding olacak şekilde sabitleniyor
         1: { cellWidth: (IMG_MAX_W + 2 * IMG_PAD), halign: 'center', valign: 'middle' }
       },
-      // 1) satır yüksekliğini ÖNCEDEN görüntü boyuna göre ayarlıyoruz (sığdırma yok)
+
+      // 1) satır yüksekliğini görsel boyuna göre ayarla
       didParseCell: (data) => {
         if (data.section !== 'body' || data.column.index !== 1) return;
         const resObj = optimSonuclar[data.row.index];
@@ -346,54 +338,49 @@ const filteredRequirements = {
         const img = pid != null ? imageMap[pid] : null;
         if (typeof img !== 'string' || !img.startsWith('data:image')) return;
         try {
-          const props = doc.getImageProperties(img); // { width, height, ... } (px cinsinden; oran için kullanıyoruz)
+          const props = doc.getImageProperties(img);
           const ratio = props.width / props.height;
-          const drawW = IMG_MAX_W;        // sadece max-width uyguluyoruz
-          const drawH = drawW / ratio;    // oran korunuyor
-
-          // Hücre minimum yüksekliğini görsel yüksekliğine göre büyüt
+          const drawW = IMG_MAX_W;
+          const drawH = drawW / ratio;
           const needed = drawH + 2 * IMG_PAD;
           data.cell.styles.minCellHeight = Math.max(data.cell.styles.minCellHeight || 0, needed);
         } catch {}
       },
-      // 2) çizimde ise hücreye sığdırma YOK — sadece max-width'e göre, merkezde çiz
+
+      // 2) çizimde: max-width’e göre merkezde çiz
       didDrawCell: data => {
-    if (data.section !== 'body' || data.column.index !== 1) return;
-    const resObj = optimSonuclar[data.row.index];
-    const pid = resObj?.profilId;
-    const img = pid != null ? imageMap[pid] : null;
-    if (typeof img !== 'string' || !img.startsWith('data:image')) return;
+        if (data.section !== 'body' || data.column.index !== 1) return;
+        const resObj = optimSonuclar[data.row.index];
+        const pid = resObj?.profilId;
+        const img = pid != null ? imageMap[pid] : null;
+        if (typeof img !== 'string' || !img.startsWith('data:image')) return;
 
-    const cellX = data.cell.x + IMG_PAD;
-    const cellY = data.cell.y + IMG_PAD;
-    const cellW = data.cell.width  - 2 * IMG_PAD;
-    const cellH = data.cell.height - 2 * IMG_PAD;
+        const cellX = data.cell.x + IMG_PAD;
+        const cellY = data.cell.y + IMG_PAD;
+        const cellW = data.cell.width  - 2 * IMG_PAD;
+        const cellH = data.cell.height - 2 * IMG_PAD;
 
-    try {
-     // SENKRON: en-boy özelliklerini jsPDF'ten al
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawW = Math.min(IMG_MAX_W, cellW); // güvenlik: hücre genişliğinden taşmasın
-      const drawH = drawW / ratio;
-      const dx = cellX + (cellW - drawW) / 2;  // yatay merkez
-      const dy = cellY + (cellH - drawH) / 2;  // dikey merkez (satır yüksekliği önceden artırıldı)
-
-
-      // formatı data URL'den tespit et (PNG/JPEG); PNG'ye zorlamayalım
-      const fmt = img.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
-      doc.addImage(img, fmt, dx, dy, drawW, drawH);
-    } catch (e) {
-      console.warn('Profil kesit resmi çizilemedi:', e);
-    }
+        try {
+          const props = doc.getImageProperties(img);
+          const ratio = props.width / props.height;
+          const drawW = Math.min(IMG_MAX_W, cellW);
+          const drawH = drawW / ratio;
+          const dx = cellX + (cellW - drawW) / 2;
+          const dy = cellY + (cellH - drawH) / 2;
+          const fmt = img.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+          doc.addImage(img, fmt, dx, dy, drawW, drawH);
+        } catch (e) {
+          console.warn('Profil kesit resmi çizilemedi:', e);
+        }
       },
+
       margin: { left: 40, right: 40 }
     });
 
-    // (7) GENEL TOPLAM KİLO kutusu: "Toplam Kilo (kg)" kolonunun tam altında, aynı genişlikte
+    // GENEL TOPLAM KİLO kutusu: "Toplam Kilo (kg)" kolonunun altında
     const at = doc.lastAutoTable;
     const tableBottomY = at?.finalY || cursorY;
 
-    // head -> son kolon bilgisi (index 6)
     const colIndex = 6;
     const headRow = at?.table?.head?.[0];
     let colX = null, colW = null;
@@ -406,16 +393,13 @@ const filteredRequirements = {
       colW = headRow[colIndex]?.width;
     }
 
-    // fallback (her ihtimale karşı)
     if (colX == null || colW == null) {
       const pageWidth = doc.internal.pageSize.getWidth();
       const leftMargin = 40, rightMargin = 40;
-      // yaklaşık: son kolonu sabit 110pt gibi kabul et
       colW = 110;
       colX = pageWidth - rightMargin - colW;
     }
 
-    // Genel toplamı, satırlardaki ham verilerden yeniden ve tam hassasiyetle hesapla:
     const genelToplamKg = optimSonuclar.reduce((sum, res) => {
       const entry = (filteredRequirements.systems || []).flatMap(s => s.profiles).find(p => p.profile_id === res.profilId);
       if (!entry) return sum;
@@ -427,14 +411,13 @@ const filteredRequirements = {
     }, 0);
     const label = `Toplam Kilo: ${genelToplamKg.toFixed(2)} kg`;
 
-    const fontSize = 10;
+    const fontSize = 9; // 9pt
     const lineFactor2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
-    const padX = 4, padY = 4;
-    const lines = doc.splitTextToSize(label, Math.max(10, colW - 2 * padX));
+    const padX2 = 4, padY2 = 4;
+    const lines = doc.splitTextToSize(label, Math.max(10, colW - 2 * padX2));
     const contentH = lines.length * (fontSize * lineFactor2);
-    const boxH = Math.max(22, contentH + 2 * padY);
+    const boxH = Math.max(22, contentH + 2 * padY2);
 
-    // tablo çizgi rengi ile aynı tonu yakala
     const lineClr =
       at?.styles?.lineColor ??
       at?.settings?.styles?.lineColor ??
@@ -446,13 +429,14 @@ const filteredRequirements = {
     else doc.setDrawColor(0, 0, 0);
 
     doc.setLineWidth(0.8);
-    doc.rect(colX, tableBottomY + 0, colW, boxH, "S"); // hemen altında (0 boşluk)
+    doc.rect(colX, tableBottomY + 0, colW, boxH, "S");
 
-    setFontSafe(doc, 'Roboto', 'normal');
+    setFontSafe(doc, 'Roboto', 'bold');
     doc.setFontSize(fontSize);
     const textX = colX + colW / 2;
-    const textY = tableBottomY + padY + fontSize;
+    const textY = tableBottomY + padY2 + fontSize;
     doc.text(lines, textX, textY, { align: "center" });
   }
+
   openPdf(doc);
 }

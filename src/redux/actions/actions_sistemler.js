@@ -1104,3 +1104,57 @@ export function deactivateSystem(systemId) {
     }
   };
 }
+
+
+/**
+ * SystemVariant'ın bağlı olduğu System'i değiştir
+ * curl eşleniği:
+ * PUT /api/system-variants/:variantId/system
+ * body: { "system_id": "<uuid>" }
+ *
+ * @param {string} variantId  - örn: "37946015-f413-400e-86c3-4f934f974326"
+ * @param {string} systemId   - örn: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+ * @returns {Function} thunk
+ */
+export function changeSystemOfSystemVariant(variantId, systemId) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${variantId}/system`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ system_id: systemId }),
+        },
+        dispatch
+      );
+
+      // Başarısız ise ayrıntılı mesajla patlat
+      if (!res.ok) {
+        let text = "";
+        try { text = await res.text(); } catch (_) {}
+        toastError();
+        throw new Error(`Varyantın sistemi değiştirilemedi (HTTP ${res.status}) ${text}`);
+      }
+
+      // 204 No Content ise true döndür
+      if (res.status === 204) {
+        toastSuccess();
+        return true;
+      }
+
+      // Bazı durumlarda boş body olabilir; güvenli parse
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+
+      toastSuccess();
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}

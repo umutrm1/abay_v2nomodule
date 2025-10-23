@@ -129,3 +129,116 @@ export function getGlassColorFromApi(page = 1, q = "", limit = 5) {
     return data;
   };
 }
+
+// === Varsayılan CAM rengi (1) ATAMA ===
+export function makeDefaultColorOne(colorId) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/glass-default/${colorId}`,
+        {
+          method: "PUT",
+          headers: { accept: "application/json" },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        toastError();
+        const text = await res.text().catch(() => "");
+        throw new Error(`Varsayılan cam rengi-1 atanamadı: ${res.status} ${text}`);
+      }
+
+      const data = await res.json().catch(() => ({}));
+      toastSuccess();
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+// === Varsayılan CAM rengi (1) GETİRME ===
+export function getDefaultColorOne() {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/glass-default`,
+        {
+          method: "GET",
+          headers: { accept: "application/json" },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        // Bazı API'lar 404 dönebilir; mesajı geliştirici için anlaşılır verelim
+        const text = await res.text().catch(() => "");
+        throw new Error(`Varsayılan cam rengi-1 alınamadı: ${res.status} ${text}`);
+      }
+
+      const data = await res.json();
+      return data; // İstersen burada bir reducera da dispatch edebilirsin
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+// === Varsayılan CAM rengi (2) ATAMA ===
+export function makeDefaultColorTwo(colorId) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/glass-default2/${colorId}`,
+        {
+          method: "PUT",
+          headers: { accept: "application/json" },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        toastError();
+        const text = await res.text().catch(() => "");
+        throw new Error(`Varsayılan cam rengi-2 atanamadı: ${res.status} ${text}`);
+      }
+
+      const data = await res.json().catch(() => ({}));
+      toastSuccess();
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+// === Varsayılan CAM rengi (2) GETİRME ===
+export function getDefaultColorTwo() {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/colors/glass-default2`,
+        {
+          method: "GET",
+          headers: { accept: "application/json" },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Varsayılan cam rengi-2 alınamadı: ${res.status} ${text}`);
+      }
+
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}

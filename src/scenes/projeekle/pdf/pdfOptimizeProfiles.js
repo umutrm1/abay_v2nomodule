@@ -38,15 +38,18 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     const bold64 = await fetchFontBase64("Roboto-Bold.ttf");
     doc.addFileToVFS("Roboto-Bold.ttf", bold64);
     doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
-    doc.setFont("Roboto", "normal");
+    // başlangıç fontunu bold yap
+    doc.setFont("Roboto", "bold");
     return doc;
   }
-  function setFontSafe(doc, family, style = "normal") {
+  function setFontSafe(doc, family, style = "bold") {
+    // varsayılan stili bold yaptık; her çağrıda bold denenecek
     try {
       const list = doc.getFontList?.() || {};
       const styles = list?.[family];
       if (Array.isArray(styles)) {
         if (styles.includes(style)) { doc.setFont(family, style); return; }
+        if (styles.includes("bold")) { doc.setFont(family, "bold"); return; }
         if (styles.includes("normal")) { doc.setFont(family, "normal"); return; }
       }
     } catch { }
@@ -63,16 +66,16 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     const headerCfg = { ...(brandConfig || {}), infoRowsLayout: pdfConfig?.infoRowsLayout, infoRows: pdfConfig?.infoRows };
 
     const pageW = doc.internal.pageSize.getWidth(), leftMargin = 40, rightMargin = 40, padX = 8, padY = 6;
-    const baseFontSize = 10, titleFontSize = 12;
+    const baseFontSize = 9, titleFontSize = 9; // tüm font size 9
     const lfac = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
     const fontName = (doc.getFontList?.()["Roboto"] ? "Roboto" : (doc.getFont().fontName || "helvetica"));
 
-    const leftRequestedW = Number(headerCfg?.leftImage?.width || 260), leftX = leftMargin, topY = 40;
+    const leftRequestedW = Number(headerCfg?.leftImage?.width || 260), leftX = leftMargin, topY = 5; // topY 5
     const rightX = leftX + leftRequestedW, rightW = Math.max(180, pageW - rightMargin - rightX); let ry = topY;
 
-    // BRAND TITLE: her zaman center
+    // BRAND TITLE: center
     if (headerCfg?.rightBox?.title) {
-      setFontSafe(doc, fontName, "normal");
+      setFontSafe(doc, fontName, "bold");
       doc.setFontSize(titleFontSize);
       const t = String(headerCfg.rightBox.title);
       const titleH = titleFontSize * lfac + 2 * padY;
@@ -84,10 +87,10 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
       ry += titleH;
     }
 
-    // Sağ kutudaki satırlar (varsa) — mevcut sola hizalı düzen korunur
+    // Sağ kutudaki satırlar
     const rLines = Array.isArray(headerCfg?.rightBox?.lines) ? headerCfg.rightBox.lines : [];
     for (const line of rLines) {
-      setFontSafe(doc, fontName, "normal");
+      setFontSafe(doc, fontName, "bold");
       const txt = (line.type === "labelValue")
         ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
         : (String(line.text || line.value || line.href || ""));
@@ -103,12 +106,12 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
       ry += h;
     }
 
-    // Sol LOGO kutusu (yükseklik: sağ bloğun yüksekliğine eşit)
+    // Sol LOGO kutusu
     const rightBottom = ry, leftFinalW = leftRequestedW, leftFinalH = rightBottom - topY;
     doc.setLineWidth(0.8);
     doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
-    // LOGO: sadece public/logo.png, orantı korunur ve ortalanır
+    // LOGO: public/logo.png, orantı korunur ve ortalanır
     try {
       const resp = await fetch("/logo.png");
       if (resp.ok) {
@@ -144,7 +147,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
       console.warn("logo.png yüklenemedi:", e);
     }
 
-    // infoRows grid (mevcut düzen korunuyor)
+    // infoRows grid
     const layout = headerCfg?.infoRowsLayout || {};
     const COLS = Math.min(3, Number(layout.columnsPerRow) || 3);
     const cellPadX = Number(layout.cellPaddingX ?? 6), cellPadY = Number(layout.cellPaddingY ?? 6);
@@ -165,7 +168,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     const rows = []; for (let i = 0; i < items.length; i += COLS) rows.push(items.slice(i, i + COLS));
     let bottomY = rightBottom;
     if (rows.length) {
-      setFontSafe(doc, fontName, "normal");
+      setFontSafe(doc, fontName, "bold");
       doc.setFontSize(baseFontSize);
       const l2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
       let gy = bottomY;
@@ -201,9 +204,9 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
 
   const doc = await createPdfDoc();
   const header = await drawSplitHeader(doc, brandConfig, pdfConfig, ctx);
-  let cursorY = header.bottomY; // (5) infoRows biter bitmez hemen altında başla — hiç boşluk yok
+  let cursorY = header.bottomY; // infoRows biter bitmez hemen altında başla
 
-  /* (2) PDF filtresi: render'dan hemen önce profilleri süz */
+  /* PDF filtresi: render'dan hemen önce profilleri süz */
   const shouldIncludeProfile = (p) => {
     const f = p?.pdf || {};
     return (type === 'detayli')
@@ -222,7 +225,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     }))
   };
 
-  // optimizasyon girdisi (yalnız filtrelenmiş profiller)
+  // optimizasyon girdisi
   const siparis = {
     urunler: (filteredRequirements.systems || []).map(sys => ({
       hesaplananGereksinimler: {
@@ -239,7 +242,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
   };
   const results = optimizasyonYap(siparis);
 
-  // kesit görselleri (kullanılabilecek tüm profilId'ler için)
+  // kesit görselleri
   const imageMap = {};
   await Promise.all(
     results.map(res =>
@@ -249,7 +252,7 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
     )
   );
 
-  // Ortak marginler (yapıyı bozma: mevcut 40/40 marjin korunuyor)
+  // Ortak marginler
   const leftMargin = 40;
   const rightMargin = 40;
 
@@ -266,70 +269,66 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
       return [kod, '', res.profilIsim, String(res.toplamBoySayisi)];
     });
 
-    // (2) satır yoksa tabloyu hiç çizme
     if (body.length > 0) {
       const IMG_PAD = 2;
-const IMG_MAX_W = 35;
+      const IMG_MAX_W = 35;
       autoTable(doc, {
         head, body, startY: cursorY, theme: 'grid',
         styles: {
-          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          font: 'Roboto', fontStyle: 'bold', fontSize: 9, minCellHeight: 22,
           halign: 'center', valign: 'middle',
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0]
         },
         tableLineColor: [0, 0, 0],
         tableLineWidth: 0.5,
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
-  lineWidth: 0.5     },
-        // 0: Profil Kodu (yarıya indir), 1: Profil Kesit (arttır), 3: Boy Sayısı (yarıya indir)
-        // Not: Bu değerler pt cinsinden. Önceden Kesit 40pt idi; Kodu ve Boy Sayısı'ndan kısarak Kesit’e alan aktarıyoruz.
-       columnStyles: {
-    0: { cellWidth: 80 },
-    1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" }, // <<< değişti
-    2: { cellWidth: 316 },
-    3: { cellWidth: 80 }
-  },
+        headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" },
+          2: { cellWidth: 316 },
+          3: { cellWidth: 80 }
+        },
 
-  didParseCell: (data) => {
-    if (data.section !== 'body' || data.column.index !== 1) return;
-    const pid = results[data.row.index]?.profilId;
-    const img = imageMap[pid];
-    if (!img) return;
-    try {
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawH = IMG_MAX_W / ratio;
-      const needMinH = drawH + 2 * IMG_PAD;
-      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
-        data.cell.styles.minCellHeight = needMinH;
-      }
-    } catch {}
-  },
+        didParseCell: (data) => {
+          if (data.section !== 'body' || data.column.index !== 1) return;
+          const pid = results[data.row.index]?.profilId;
+          const img = imageMap[pid];
+          if (!img) return;
+          try {
+            const props = doc.getImageProperties(img);
+            const ratio = props.width / props.height;
+            const drawH = IMG_MAX_W / ratio;
+            const needMinH = drawH + 2 * IMG_PAD;
+            if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+              data.cell.styles.minCellHeight = needMinH;
+            }
+          } catch {}
+        },
 
-  didDrawCell: (data) => {
-    if (data.section !== 'body' || data.column.index !== 1) return;
-    const pid = results[data.row.index]?.profilId;
-    const img = imageMap[pid];
-    if (!img) return;
+        didDrawCell: (data) => {
+          if (data.section !== 'body' || data.column.index !== 1) return;
+          const pid = results[data.row.index]?.profilId;
+          const img = imageMap[pid];
+          if (!img) return;
 
-    try {
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawW = IMG_MAX_W;
-      const drawH = drawW / ratio;
+          try {
+            const props = doc.getImageProperties(img);
+            const ratio = props.width / props.height;
+            const drawW = IMG_MAX_W;
+            const drawH = drawW / ratio;
 
-      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
-      const dy = data.cell.y + (data.cell.height - drawH) / 2;
-      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-      doc.addImage(img, fmt, dx, dy, drawW, drawH);
-    } catch (e) {
-      console.warn("Profil kesit resmi çizilemedi:", e);
-    }
-  },
+            const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+            const dy = data.cell.y + (data.cell.height - drawH) / 2;
+            const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+            doc.addImage(img, fmt, dx, dy, drawW, drawH);
+          } catch (e) {
+            console.warn("Profil kesit resmi çizilemedi:", e);
+          }
+        },
 
-  margin: { left: 40, right: 40 }
-});
+        margin: { left: leftMargin, right: rightMargin }
+      });
     }
 
   } else {
@@ -352,66 +351,64 @@ const IMG_MAX_W = 35;
       });
     });
 
-    // (2) satır yoksa tabloyu hiç çizme
     if (body.length > 0) {
       const IMG_PAD = 2;
-const IMG_MAX_W = 35;
+      const IMG_MAX_W = 35;
       autoTable(doc, {
         head, body, startY: cursorY, theme: 'grid',
         styles: {
-          font: 'Roboto', fontSize: 10, minCellHeight: 22,
+          font: 'Roboto', fontStyle: 'bold', fontSize: 9, minCellHeight: 22,
           halign: 'center', valign: 'middle',
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0]
         },
         tableLineColor: [0, 0, 0],
         tableLineWidth: 0.5,
-        headStyles: { font: 'Roboto', fontStyle: 'normal', fontSize: 11, fillColor: [120, 160, 210],  lineColor: [0, 0, 0],         // sütun ayırıcı çizgiler siyah
-  lineWidth: 0.5     },
-         columnStyles: {
-    0: { cellWidth: 50 },
-    1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } // <<< değişti
-  },
+        headStyles: { font: 'Roboto', fontStyle: 'bold', fontSize: 9, fillColor: [120, 160, 210], lineColor: [0, 0, 0], lineWidth: 0.5 },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" }
+        },
 
-  didParseCell: (data) => {
-    if (data.section !== 'body' || data.column.index !== 1) return;
-    const pid = rowProfileIds[data.row.index];
-    const img = imageMap[pid];
-    if (!img) return;
-    try {
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawH = IMG_MAX_W / ratio;
-      const needMinH = drawH + 2 * IMG_PAD;
-      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
-        data.cell.styles.minCellHeight = needMinH;
-      }
-    } catch {}
-  },
+        didParseCell: (data) => {
+          if (data.section !== 'body' || data.column.index !== 1) return;
+          const pid = rowProfileIds[data.row.index];
+          const img = imageMap[pid];
+          if (!img) return;
+          try {
+            const props = doc.getImageProperties(img);
+            const ratio = props.width / props.height;
+            const drawH = IMG_MAX_W / ratio;
+            const needMinH = drawH + 2 * IMG_PAD;
+            if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+              data.cell.styles.minCellHeight = needMinH;
+            }
+          } catch {}
+        },
 
-  didDrawCell: (data) => {
-    if (data.section !== 'body' || data.column.index !== 1) return;
-    const pid = rowProfileIds[data.row.index];
-    const img = imageMap[pid];
-    if (!img) return;
+        didDrawCell: (data) => {
+          if (data.section !== 'body' || data.column.index !== 1) return;
+          const pid = rowProfileIds[data.row.index];
+          const img = imageMap[pid];
+          if (!img) return;
 
-    try {
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawW = IMG_MAX_W;
-      const drawH = drawW / ratio;
+          try {
+            const props = doc.getImageProperties(img);
+            const ratio = props.width / props.height;
+            const drawW = IMG_MAX_W;
+            const drawH = drawW / ratio;
 
-      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
-      const dy = data.cell.y + (data.cell.height - drawH) / 2;
-      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-      doc.addImage(img, fmt, dx, dy, drawW, drawH);
-    } catch (e) {
-      console.warn("Profil kesit resmi çizilemedi:", e);
-    }
-  },
+            const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+            const dy = data.cell.y + (data.cell.height - drawH) / 2;
+            const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+            doc.addImage(img, fmt, dx, dy, drawW, drawH);
+          } catch (e) {
+            console.warn("Profil kesit resmi çizilemedi:", e);
+          }
+        },
 
-  margin: { left: 40, right: 40 }
-});
+        margin: { left: leftMargin, right: rightMargin }
+      });
     }
   }
 

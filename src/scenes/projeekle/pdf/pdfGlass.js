@@ -5,7 +5,6 @@ import { mapGlass } from "./mappers/glass.mapper.js";
 
 /* ===================== ortak yardımcılar ===================== */
 function arrayBufferToBase64(buf) {
-
   return new Promise((resolve, reject) => {
     const blob = new Blob([buf], { type: "font/ttf" });
     const reader = new FileReader();
@@ -31,22 +30,24 @@ async function createPdfDoc() {
   const bold64 = await fetchFontBase64("Roboto-Bold.ttf");
   doc.addFileToVFS("Roboto-Bold.ttf", bold64);
   doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
-  doc.setFont("Roboto", "normal");
+  // Varsayılan: her yerde kalın yaz
+  doc.setFont("Roboto", "bold");
   return doc;
 }
-function setFontSafe(doc, family, style = "normal") {
+// Artık her zaman BOLD ayarlar (style parametresi gözardı edilir)
+function setFontSafe(doc, family, _style = "bold") {
   try {
     const list = doc.getFontList?.() || {};
     const styles = list?.[family];
     if (Array.isArray(styles)) {
-      if (styles.includes(style)) { doc.setFont(family, style); return; }
+      if (styles.includes("bold")) { doc.setFont(family, "bold"); return; }
       if (styles.includes("normal")) { doc.setFont(family, "normal"); return; }
     } else if (styles) {
-      try { doc.setFont(family, style); return; } catch { }
-      try { doc.setFont(family, "normal"); return; } catch { }
+      try { doc.setFont(family, "bold"); return; } catch {}
+      try { doc.setFont(family, "normal"); return; } catch {}
     }
-  } catch { }
-  doc.setFont("helvetica", style === "bold" ? "bold" : "normal");
+  } catch {}
+  doc.setFont("helvetica", "bold");
 }
 function truncateTo(n, d = 0) {
   if (!Number.isFinite(n)) return n;
@@ -85,13 +86,13 @@ function formatCell(v, f) {
     const d = +m[1] || 2;
     return Number.isFinite(n) ? n.toFixed(d) : (v ?? "");
   }
-    const t = String(f).match(/^truncate\((\d+)\)$/);
+  const t = String(f).match(/^truncate\((\d+)\)$/);
   if (t) {
     const d = +t[1] || 0;
-   if (!Number.isFinite(n)) return v ?? "";
-   const cut = truncateTo(n, d);
-   // her zaman sabit hane göstermek için toFixed kullanıyoruz
-   return cut.toFixed(d);
+    if (!Number.isFinite(n)) return v ?? "";
+    const cut = truncateTo(n, d);
+    // her zaman sabit hane göstermek için toFixed kullanıyoruz
+    return cut.toFixed(d);
   }
   return v ?? "";
 }
@@ -114,8 +115,8 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const rightMargin = 40;
   const padX = 8;
   const padY = 6;
-  const baseFontSize = 10;
-  const titleFontSize = 12;
+  const baseFontSize = 9;   // <- tüm fontlar 9
+  const titleFontSize = 9;  // <- başlık da 9
   const lineFactor = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
   const fontName = (doc.getFontList && doc.getFontList()["Roboto"])
     ? "Roboto"
@@ -124,7 +125,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // SOL kutu (logo alanı)
   const leftRequestedW = Number(headerCfg?.leftImage?.width || 260);
   const leftX = leftMargin;
-  const topY = 40;
+  const topY = 5;
 
   // SAĞ blok (firma kutuları)
   const rightX = leftX + leftRequestedW;
@@ -133,22 +134,22 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   // Başlık
   if (headerCfg?.rightBox?.title) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
     const titleH = titleFontSize * lineFactor + 2 * padY;
     doc.setLineWidth(0.8);
     doc.rect(rightX, rightCursorY, rightW, titleH, "S");
-     const centerX = rightX + rightW / 2;
- const centerY = rightCursorY + titleH / 2 + titleFontSize / 3; // optik dengeleme
-doc.text(t, centerX, centerY, { align: "center" });
+    const centerX = rightX + rightW / 2;
+    const centerY = rightCursorY + titleH / 2 + titleFontSize / 3; // optik dengeleme
+    doc.text(t, centerX, centerY, { align: "center" });
     rightCursorY += titleH;
   }
 
   // Satırlar
   const rLines = Array.isArray(headerCfg?.rightBox?.lines) ? headerCfg.rightBox.lines : [];
   for (const line of rLines) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     const txt = (line.type === "labelValue")
       ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
       : (String(line.text || line.value || line.href || ""));
@@ -171,50 +172,46 @@ doc.text(t, centerX, centerY, { align: "center" });
   doc.setLineWidth(0.8);
   doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
-try {
-  const resp = await fetch("/logo.png"); // public klasör kökü
-  const blob = await resp.blob();
-  const leftImg = await new Promise(res => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result);
-    reader.readAsDataURL(blob);
-  });
+  try {
+    const resp = await fetch("/logo.png"); // public klasör kökü
+    const blob = await resp.blob();
+    const leftImg = await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(blob);
+    });
 
-  const inset = 2;
-  const boxW = leftFinalW - 2 * inset;           // max ~256 px
-  const boxH = Math.max(0, leftFinalH - 2 * inset);
+    const inset = 2;
+    const boxW = leftFinalW - 2 * inset;           // max ~256 px
+    const boxH = Math.max(0, leftFinalH - 2 * inset);
 
-  // orijinal boyutları öğren
-  const img = new Image();
-  img.src = leftImg;
-  await new Promise(r => { img.onload = r; });
+    // orijinal boyutları öğren
+    const img = new Image();
+    img.src = leftImg;
+    await new Promise(r => { img.onload = r; });
 
-  const imgW = img.width;
-  const imgH = img.height;
-  const ratio = imgW / imgH;
+    const imgW = img.width;
+    const imgH = img.height;
+    const ratio = imgW / imgH;
 
-  // genişliği kutuya uydur, yüksekliği orantılı
-  let drawW = boxW;
-  let drawH = drawW / ratio;
+    // genişliği kutuya uydur, yüksekliği orantılı
+    let drawW = boxW;
+    let drawH = drawW / ratio;
 
-  // eğer yükseklik kutuya sığmazsa yüksekliğe göre uyarla
-  if (drawH > boxH) {
-    drawH = boxH;
-    drawW = drawH * ratio;
+    // eğer yüksekliğe sığmazsa yüksekliğe göre uyarla
+    if (drawH > boxH) {
+      drawH = boxH;
+      drawW = drawH * ratio;
+    }
+
+    // ortala
+    const x = leftX + inset + (boxW - drawW) / 2;
+    const y = topY + inset + (boxH - drawH) / 2;
+
+    doc.addImage(leftImg, "PNG", x, y, drawW, drawH);
+  } catch (e) {
+    console.warn("logo.png yüklenemedi:", e);
   }
-
-  // ortala
-  const x = leftX + inset + (boxW - drawW) / 2;
-  const y = topY + inset + (boxH - drawH) / 2;
-
-  doc.addImage(leftImg, "PNG", x, y, drawW, drawH);
-} catch (e) {
-  console.warn("logo.png yüklenemedi:", e);
-}
-
-
-
-
 
   // infoRows grid
   const layoutCfg = headerCfg?.infoRowsLayout || {};
@@ -246,7 +243,7 @@ try {
 
   let blockBottomY = rightBottomY;
   if (rows.length) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(baseFontSize);
     const lineFactor2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
 
@@ -346,13 +343,26 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     const w = Number(pick(r, "width_mm")) || 0;
     const h = Number(pick(r, "height_mm")) || 0;
     const c = Number(pick(r, "count")) || 0;
+
     // mm * mm * adet => mm² * adet. m²'ye çevirmek için 1e6'ya böl.
     const m2Float = (w * h * c) / 1e6;
-    // cam_isim + (varsa) glass_color.name
-    const camIsim   = String(pick(r, "cam_isim") ?? "").trim();
-    const color_name   = String(pick(r, "color_name") ?? "").trim();
-    const colorName = String(pick(r, "glass_color.name") ?? "").trim();
-    const camFull   = color_name ? `${camIsim} - ${color_name}` : camIsim;
+
+    // ---- İSİM OLUŞTURMA KURALI ----
+    const camIsim  = String(pick(r, "cam_isim") ?? "").trim();
+    const thick    = Number(pick(r, "thickness_mm")) || 0;
+    const c1       = String(pick(r, "color1_name") ?? "").trim();
+    const c2       = String(pick(r, "color2_name") ?? "").trim();
+
+    // Güvenli birleştir: boşları otomatik ayıkla
+    const joinNonEmpty = (...parts) => parts.filter(Boolean).join(" - ");
+
+    // Eğer thickness_mm === 1 ise: cam_isim - color1
+    // Aksi tüm durumlarda:      cam_isim - color1 - color2
+    const camFull =
+      thick === 1
+        ? joinNonEmpty(camIsim, c1)
+        : joinNonEmpty(camIsim, c1, c2);
+
     return { ...r, m2: m2Float, cam_full_name: camFull };
   });
 
@@ -366,13 +376,10 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
       startY: cursorY,
       head, body,
       theme: "grid",
-      // ✨ split header ile aynı görsel dil:
-      // - çizgiler siyah
-      // - metinler siyah
-      // - çizgi kalınlığı 0.8 (header kutularıyla uyumlu)
       styles: {
         font: fontName,
-        fontSize: 10,
+        fontSize: 9,                 // <- 9
+        fontStyle: "bold",           // <- kalın
         minCellHeight: 22,
         lineWidth: 0.8,
         lineColor: [0, 0, 0],
@@ -380,14 +387,14 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
       },
       headStyles: {
         font: fontName,
-        fontStyle: "normal",
-        fontSize: 11,
+        fontStyle: "bold",           // <- kalın başlık
+        fontSize: 9,                 // <- 9
         fillColor: [120, 160, 210]
       },
       bodyStyles: {
+        fontStyle: "bold",           // <- gövde de kalın
         textColor: [0, 0, 0]
       },
-      // tablo çerçevesi ve iç ızgara siyah
       tableLineColor: [0, 0, 0],
       tableLineWidth: 0.8,
       columnStyles: buildColumnStyles(columns),
@@ -412,18 +419,17 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
 
     const totalM2 = sumField(rows, "m2");
     const label = `Toplam Metrekare: ${formatCell(totalM2, "number(2)")}`;
-    const fontSize = 10;
+    const fontSize = 9; // <- 9
     const lineFactor2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
     const padX = 4, padY = 4;
     const lines = doc.splitTextToSize(label, Math.max(10, m2ColW - 2 * padX));
     const contentH = lines.length * (fontSize * lineFactor2);
     const boxH = Math.max(22, contentH + 2 * padY);
 
-
     doc.setLineWidth(0.8);
     doc.rect(m2ColX, tableBottomY, m2ColW, boxH, "S");
 
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(fontSize);
     const textX = m2ColX + m2ColW / 2;
     const textY = tableBottomY + padY + fontSize;

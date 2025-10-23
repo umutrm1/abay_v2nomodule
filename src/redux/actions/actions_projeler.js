@@ -513,7 +513,7 @@ export function editProjectPricesOnApi(projectId, prices) {
 /**
  * Tek bir system-glass kaydının cam rengini güncelle. (PUT)
  */
-export const updateSystemGlassColorInProject = (projectId, psgId, glassColorId) => {
+export const updateSystemGlassColorInProject = (projectId, psgId, body) => {
   return async (dispatch) => {
     try {
       const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/${psgId}/color`;
@@ -522,7 +522,7 @@ export const updateSystemGlassColorInProject = (projectId, psgId, glassColorId) 
         {
           method: "PUT",
           headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify({ glass_color_id: glassColorId }),
+          body: JSON.stringify(body)
         },
         dispatch
       );
@@ -542,7 +542,7 @@ export const updateSystemGlassColorInProject = (projectId, psgId, glassColorId) 
 /**
  * Aynı camları toplu güncelle (bulk). (PUT)
  */
-export const updateSameGlassesInProject = (projectId, system_variant_id, glass_type_id, glass_color_id) => {
+export const updateSameGlassesInProject = (projectId, body) => {
   return async (dispatch) => {
     try {
       const url = `${API_BASE_URL}/projects/${projectId}/system-glasses/colors/bulk`;
@@ -551,11 +551,7 @@ export const updateSameGlassesInProject = (projectId, system_variant_id, glass_t
         {
           method: "PUT",
           headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_variant_id,
-            glass_type_id,
-            glass_color_id,
-          }),
+          body: JSON.stringify(body),
         },
         dispatch
       );
@@ -573,7 +569,7 @@ export const updateSameGlassesInProject = (projectId, system_variant_id, glass_t
 };
 
 // Tüm camların rengini tek seferde güncelle (PUT)
-export const updateAllGlassesColorInProject = (projectId, glassColorId) => {
+export const updateAllGlassesColorInProject = (projectId, body) => {
   return async (dispatch) => {
     try {
       const url = `${API_BASE_URL}/projects/${projectId}/glasses/colors/all`;
@@ -585,7 +581,7 @@ export const updateAllGlassesColorInProject = (projectId, glassColorId) => {
             accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ glass_color_id: glassColorId }),
+          body: JSON.stringify(body)
         },
         dispatch
       );
@@ -601,3 +597,276 @@ export const updateAllGlassesColorInProject = (projectId, glassColorId) => {
     }
   };
 };
+
+
+/* ===================== PUT: Extra Profile (edit) ===================== */
+/**
+ * Projedeki ekstra profili günceller.
+ * @param {string} projectId - Yenilenecek projenin id'si
+ * @param {string} id - Güncellenecek extra profile id'si
+ * @param {object} payload - PUT gövdesi (cut_length_mm, cut_count, is_painted, unit_price, pdf {...})
+ */
+export function editExtraProfileOnApi(projectId, id, payload) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-profiles/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Güncelleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== DELETE: Extra Profile ===================== */
+/**
+ * Projedeki ekstra profili siler.
+ * @param {string} projectId - Yenilenecek projenin id'si
+ * @param {string} id - Silinecek extra profile id'si
+ */
+export function deleteExtraProfileFromApi(projectId, id) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-profiles/${id}`,
+        {
+          method: "DELETE",
+          headers: { Accept: "*/*" },
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Silme başarısız");
+      }
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return true;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== PUT: Extra Glass (edit) ===================== */
+/**
+ * Projedeki ekstra camı günceller.
+ * @param {string} projectId
+ * @param {string} id - extra-glasses id
+ * @param {object} payload - PUT gövdesi (width_mm, height_mm, count, unit_price, renk alanları, pdf {...})
+ */
+export function editExtraGlassOnApi(projectId, id, payload) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-glasses/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Güncelleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== DELETE: Extra Glass ===================== */
+/**
+ * Projedeki ekstra camı siler.
+ * @param {string} projectId
+ * @param {string} id - extra-glasses id
+ */
+export function deleteExtraGlassFromApi(projectId, id) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-glasses/${id}`,
+        {
+          method: "DELETE",
+          headers: { Accept: "*/*" },
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Silme başarısız");
+      }
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return true;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== PUT: Extra Material (edit) ===================== */
+/**
+ * Projedeki ekstra malzemeyi günceller.
+ * @param {string} projectId
+ * @param {string} id - extra-materials id
+ * @param {object} payload - PUT gövdesi (count, cut_length_mm, unit_price, pdf {...})
+ */
+export function editExtraMaterialOnApi(projectId, id, payload) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-materials/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Güncelleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== DELETE: Extra Material ===================== */
+/**
+ * Projedeki ekstra malzemeyi siler.
+ * @param {string} projectId
+ * @param {string} id - extra-materials id
+ */
+export function deleteExtraMaterialFromApi(projectId, id) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-materials/${id}`,
+        {
+          method: "DELETE",
+          headers: { Accept: "*/*" },
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Silme başarısız");
+      }
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return true;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== PUT: Extra Remote (edit) ===================== */
+/**
+ * Projedeki ekstra kumandayı günceller.
+ * @param {string} projectId
+ * @param {string} id - extra-remotes id
+ * @param {object} payload - PUT gövdesi (count, unit_price, pdf {...})
+ */
+export function editExtraRemoteOnApi(projectId, id, payload) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-remotes/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Güncelleme başarısız");
+      }
+      const data = await res.json();
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return data;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}
+
+/* ===================== DELETE: Extra Remote ===================== */
+/**
+ * Projedeki ekstra kumandayı siler.
+ * @param {string} projectId
+ * @param {string} id - extra-remotes id
+ */
+export function deleteExtraRemoteFromApi(projectId, id) {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/projects/extra-remotes/${id}`,
+        {
+          method: "DELETE",
+          headers: { Accept: "*/*" },
+        },
+        dispatch
+      );
+      if (!res.ok) {
+        toastError();
+        _assertOk(res, "Silme başarısız");
+      }
+      toastSuccess();
+      await dispatch(getProjeRequirementsFromApi(projectId));
+      return true;
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+}

@@ -31,15 +31,18 @@ async function createPdfDoc() {
   doc.addFileToVFS("Roboto-Bold.ttf", bold64);
   doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
 
-  doc.setFont("Roboto", "normal");
+  // başlangıç fontunu bold yap
+  doc.setFont("Roboto", "bold");
   return doc;
 }
-function setFontSafe(doc, family, style = "normal") {
+function setFontSafe(doc, family, style = "bold") {
+  // tüm çağrılar bold olacak şekilde varsayılanı da bold yaptık
   try {
     const list = doc.getFontList?.() || {};
     const styles = list?.[family];
     if (Array.isArray(styles)) {
       if (styles.includes(style)) { doc.setFont(family, style); return; }
+      if (styles.includes("bold")) { doc.setFont(family, "bold"); return; }
       if (styles.includes("normal")) { doc.setFont(family, "normal"); return; }
     }
   } catch { }
@@ -70,13 +73,13 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const pageW = doc.internal.pageSize.getWidth();
   const leftMargin = 40, rightMargin = 40;
   const padX = 8, padY = 6;
-  const baseFontSize = 10, titleFontSize = 12;
+  const baseFontSize = 9, titleFontSize = 9; // tüm font size 9
   const lineFactor = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
   const fontName = (doc.getFontList?.()["Roboto"] ? "Roboto" : (doc.getFont().fontName || "helvetica"));
 
   // sol logo kutusu hedef genişlik
   const leftRequestedW = Number(headerCfg?.leftImage?.width || 260);
-  const leftX = leftMargin, topY = 30;
+  const leftX = leftMargin, topY = 5; // topY’yi 5 yaptık
 
   // sağ blok
   const rightX = leftX + leftRequestedW;
@@ -85,7 +88,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   // Brand (başlık) — HER ZAMAN ORTALI
   if (headerCfg?.rightBox?.title) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
     const titleH = titleFontSize * lineFactor + 2 * padY;
@@ -100,7 +103,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // Sağ bilgi satırları
   const rLines = Array.isArray(headerCfg?.rightBox?.lines) ? headerCfg.rightBox.lines : [];
   for (const line of rLines) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     const txt = (line.type === "labelValue")
       ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
       : (String(line.text || line.value || line.href || ""));
@@ -177,7 +180,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   let bottomY = rightBottom;
   if (rows.length) {
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(baseFontSize);
     const lfac2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
 
@@ -242,18 +245,18 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
   const doc = await createPdfDoc();
   const fontName = (doc.getFontList?.()["Roboto"] ? "Roboto" : "helvetica");
 
-  // Üst bilgi (logo/başlık/kartlar) – dosyadaki mevcut header çizimini aynen kullanıyoruz
+  // Üst bilgi
   const { bottomY, leftMargin, rightMargin } = await drawSplitHeader(doc, brandConfig, pdfConfig, ctx);
   let cursorY = bottomY;
 
-  // --- Yardımcı: PDF görünürlük filtresi (yoksa geriye dönük alanı kullan)
+  // --- Yardımcı: PDF görünürlük filtresi
   const pdfAllow = (obj, fallbackKey = "profilAksesuarCiktisi") => {
     const pdf = obj?.pdf || {};
     if (typeof pdf.pdfProfileAccessory === "boolean") return pdf.pdfProfileAccessory === true;
     return pdf?.[fallbackKey] === true;
   };
 
-  // ---- 1) Filtrelenmiş requirements (sadece profil/aksesuar/kumanda çıktısı)
+  // ---- 1) Filtrelenmiş requirements
   const filtered = {
     ...requirements,
     systems: (requirements?.systems || []).map(sys => ({
@@ -286,7 +289,7 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
   // ---- 3) Satır gövdesi
   const body = [];
 
-  // ========== ÖNCE: UI’dan gelen satırlar varsa onları olduğu gibi kullan ==========
+  // ========== ÖNCE: UI’dan gelen satırlar ==========
   let usedExternalRows = false;
   if (Array.isArray(options?.rows) && options.rows.length > 0) {
     usedExternalRows = true;
@@ -304,7 +307,6 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
         (r?.boy_m === "" || r?.boy_m == null) ? "" : String(r.boy_m),
         (r?.birimKg === "" || r?.birimKg == null) ? "" : String(r.birimKg),
         (r?.toplamKg === "" || r?.toplamKg == null) ? "" : String(r.toplamKg),
-        // Fiyat kolonları: sayı ise 2 hane, string/"" ise dokunma
         (typeof r?.birimFiyat === "number") ? r.birimFiyat.toFixed(2)
           : (r?.birimFiyat == null ? "" : String(r.birimFiyat)),
         (typeof r?.toplamFiyat === "number") ? r.toplamFiyat.toFixed(2)
@@ -313,7 +315,7 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     }
   }
 
-  // ========== YOKSA: Eski aggregation mantığı ==========
+  // ========== YOKSA: Eski aggregation ==========
   if (!usedExternalRows) {
     /* ---------- PROFİLLER ---------- */
     const profAgg = new Map(); // key: id|boy|birimKg|paintedFlag
@@ -350,11 +352,10 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
       })
     );
 
-    // Fiyatlandırma kuralı (dosyandaki mevcut davranış korunur)
+    // Fiyatlandırma
     for (const { id, kod, ad, adet, boy_m, birimKg, isPainted } of profAgg.values()) {
       let birimFiyat = 0;
       if (!options?.pricingMode) {
-        // orijinal birim fiyat (requirements içinden)
         const findOriginal = () => {
           for (const s of (requirements?.systems || [])) {
             for (const pr of (s.profiles || [])) {
@@ -396,7 +397,6 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     }
 
     /* ---------- MALZEMELER ---------- */
-    // Aynı materyali (id, cutLen, birimKg) bazında biriktirme
     const matAgg = new Map(); // key: id|cutLen|birimKg
     const pushMaterial = (m) => {
       const id = m.material?.id || m.id;
@@ -429,21 +429,19 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
         ad,
         adet,
         cutLen || "",
-        "",                     // Materyallerde Birim Kilo -> HER ZAMAN BOŞ (UI ile aynı)
+        "",                     // Materyallerde Birim Kilo -> boş
         (adet * (cutLen || 0)),
         birimFiyat.toFixed(2),
         toplamFiyat.toFixed(2),
       ]);
     }
 
-    /* ---------- KUMANDALAR (REMOTE) – planlama ---------- */
-    // Toplam quantity (systems)
+    /* ---------- KUMANDALAR (REMOTE) ---------- */
     const totalQty = (filtered.systems || []).reduce((sum, s) => {
       const q = Number(s?.quantity || 0);
       return sum + (Number.isFinite(q) && q > 0 ? q : 0);
     }, 0);
 
-    // Kapasite -> en ucuz kumandayı seç
     const capacityMap = new Map(); // cap:number -> { name, unitPrice:number }
     (filtered.systems || []).forEach(sys => {
       (sys.remotes || []).forEach(r => {
@@ -464,7 +462,6 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     if (totalQty > 0 && caps.length > 0) {
       let remaining = totalQty;
 
-      // 15’leri max
       if (capacityMap.has(15)) {
         const info = capacityMap.get(15);
         const take = Math.floor(remaining / 15);
@@ -473,7 +470,6 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
           remaining -= take * 15;
         }
       }
-      // 9
       if (remaining > 0 && capacityMap.has(9)) {
         const info = capacityMap.get(9);
         const take = Math.floor(remaining / 9);
@@ -482,20 +478,17 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
           remaining -= take * 9;
         }
       }
-      // 5 (en az 2 kalmışsa bir adet 5’lik al)
       if (remaining > 1 && capacityMap.has(5)) {
         const info = capacityMap.get(5);
         remotePlan.push({ cap: 5, count: 1, name: info.name, unitPrice: info.unitPrice });
         remaining -= 5;
       }
-      // kalan 0/1
       if (remaining > 0) {
         if (capacityMap.has(1)) {
           const info = capacityMap.get(1);
           remotePlan.push({ cap: 1, count: remaining, name: info.name, unitPrice: info.unitPrice });
           remaining = 0;
         } else {
-          // 1 yoksa: kalan’ı kapatan en küçük kapasite veya en küçük kapasiteden 1 adet
           const capsAsc = [...caps].sort((a, b) => a - b);
           const coverCap = capsAsc.find(c => c >= remaining) ?? capsAsc[0];
           const infoC = capacityMap.get(coverCap);
@@ -505,7 +498,6 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
       }
     }
 
-    // Planı PDF’e yaz (adet > 0). Boy/BirimKg/ToplamKg kolonları HER ZAMAN BOŞ
     remotePlan.forEach(it => {
       if (!it.count) return;
       const adet = it.count;
@@ -517,15 +509,14 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
         "",
         it.name,
         adet,
-        "",   // Boy (m)  -> boş
-        "",   // Birim Kg -> boş
-        "",   // Toplam Kg-> boş
+        "",   // Boy (m)
+        "",   // Birim Kg
+        "",   // Toplam Kg
         birimFiyat.toFixed(2),
         toplamFiyat.toFixed(2),
       ]);
     });
 
-    // extra_remotes: olduğu gibi ekle (adet>0)
     (requirements?.extra_remotes || [])
       .filter(er => pdfAllow(er) && Number(er?.count || 0) > 0)
       .forEach(er => {
@@ -539,71 +530,72 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
           "",
           name,
           adet,
-          "",  // Boy -> boş
-          "",  // Birim Kg -> boş
-          "",  // Toplam Kg -> boş
+          "",
+          "",
+          "",
           birimFiyat.toFixed(2),
           toplamFiyat.toFixed(2),
         ]);
       });
   } // !usedExternalRows
 
-const IMG_PAD = 2;
-const IMG_MAX_W = 35;
+  const IMG_PAD = 2;
+  const IMG_MAX_W = 35;
 
-autoTable(doc, {
-  startY: cursorY,
-  head,
-  body,
-  theme: "grid",
-  styles: { font: fontName, fontSize: 8, halign: "center", valign: "middle" },
-  headStyles: { font: fontName, fontStyle: "normal", fontSize: 8, halign: "center", fillColor: [120, 160, 210] },
+  autoTable(doc, {
+    startY: cursorY,
+    head,
+    body,
+    theme: "grid",
+    styles: { font: fontName, fontStyle: "bold", fontSize: 9, halign: "center", valign: "middle" },
+    headStyles: { font: fontName, fontStyle: "bold", fontSize: 9, halign: "center", fillColor: [120, 160, 210] },
 
-  // Profil Kesit sütunu: genişliği görsel + padding kadar sabitle
-  columnStyles: { 1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } },
+    // Profil Kesit sütunu: genişliği görsel + padding kadar sabitle
+    columnStyles: { 1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } },
 
-  // 1) Satır yüksekliğini resmin hedef yüksekliğine göre büyüt
-  didParseCell: (data) => {
-    if (data.section !== "body" || data.column.index !== 1) return;
-    const cellRaw = data.row?.raw?.[1]?.raw || {};
-    const img = cellRaw.imageData;
-    if (typeof img !== "string" || !img.startsWith("data:image")) return;
-    try {
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawH = IMG_MAX_W / ratio; // en-boy oranı koru
-      const needMinH = drawH + 2 * IMG_PAD;
-      if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
-        data.cell.styles.minCellHeight = needMinH;
+    // 1) Satır yüksekliğini resmin hedef yüksekliğine göre büyüt
+    didParseCell: (data) => {
+      if (data.section !== "body" || data.column.index !== 1) return;
+      const cellRaw = data.row?.raw?.[1]?.raw || {};
+      const img = cellRaw.imageData;
+      if (typeof img !== "string" || !img.startsWith("data:image")) return;
+      try {
+        const props = doc.getImageProperties(img);
+        const ratio = props.width / props.height;
+        const drawH = IMG_MAX_W / ratio; // en-boy oranı koru
+        const needMinH = drawH + 2 * IMG_PAD;
+        if (!data.cell.styles.minCellHeight || data.cell.styles.minCellHeight < needMinH) {
+          data.cell.styles.minCellHeight = needMinH;
+        }
+      } catch {}
+    },
+
+    // 2) Çizim: sabit max genişlikte, ortalanmış
+    didDrawCell: (data) => {
+      if (data.section !== "body" || data.column.index !== 1) return;
+      const cellRaw = data.row?.raw?.[1]?.raw || {};
+      const img = cellRaw.imageData;
+      if (typeof img !== "string" || !img.startsWith("data:image")) return;
+
+      try {
+        const props = doc.getImageProperties(img);
+        const ratio = props.width / props.height;
+        const drawW = IMG_MAX_W;
+        const drawH = drawW / ratio;
+
+        const dx = data.cell.x + (data.cell.width  - drawW) / 2;
+        const dy = data.cell.y + (data.cell.height - drawH) / 2;
+
+        const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+        doc.addImage(img, fmt, dx, dy, drawW, drawH);
+      } catch (e) {
+        console.warn("Profil kesit resmi çizilemedi:", e);
       }
-    } catch {}
-  },
+    },
 
-  // 2) Çizim: artık 'fit to cell' yok; sabit max genişlikte, ortalanmış
-  didDrawCell: (data) => {
-    if (data.section !== "body" || data.column.index !== 1) return;
-    const cellRaw = data.row?.raw?.[1]?.raw || {};
-    const img = cellRaw.imageData;
-    if (typeof img !== "string" || !img.startsWith("data:image")) return;
+    margin: { left: 40, right: 40 }
+  });
 
-    try {
-      const props = doc.getImageProperties(img);
-      const ratio = props.width / props.height;
-      const drawW = IMG_MAX_W;
-      const drawH = drawW / ratio;
-
-      const dx = data.cell.x + (data.cell.width  - drawW) / 2;
-      const dy = data.cell.y + (data.cell.height - drawH) / 2;
-
-      const fmt = img.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-      doc.addImage(img, fmt, dx, dy, drawW, drawH);
-    } catch (e) {
-      console.warn("Profil kesit resmi çizilemedi:", e);
-    }
-  },
-
-  margin: { left: 40, right: 40 }
-});
   // ---- 5) Sağda toplam kutuları + solda açıklama + uyarı
   const at = doc.lastAutoTable;
   const y0 = at?.finalY || cursorY;
@@ -621,7 +613,7 @@ autoTable(doc, {
   const xLeft = leftMargin;
   const xRight = leftMargin + leftW;
 
-  // === TOPLAM HESAPLARI: UI’dan geldiyse onları kullan
+  // === TOPLAM HESAPLARI
   let toplamFiyat, kdv, genelToplam;
   if (options?.totals) {
     toplamFiyat = Number(options.totals.toplam || 0);
@@ -631,14 +623,13 @@ autoTable(doc, {
       (gtOpt !== undefined && gtOpt !== null) ? gtOpt : (Number(options.totals.toplam || 0) + Number(options.totals.kdv || 0))
     );
   } else {
-    // (Eski davranış) tablodan “Toplam Fiyat” kolonunu topla (index=8)
     toplamFiyat = body.reduce((s, r) => s + (parseFloat(r[8]) || 0), 0);
     kdv = toplamFiyat * 0.20;
     genelToplam = toplamFiyat + kdv;
   }
 
-  const totalsFontSize = 10;
-  const drawRightRow = (y, label, val, fillBlue = false, boldVal = false) => {
+  const totalsFontSize = 9;
+  const drawRightRow = (y, label, val, fillBlue = false) => {
     const half = rightW / 2;
     const padL = 6, padR = 6;
     const fs = totalsFontSize;
@@ -656,26 +647,26 @@ autoTable(doc, {
     const lfac = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
     const cy = y + (boxH - fs * lfac) / 2 + fs;
 
-    // Sol hücre (etiket)
-    setFontSafe(doc, fontName, "normal");
+    // Sol hücre (etiket) — BOLD
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(fs);
     doc.text(String(label), xRight + padL, cy, { align: "left" });
 
-    // Sağ hücre (değer)
-    setFontSafe(doc, fontName, boldVal ? "bold" : "normal");
+    // Sağ hücre (değer) — BOLD
+    setFontSafe(doc, fontName, "bold");
     doc.setFontSize(fs);
     doc.setTextColor(200, 0, 0);
     doc.text(fmtMoneyTRY(val), xRight + rightW - padR, cy, { align: "right" });
 
     doc.setTextColor(0, 0, 0);
-    setFontSafe(doc, fontName, "normal");
+    setFontSafe(doc, fontName, "bold");
   };
 
-  drawRightRow(y0 + 0 * boxH, "TOPLAM", toplamFiyat, false, false);
-  drawRightRow(y0 + 1 * boxH, "KDV (%20)", kdv, true, true);
-  drawRightRow(y0 + 2 * boxH, "GENEL TOPLAM", genelToplam, false, true);
+  drawRightRow(y0 + 0 * boxH, "TOPLAM", toplamFiyat, false);
+  drawRightRow(y0 + 1 * boxH, "KDV (%20)", kdv, true);
+  drawRightRow(y0 + 2 * boxH, "GENEL TOPLAM", genelToplam, false);
 
-  // Sol tarafta açıklama kutusu
+ // Sol tarafta açıklama kutusu
   const leftBoxH = boxH * 3;
   doc.setDrawColor(150); doc.setLineWidth(0.8);
   doc.rect(xLeft, y0, leftW, leftBoxH, "S");
@@ -690,10 +681,14 @@ autoTable(doc, {
   ].join("\n");
 
   const padX = 8, padY = 8;
-  setFontSafe(doc, fontName, "normal");
-  doc.setFontSize(5);
+  setFontSafe(doc, fontName, "bold");
+  
+  doc.setFontSize(5); // <<< DEĞİŞİKLİK: Yazı boyutu 5 yapıldı.
+  
   let lines = doc.splitTextToSize(aciklamaText, leftW - 2 * padX);
-  doc.text(lines, xLeft + padX, y0 + padY + doc.getFontSize());
+  
+  // <<< DEĞİŞİKLİK: Kutuya dikey ortalamak için Y koordinatı ve valign eklendi.
+  doc.text(lines, xLeft + padX, y0 + leftBoxH / 2, { align: "left", valign: "middle" });
 
   // Alt uyarı
   const warnY = y0 + leftBoxH;
@@ -704,14 +699,17 @@ autoTable(doc, {
   doc.setDrawColor(150); doc.setLineWidth(0.8);
   doc.rect(leftMargin, warnY, pageW - leftMargin - rightMargin, warnH, "S");
   setFontSafe(doc, fontName, "bold");
-  doc.setFontSize(7);
+  
+  doc.setFontSize(5); // <<< DEĞİŞİKLİK: Yazı boyutu 5 yapıldı. (Önceki 4 yerine)
+  
   doc.setTextColor(200, 0, 0);
   const warnLines = doc.splitTextToSize(warnText, pageW - leftMargin - rightMargin - 2 * padX);
-  doc.text(warnLines, leftMargin + (pageW - leftMargin - rightMargin) / 2, warnY + warnH / 2, { align: "center" });
+  
+  // <<< DEĞİŞİKLİK: Dikey ortalama (valign) eklendi.
+  doc.text(warnLines, leftMargin + (pageW - leftMargin - rightMargin) / 2, warnY + warnH / 2, { align: "center", valign: "middle" });
+  
   doc.setTextColor(0, 0, 0);
 
   // PDF’i aç
   openPdf(doc);
 }
-
-

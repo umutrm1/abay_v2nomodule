@@ -4,7 +4,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   getSystemFullVariantsOfSystemFromApi,
-  editSystemVariantTemplatesOnApi
+  editSystemVariantTemplatesOnApi,
+  getSistemlerFromApi,
+  changeSystemOfSystemVariant,
 } from '@/redux/actions/actions_sistemler.js';
 import DialogPdfAyar from "./DialogPdfAyar.jsx";
 import Header from '@/components/mycomponents/Header.jsx';
@@ -28,7 +30,12 @@ const SistemVaryantDuzenle = () => {
   const [openPdfDlg, setOpenPdfDlg] = useState(false);
   const [pdfTarget, setPdfTarget] = useState({ type: null, rowKey: null });
   const [pdfDraft, setPdfDraft] = useState(null);
+
+  // Sistem seçimi + sistem listesi
   const [selectedSystem, setSelectedSystem] = useState('');
+  const [systems, setSystems] = useState([]);
+  const [systemsLoading, setSystemsLoading] = useState(false);
+
   const [variantName, setVariantName] = useState('');
   const [profiles, setProfiles] = useState([]);
   const [glasses, setGlasses] = useState([]);
@@ -57,6 +64,25 @@ const SistemVaryantDuzenle = () => {
   useEffect(() => {
     dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
   }, [dispatch, variantId]);
+
+  // İlk yükleme: sistem listesini getir (tümü)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setSystemsLoading(true);
+        const data = await dispatch(getSistemlerFromApi(1, "", "all"));
+        if (!mounted) return;
+        setSystems(Array.isArray(data?.items) ? data.items : []);
+      } catch (err) {
+        console.error("Sistemler yüklenemedi:", err);
+        setSystems([]);
+      } finally {
+        if (mounted) setSystemsLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [dispatch]);
 
   // Varyant reducer değişince UI state doldur
   useEffect(() => {
@@ -147,6 +173,22 @@ const SistemVaryantDuzenle = () => {
       })));
     }
   }, [seciliVaryant, variantId]);
+
+  // Sistem değiştirici
+  const handleSystemChange = async (e) => {
+    const newSystemId = e.target.value;
+    if (!newSystemId || newSystemId === selectedSystem) return;
+
+    try {
+      await dispatch(changeSystemOfSystemVariant(variantId, newSystemId));
+      setSelectedSystem(newSystemId);
+      // Varyant detayını tazele (UI'daki system name vs. güncellensin)
+      await dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
+    } catch (err) {
+      console.error("Sistem değiştirilemedi:", err);
+      // toastError thunk içinde çalışıyor; burada sadece logluyoruz.
+    }
+  };
 
   // Satır ekleme/çıkarma
   const addProfileRow = () => setProfiles(ps => [...ps, {
@@ -292,10 +334,23 @@ const SistemVaryantDuzenle = () => {
         <div className="flex flex-col md:flex-row items-center gap-4">
           <div className="flex items-center gap-2">
             <label className="font-semibold">Sistem:</label>
-            <select className="select select-bordered" value={selectedSystem} disabled>
-              <option>{seciliVaryant.system?.name || '-'}</option>
+            <select
+              className="select select-bordered"
+              value={selectedSystem}
+              onChange={handleSystemChange}
+              disabled={systemsLoading || systems.length === 0}
+            >
+              <option value="" disabled>
+                {systemsLoading ? 'Yükleniyor...' : 'Sistem seçin'}
+              </option>
+              {systems.map(sys => (
+                <option key={sys.id} value={sys.id}>
+                  {sys.name}
+                </option>
+              ))}
             </select>
           </div>
+
           <div className="flex items-center gap-2">
             <label className="font-semibold">Varyant İsmi:</label>
             <input
