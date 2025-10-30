@@ -1,6 +1,7 @@
 // src/utils/pdf/pdfProfileAccessory.js
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getBrandImage } from "@/redux/actions/actionsPdf.js";
 
 /* ========== yardımcılar ========== */
 function arrayBufferToBase64(buf) {
@@ -128,27 +129,20 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   // Logo: public/logo.png (orantıyı koru, ortala)
   try {
-    const resp = await fetch("/logo.png");
-    if (resp.ok) {
-      const blob = await resp.blob();
-      const dataUrl = await new Promise(res => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result);
-        fr.readAsDataURL(blob);
-      });
-      const inset = 2;
-      const boxW = leftFinalW - 2 * inset;
-      const boxH = Math.max(0, leftFinalH - 2 * inset);
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise(r => { img.onload = r; });
-      const ratio = img.width / img.height;
-      let w = boxW, h = w / ratio;
-      if (h > boxH) { h = boxH; w = h * ratio; }
-      const x = leftX + inset + (boxW - w) / 2;
-      const y = topY + inset + (boxH - h) / 2;
-      doc.addImage(dataUrl, "PNG", x, y, w, h);
-    }
+    const dataUrl = await getBrandImage(); // "data:image/png;base64,..." döner
+    if (!dataUrl) throw new Error("Boş logo yanıtı");
+    const inset = 2;
+    const boxW = leftFinalW - 2 * inset;
+    const boxH = Math.max(0, leftFinalH - 2 * inset);
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise(r => { img.onload = r; });
+    const ratio = img.width / img.height;
+    let w = boxW, h = w / ratio;
+    if (h > boxH) { h = boxH; w = h * ratio; }
+    const x = leftX + inset + (boxW - w) / 2;
+    const y = topY + inset + (boxH - h) / 2;
+    doc.addImage(dataUrl, "PNG", x, y, w, h);
   } catch (e) {
     console.warn("logo.png yüklenemedi:", e);
   }

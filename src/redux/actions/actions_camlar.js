@@ -84,8 +84,8 @@ export function sellCamOnApi(cam_id) {
   return async (dispatch) => {
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/catalog/glass-types/${cam_id}`,
-        { method: "DELETE", headers: { Accept: "application/json" } },
+        `${API_BASE_URL}/catalog/glass-types/${cam_id}/deactivate`,
+        {method: "PUT", headers: { Accept: "application/json" } },
         dispatch
       );
       if (!res.ok) {

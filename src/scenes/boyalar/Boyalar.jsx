@@ -259,9 +259,9 @@ const Boyalar = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+                <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
                   <thead>
-                    <tr className="border-b border-base-500 dark:border-gray-500">
+                    <tr className="border-b border-base-500 border-gray-500">
                       <th>Boya İsmi</th>
                       <th className="text-center">İşlemler</th>
                     </tr>
@@ -269,7 +269,7 @@ const Boyalar = () => {
                   <tbody>
                     {profileData.items?.length > 0 ? (
                       profileData.items.map(color => (
-                        <tr key={color.id} className="border-b border-base-300 dark:border-gray-500">
+                        <tr key={color.id} className="border-b  border-gray-500">
                           <td>{color.name}</td>
 
                           <td className="text-center space-x-2">
@@ -289,7 +289,7 @@ const Boyalar = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={2} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                        <td colSpan={2} className="border-b border-base-500 border-gray-500 text-center text-muted-foreground py-4">
                           Veri bulunamadı.
                         </td>
                       </tr>
@@ -408,9 +408,9 @@ const Boyalar = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+                <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
                   <thead>
-                    <tr className="border-b border-base-500 dark:border-gray-500">
+                    <tr className="border-b border-base-500 border-gray-500">
                       <th>Boya İsmi</th>
                       <th className="text-center">İşlemler</th>
                     </tr>
@@ -418,7 +418,7 @@ const Boyalar = () => {
                   <tbody>
                     {glassData.items?.length > 0 ? (
                       glassData.items.map(color => (
-                        <tr key={color.id} className="border-b border-base-300 dark:border-gray-500">
+                        <tr key={color.id} className="border-b border-gray-500">
                           <td className="flex items-center gap-1">
                             <span>{color.name}</span>
                             {renderDefaultBadge(color)}
@@ -448,7 +448,7 @@ const Boyalar = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={2} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                        <td colSpan={2} className="border-b border-base-500 border-gray-500 text-center text-muted-foreground py-4">
                           Veri bulunamadı.
                         </td>
                       </tr>

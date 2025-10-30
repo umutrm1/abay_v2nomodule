@@ -11,9 +11,10 @@ import {
   getSystemVariantsFromApi,
   deleteSystemVariantOnApi,
   AddOrUpdateSystemImageFromApi,
-
+getSystemVariantsOfSystemFromApi,
   // yeni eklenen aksiyonlar:
   publishSystem,
+  editSystemVariantOnApi,
   unpublishSystem,
   activateSystem,
   deactivateSystem,
@@ -27,6 +28,8 @@ import DialogSistemEkle from './DialogSistemEkle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 import DialogVaryantOlustur from './DialogVaryantOlustur.jsx';
 import AppButton from '@/components/ui/AppButton.jsx';
+import SistemVaryantGorSirala from './SistemVaryantGorSirala.jsx';
+import SistemSirala from './SistemSirala.jsx';
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -46,7 +49,7 @@ const Sistemler = () => {
   const [sysSearch, setSysSearch] = useState('');
   const [sysPage, setSysPage]     = useState(1);
   const [sysLoading, setSysLoading] = useState(false);
-
+  const [sysSortOpen, setSysSortOpen] = useState(false);
   const [sysLimit, setSysLimit] = useState(10);
   const [varLimit, setVarLimit] = useState(10);
 
@@ -179,12 +182,26 @@ const Sistemler = () => {
 
   const totalSysPages = systems.total_pages || 1;
   const totalVarPages = variants.total_pages || 1;
+ const [siralaOpen, setSiralaOpen] = useState(false);
+ const [activeSystemForSort, setActiveSystemForSort] = useState(null);
+
+ const openSortModal = async (sys) => {
+   if (!sys?.id) return;
+   setActiveSystemForSort(sys);
+   setSiralaOpen(true);
+   // İsteğe bağlı: modal açılmadan prefetch (modal da zaten çekecek; hızlı his için bırakıyorum)
+   try { 
+     await dispatch(getSystemVariantsOfSystemFromApi(sys.id, 1, "", "all")); 
+   } catch (_) {}
+ };
+
+
 
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen bg-background text-foreground">
       <Header title="Sistemler" />
 
-      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-6">
+      <div className="bg-card border borderorder rounded-2xl p-5 flex flex-col gap-y-6">
         {/* SISTEMLER ÜST BAR */}
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
           <input
@@ -218,15 +235,23 @@ const Sistemler = () => {
             />
             <span className="text-sm">Aktif Olmayanları Göster</span>
           </label>
-
+         <AppButton
+           variant="lacivert"
+           size="sm"
+           shape="none"
+           onClick={() => setSysSortOpen(true)}
+           title="Sistemlerin genel sıralamasını düzenle"
+         >
+           Sistem Sırala
+         </AppButton>
           <DialogSistemEkle onSave={handleAddSystem} />
         </div>
 
         {/* SISTEMLER TABLO */}
         <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+          <table className="table w-full border  border-gray-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500 dark:border-gray-500">
+              <tr className="border border-gray-500 ">
                 <th>Sistem İsmi</th>
                 <th>Açıklama</th>
                 <th className="text-center">Durumlar</th>
@@ -236,7 +261,7 @@ const Sistemler = () => {
 
             {sysLoading ? (
               <tbody>
-                <tr className="border-b border-base-400 dark:border-gray-500">
+                <tr className="border borderase-400 border-gray-500">
                   <td colSpan={5}><Spinner /></td>
                 </tr>
               </tbody>
@@ -244,7 +269,7 @@ const Sistemler = () => {
               <tbody>
                 {filteredSystemItems.length > 0 ? (
                   filteredSystemItems.map(sys => (
-                    <tr key={sys.id} className="border-b border-base-300 dark:border-gray-500">
+                    <tr key={sys.id} className="border borderase-300 border-gray-500">
                       <td>{sys.name}</td>
                       <td>{sys.description}</td>
                       <td className="text-center">
@@ -262,14 +287,14 @@ const Sistemler = () => {
                         <DialogSistemEkle system={sys} onSave={handleEditSystem} />
 
                         {/* Sil */}
-                        <AppButton
+                        {/* <AppButton
                           size="sm"
                           variant="kirmizi"
                           shape="none"
                           onClick={() => askDeleteSystem(sys)}
                         >
                           Sil
-                        </AppButton>
+                        </AppButton> */}
 
                         {/* Yayınla / Yayından Kaldır */}
                         <AppButton
@@ -290,12 +315,21 @@ const Sistemler = () => {
                         >
                           {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
                         </AppButton>
+                     <AppButton
+                       size="sm"
+                       variant="lacivert"
+                       shape="none"
+                       onClick={() => openSortModal(sys)}
+                       title="Bu sistemin varyantlarını gör ve sırala"
+                     >
+                       Gör ve Sırala
+                     </AppButton>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                    <td colSpan={5} className="border border-gray-500 text-center text-muted-foreground py-4">
                       Veri bulunamadı
                     </td>
                   </tr>
@@ -376,9 +410,9 @@ const Sistemler = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+            <table className="table w-full border border-gray-500 rounded-lg">
               <thead>
-                <tr className="border-b border-base-500 dark:border-gray-500">
+                <tr className="border border-gray-500 ">
                   <th>Varyant İsmi</th>
                   <th className="text-center">Durumlar</th>
                   <th className="text-center">İşlemler</th>
@@ -387,7 +421,7 @@ const Sistemler = () => {
 
               {varLoading ? (
                 <tbody>
-                  <tr className="border-b border-base-400 dark:border-gray-500">
+                  <tr className="border borderase-400 border-gray-500">
                     <td colSpan={3}><Spinner /></td>
                   </tr>
                 </tbody>
@@ -395,7 +429,7 @@ const Sistemler = () => {
                 <tbody>
                   {filteredVariantItems.length > 0 ? (
                     filteredVariantItems.map(variant => (
-                      <tr key={variant.id} className="border-b border-base-300 dark:border-gray-500">
+                      <tr key={variant.id} className="border borderase-300 border-gray-500">
                         <td>{variant.name}</td>
                         <td className="text-center">
                           <div className="flex items-center justify-center gap-2 text-xs">
@@ -414,9 +448,9 @@ const Sistemler = () => {
                           </AppButton>
 
                           {/* Sil */}
-                          <AppButton size="sm" variant="kirmizi" shape="none" onClick={() => askDeleteVariant(variant)}>
+                          {/* <AppButton size="sm" variant="kirmizi" shape="none" onClick={() => askDeleteVariant(variant)}>
                             Sil
-                          </AppButton>
+                          </AppButton> */}
 
                           {/* Yayınla / Yayından Kaldır */}
                           <AppButton
@@ -442,7 +476,7 @@ const Sistemler = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={3} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4">
+                      <td colSpan={3} className="border border-gray-500 text-center text-muted-foreground py-4">
                         Veri bulunamadı
                       </td>
                     </tr>
@@ -484,6 +518,22 @@ const Sistemler = () => {
         </div>
       </div>
 
+     {/* SİSTEM SIRALAMA MODALI */}
+     <SistemSirala
+       open={sysSortOpen}
+       onOpenChange={(v) => setSysSortOpen(v)}
+     />
+      {/* VARYANT SIRALAMA MODALI */}
+
+     <SistemVaryantGorSirala
+       open={siralaOpen}
+       onOpenChange={(v) => { 
+         setSiralaOpen(v); 
+         if (!v) setActiveSystemForSort(null);
+       }}
+       system={activeSystemForSort}
+     />
+
       {/* SİLME ONAY MODALLARI */}
       <ConfirmDeleteModal
         open={deleteOpen}
@@ -506,6 +556,7 @@ const Sistemler = () => {
         onConfirm={confirmDeleteVariant}
         loading={deletingVar}
       />
+
     </div>
   );
 };

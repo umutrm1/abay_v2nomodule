@@ -84,8 +84,8 @@ export function sellDigerMalzemeOnApi(malzeme_id) {
   return async (dispatch) => {
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/catalog/other-materials/${malzeme_id}`,
-        { method: "DELETE", headers: { Accept: "application/json" } },
+        `${API_BASE_URL}/catalog/other-materials/${malzeme_id}/deactivate`,
+        { method: "PUT", headers: { Accept: "application/json" } },
         dispatch
       );
       if (!res.ok) {

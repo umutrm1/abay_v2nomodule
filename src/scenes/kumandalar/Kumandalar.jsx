@@ -155,9 +155,9 @@ const Kumandalar = () => {
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+          <table className="table w-full border borderborder-gray-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500">
+              <tr className="border border-gray-500">
                 <th>Kumanda Adı</th>
                 <th>Fiyat</th>
                 <th>Kapasite</th>
@@ -167,7 +167,7 @@ const Kumandalar = () => {
 
             {isLoading ? (
               <tbody>
-                <tr className="border-b border-base-400">
+                <tr className="border border-gray-500">
                   <td colSpan={4}>
                     <Spinner />
                   </td>
@@ -176,7 +176,7 @@ const Kumandalar = () => {
             ) : (data.items?.length > 0 ? (
               <tbody>
                 {data.items.map(kumanda => (
-                  <tr key={kumanda.id} className="border-b border-base-300">
+                  <tr key={kumanda.id} className="border border-gray-500">
                     <td>{kumanda.kumanda_isim}</td>
                     <td>{kumanda.price}</td>
                     <td>{kumanda.kapasite}</td>
@@ -198,7 +198,7 @@ const Kumandalar = () => {
             ) : (
               <tbody>
                 <tr>
-                  <td colSpan={4} className="border-b border-base-500 text-center text-muted-foreground py-4">
+                  <td colSpan={4} className="border border-gray-500 text-center text-muted-foreground py-4">
                     Veri bulunamadı
                   </td>
                 </tr>

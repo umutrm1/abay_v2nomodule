@@ -61,7 +61,7 @@ const DialogPdfAyar = ({
         <div className="mt-2 divide-y divide-border">
           <Row label="Optimizasyon Detaylı Çıktısı"  checked={form.optimizasyonDetayliCiktisi} onChange={(v) => setField("optimizasyonDetayliCiktisi", v)} />
           <Row label="Optimizasyon Detaysız Çıktısı" checked={form.optimizasyonDetaysizCiktisi} onChange={(v) => setField("optimizasyonDetaysizCiktisi", v)} />
-          <Row label="Sipariş Çıktısı"               checked={form.siparisCiktisi}               onChange={(v) => setField("siparisCiktisi", v)} />
+          <Row label="Üretim Çıktısı"               checked={form.siparisCiktisi}               onChange={(v) => setField("siparisCiktisi", v)} />
           <Row label="Boya Çıktısı"                  checked={form.boyaCiktisi}                  onChange={(v) => setField("boyaCiktisi", v)} />
           <Row label="Profil Aksesuar Çıktısı"       checked={form.profilAksesuarCiktisi}        onChange={(v) => setField("profilAksesuarCiktisi", v)} />
           <Row label="Cam Çıktısı"                   checked={form.camCiktisi}                   onChange={(v) => setField("camCiktisi", v)} />

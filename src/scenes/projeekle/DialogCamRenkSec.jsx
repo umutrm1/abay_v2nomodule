@@ -298,7 +298,6 @@ const resolveEffectiveColor = (g, slot /* 1|2 */) => {
     if (!body.glass_color_id_1 && !body.glass_color_id_2) return;
 
     try {
-      console.log(body)
       setRefreshing(true);
       await dispatch(actions_projeler.updateSameGlassesInProject(projectId, body));
       await dispatch(actions_projeler.getProjeRequirementsFromApi(projectId));

@@ -151,9 +151,9 @@ const DigerMalzemeler = () => {
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+          <table className="table w-full border border-gray-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500">
+              <tr className="border-b border-gray-500">
                 <th>İsim</th>
                 <th>Birim</th>
                 <th>Birim Ağırlık</th>
@@ -165,7 +165,7 @@ const DigerMalzemeler = () => {
 
             {isLoading ? (
               <tbody>
-                <tr className="border-b border-base-400">
+                <tr className="border-b border-gray-500 ">
                   <td colSpan={6}>
                     <Spinner />
                   </td>
@@ -174,7 +174,7 @@ const DigerMalzemeler = () => {
             ) : (data.items?.length > 0 ? (
               <tbody>
                 {data.items.map(item => (
-                  <tr key={item.id} className="border-b border-base-300">
+                  <tr key={item.id} className="border-b border-gray-500">
                     <td>{item.diger_malzeme_isim}</td>
                     <td>{item.birim}</td>
                     <td>{item.birim_agirlik}</td>

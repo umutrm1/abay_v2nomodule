@@ -78,11 +78,25 @@ const renderBadge = (value, map) => {
   return <span className={`${base} ${cls}`}>{value}</span>;
 };
 /** 🔹 approval_date → sadece tarih (TR yereli) */
-const formatDate = (v) => {
-  if (!v) return '—';
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('tr-TR');
+const formatOnlyDate = (val) => {
+  if (!val) return "—";
+  try {
+    if (typeof val === "string") {
+      const m = val.match(/^(\d{4})-(\d{2})-(\d{2})/); // 2025-10-28 veya 2025-10-28T...
+      if (m) {
+        const [, y, mo, d] = m;
+        return `${d}/${mo}/${y}`;
+      }
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "—";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch {
+    return "—";
+  }
 };
 
 const Projeler = () => {
@@ -99,7 +113,8 @@ const Projeler = () => {
   const [searchName, setSearchName] = useState('');
   const debouncedCode = useDebounced(searchCode, 300);
   const debouncedName = useDebounced(searchName, 300);
-
+  const [sortProjeler, setSortProjeler] = useState(false);
+  const [sortProjelerDir, setSortProjelerDir] = useState(null);
   const [page, setPage] = useState(1);
 
   // 🆕 Proje sayısı (limit)
@@ -142,11 +157,12 @@ const Projeler = () => {
           glass_status,
           production_status,
           customer_id: selectedCustomer?.id || "",
+          ...(sortProjeler === true ? { proje_sorted: true } : {}),
         })
       )
     ).finally(() => setListLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, page, debouncedName, debouncedCode, paint_status, glass_status, production_status, selectedCustomer?.id, limit]);
+  }, [dispatch, page, debouncedName, debouncedCode, paint_status, glass_status, production_status, selectedCustomer?.id, limit,sortProjeler]);
 
   const onSearchName = (e) => { setSearchName(e.target.value); setPage(1); };
   const onSearchCode = (e) => { setSearchCode(e.target.value); setPage(1); };
@@ -273,7 +289,7 @@ const Projeler = () => {
 
       <Header title="Projeler" />
 
-      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
+      <div className="bg-card border borderorder rounded-2xl p-5 flex flex-col gap-y-4 text-foreground ">
         {/* Arama + Filtreler + Ekle */}
         <div className="flex flex-col gap-3 w-full">
           {/* SOLDAN SAĞA: PROJE KODU → PROJE ADI → MÜŞTERİ → PROJE SAYISI → EKLE */}
@@ -309,7 +325,7 @@ const Projeler = () => {
               </AppButton>
 
               {selectedCustomer?.id && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-sm">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full border borderorder text-sm">
                   <span className="truncate max-w-[12rem]">
                     {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
                   </span>
@@ -380,10 +396,32 @@ const Projeler = () => {
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 rounded-lg">
+          <table className="table w-full border borderase-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500 dark:border-gray-500">
-                <th>Onay Tarihi</th>
+              <tr className="border borderase-500 border-gray-500">
+                <th>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 hover:opacity-80 cursor-pointer select-none"
+                    title="Onay tarihine göre sırala"
+                    onClick={() => {
+                      if (sortProjeler === false) {
+                        setSortProjeler(true);
+                        setSortProjelerDir(prev => (prev === "asc" ? "desc" : "asc"));
+                        setPage(1);
+                      } else {
+                        setSortProjeler(false);
+                        setSortProjelerDir(prev => (prev === "asc" ? "desc" : "asc"));
+                        setPage(1);
+                      }
+                    }}
+                  >
+                    <span>Onay Tarihi</span>
+                    <span className={sortProjeler ? "" : "opacity-50"}>
+                      {sortProjelerDir === "asc" ? "▲" : "▼"}
+                    </span>
+                  </button>
+                </th>
                 <th>Proje Kodu</th>
                 <th>Müşteri Adı</th>
                 <th>Proje Adı</th>
@@ -396,15 +434,15 @@ const Projeler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr className="border-b border-base-400 dark:border-gray-500">
+                <tr className="border borderase-400 border-gray-500">
                   <td colSpan={COL_COUNT}><Spinner /></td>
                 </tr>
               </tbody>
             ) : (data.items ?? []).length > 0 ? (
               <tbody>
                 {data.items.map(proje => (
-                  <tr key={proje.id} className="border-b border-base-300 dark:border-gray-500">
-                    <td>{formatDate(proje.approval_date)}</td>
+                  <tr key={proje.id} className="border borderase-300 border-gray-500">
+                    <td>{formatOnlyDate(proje?.approval_date ?? proje?.requirements?.approval_date)}</td>
                     <td>{proje.project_kodu}</td>
                     <td>{proje.customer_name || '—'}</td>
                     <td>{proje.project_name}</td>
@@ -447,7 +485,7 @@ const Projeler = () => {
               </tbody>
             ) : (
               <tbody>
-                <tr className="border-b border-base-500">
+                <tr className="border borderase-500">
                   <td colSpan={COL_COUNT} className="text-center text-muted-foreground py-10">
                     Gösterilecek proje bulunamadı.
                   </td>

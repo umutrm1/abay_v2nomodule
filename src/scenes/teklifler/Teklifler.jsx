@@ -43,7 +43,8 @@ const Teklifler = () => {
 
   const [isOverlayLoading, setIsOverlayLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
-
+  const [sortTeklifler, setSortTeklifler] = useState(false);
+  const [sortTekliflerDir, setSortTekliflerDir] = useState(null);
   const [searchCode, setSearchCode] = useState('');
   const [searchName, setSearchName] = useState('');
   const debouncedCode = useDebounced(searchCode, 300);
@@ -63,6 +64,29 @@ const Teklifler = () => {
   const [pendingMove, setPendingMove] = useState(null);
   const [moving, setMoving] = useState(false);
 
+  const formatOnlyDate = (val) => {
+    if (!val) return "—";
+    try {
+      // En güvenlisi: string başında YYYY-MM-DD yakala ve dönüştür
+      if (typeof val === "string") {
+        const m = val.match(/^(\d{4})-(\d{2})-(\d{2})/); // 2025-10-28 veya 2025-10-28T...
+        if (m) {
+          const [, y, mo, d] = m;
+          return `${d}/${mo}/${y}`;
+        }
+      }
+      // Diğer durumlar: Date nesnesine çevirip yerel tarihten oluştur
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return "—";
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    } catch {
+      return "—";
+    }
+  };
+
   useEffect(() => {
     setListLoading(true);
     Promise.resolve(
@@ -74,10 +98,11 @@ const Teklifler = () => {
           code: debouncedCode || "",
           is_teklif: true,
           customer_id: selectedCustomer?.id || "",
+          ...(sortTeklifler === true ? { teklifler_sorted: true } : {})
         })
       )
     ).finally(() => setListLoading(false));
-  }, [dispatch, page, debouncedName, debouncedCode, limit, selectedCustomer?.id]);
+  }, [dispatch, page, debouncedName, debouncedCode, limit, selectedCustomer?.id,sortTeklifler]);
 
   const onSearchName = (e) => {
     setSearchName(e.target.value);
@@ -187,7 +212,7 @@ const Teklifler = () => {
   };
 
   const totalPages = data.total_pages || 1;
-  const COL_COUNT = 4;
+  const COL_COUNT = 5;
 
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
@@ -199,7 +224,7 @@ const Teklifler = () => {
 
       <Header title="Teklifler" />
 
-      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
+      <div className="bg-card border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama + Ekle */}
         <div className="flex flex-col md:flex-row items-center gap-3 md:gap-0 w-full justify-evenly">
           <input
@@ -229,7 +254,7 @@ const Teklifler = () => {
             </AppButton>
 
             {selectedCustomer?.id && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-gray-500 text-sm">
                 <span className="truncate max-w-[12rem]">
                   {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
                 </span>
@@ -264,9 +289,34 @@ const Teklifler = () => {
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 rounded-lg">
+          <table className="table w-full border borderase-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500 dark:border-gray-500">
+              <tr className="border borderase-500 border-gray-500">
+              <th>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 hover:opacity-80 cursor-pointer select-none "
+                  title="Oluşturma tarihine göre sırala"
+                  onClick={() => {
+                    if(sortTeklifler==false){
+                    setSortTeklifler(true);
+                    setSortTekliflerDir(prev => (prev === "asc" ? "desc" : "asc"));
+                    setPage(1);
+                  }
+                  else{
+                    setSortTeklifler(false);
+                    setSortTekliflerDir(prev => (prev === "asc" ? "desc" : "asc"));
+                    setPage(1);            
+                  }}
+                }
+
+                >
+                  <span>Oluşturma Tarihi</span>
+                  <span className={sortTeklifler ? "" : "opacity-50"}>
+                    {sortTekliflerDir === "asc" ? "▲" : "▼"}
+                  </span>
+                </button>
+              </th>
                 <th>Proje Kodu</th>
                 <th>Müşteri Adı</th>
                 <th>Proje Adı</th>
@@ -276,14 +326,17 @@ const Teklifler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr className="border-b border-base-400 dark:border-gray-500">
+                <tr className="border borderase-400 border-gray-500">
                   <td colSpan={COL_COUNT}><Spinner /></td>
                 </tr>
               </tbody>
             ) : (data.items ?? []).length > 0 ? (
               <tbody>
                 {data.items.map(proje => (
-                  <tr key={proje.id} className="border-b border-base-300 dark:border-gray-500">
+                  <tr key={proje.id} className="border borderase-300 border-gray-500">
+                    <td>
+                      {formatOnlyDate(proje?.created_at ?? proje?.requirements?.created_at)}
+                    </td>
                     <td>{proje.project_kodu}</td>
                     <td>{proje.customer_name || '—'}</td>
                     <td>{proje.project_name}</td>
@@ -320,7 +373,7 @@ const Teklifler = () => {
               </tbody>
             ) : (
               <tbody>
-                <tr className="border-b border-base-500">
+                <tr className="border borderase-500">
                   <td colSpan={COL_COUNT} className="text-center text-muted-foreground py-10">
                     Gösterilecek teklif bulunamadı.
                   </td>

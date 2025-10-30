@@ -2,6 +2,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
+import { getBrandImage } from "@/redux/actions/actionsPdf.js";
 
 /**
  * Optimize Profiller PDF
@@ -112,34 +113,21 @@ export async function generateOptimizeProfilesPdf(ctx, type = 'detayli', pdfConf
 
     // LOGO: public/logo.png
     try {
-      const resp = await fetch("/logo.png");
-      if (resp.ok) {
-        const blob = await resp.blob();
-        const leftImg = await new Promise(res => {
-          const reader = new FileReader();
-          reader.onload = () => res(reader.result);
-          reader.readAsDataURL(blob);
-        });
-
-        const inset = 2;
-        const boxW = leftFinalW - 2 * inset;
-        const boxH = Math.max(0, leftFinalH - 2 * inset);
-
-        const img = new Image();
-        img.src = leftImg;
-        await new Promise(r => { img.onload = r; });
-
-        const ratio = img.width / img.height;
-
-        let drawW = boxW;
-        let drawH = drawW / ratio;
-        if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
-
-        const x = leftX + inset + (boxW - drawW) / 2;
-        const y = topY + inset + (boxH - drawH) / 2;
-
-        doc.addImage(leftImg, headerCfg?.leftImage?.type || "PNG", x, y, drawW, drawH);
-      }
+    const dataUrl = await getBrandImage(); // "data:image/png;base64,..." döner
+    if (!dataUrl) throw new Error("Boş logo yanıtı");
+    const inset = 2;
+    const boxW = leftFinalW - 2 * inset;
+    const boxH = Math.max(0, leftFinalH - 2 * inset);
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise(r => { img.onload = r; });
+    const ratio = img.width / img.height;
+    let w = boxW, h = w / ratio;
+    if (h > boxH) { h = boxH; w = h * ratio; }
+    const x = leftX + inset + (boxW - w) / 2;
+    const y = topY + inset + (boxH - h) / 2;
+    doc.addImage(dataUrl, "PNG", x, y, w, h);
+      
     } catch (e) {
       console.warn("logo.png yüklenemedi:", e);
     }

@@ -27,8 +27,6 @@ export function mapGlass(requirements) {
 
     const color1_name =
       g.glass_color_obj_1?.name ??
-      (typeof g.glass_color_1 === "string" ? g.glass_color_1 : g.glass_color_1?.name) ??
-      g.glass_color?.name ??
       "";
 
     // 2. renk
@@ -39,8 +37,13 @@ export function mapGlass(requirements) {
 
     const color2_name =
       g.glass_color_obj_2?.name ??
-      (typeof g.glass_color_2 === "string" ? g.glass_color_2 : g.glass_color_2?.name) ??
       "";
+    
+    const belirtec_1_value =
+    g.belirtec_1_value??0;
+
+    const belirtec_2_value=
+    g.belirtec_2_value??0;
 
     // ====== m2 (ham) — mevcut mantık korunur ======
     const area_m2 = g.area_m2 != null
@@ -68,7 +71,9 @@ export function mapGlass(requirements) {
         // PDF tarafında kullanılacak ek alanlar:
         thickness_mm,
         color1_name: (color1_name || "").trim(),
-        color2_name: (color2_name || "").trim()
+        color2_name: (color2_name || "").trim(),
+        belirtec_1_value:belirtec_1_value,
+        belirtec_2_value:belirtec_2_value
       });
     }
 

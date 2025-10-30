@@ -3,7 +3,7 @@
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-
+import { getBrandImage } from "@/redux/actions/actionsPdf.js";
 /* ----------------------------- yardımcılar ----------------------------- */
 function arrayBufferToBase64(buf) {
   return new Promise((resolve, reject) => {
@@ -50,6 +50,46 @@ function pick(obj, path) {
   if (!obj || !path) return "";
   return path.split(".").reduce((acc, k) => (acc ? acc[k] : undefined), obj) ?? "";
 }
+
+/* -------------------- CAM İSMİ OLUŞTURMA YARDIMCILARI -------------------- */
+// Belirli bir karakter indeksine string eklemek için güvenli yardımcı
+function insertAt(str = "", index = 0, insert = "") {
+  const s = String(str);
+  const i = Math.max(0, Number(index) || 0);
+  const ins = String(insert ?? "");
+  if (i <= 0) return ins + s;
+  if (i >= s.length) return s + ins;
+  return s.slice(0, i) + ins + s.slice(i);
+}
+
+// İstenen kurala göre "Cam İsmi" üret:
+// - thickness_mm === 2 ise: belirtec_1_value indexe glass_color_obj_1.name ve
+//   belirtec_2_value indexe glass_color_obj_2.name eklenir.
+// - thickness_mm === 1 ise: sadece belirtec_1_value indexe glass_color_obj_1.name eklenir.
+function buildGlassName(glass) {
+  if (!glass) return "";
+  const baseName = String(glass?.glass_type?.cam_isim ?? "");
+  const t = Number(glass?.glass_type?.thickness_mm ?? 0);
+  const color1 = String(glass?.glass_color_obj_1?.name ?? "");
+  const color2 = String(glass?.glass_color_obj_2?.name ?? "");
+  const idx1 = Number(glass?.belirtec_1_value ?? 0);
+  const idx2 = Number(glass?.belirtec_2_value ?? 0);
+
+  // Metne yerleştirirken okunabilirlik için eklenen renklerin etrafına birer boşluk koyuyoruz.
+  let result = baseName;
+  if (t === 2) {
+    // Not: daha yüksek indeksli eklemeyi önce yapmak, küçük indeksin kaymasını önler.
+    // Bu nedenle önce idx2, sonra idx1 ekliyoruz.
+    if (color2) result = insertAt(result, idx2, ` ${color2} `);
+    if (color1) result = insertAt(result, idx1, ` ${color1} `);
+  } else if (t === 1) {
+    if (color1) result = insertAt(result, idx1, ` ${color1} `);
+  }
+  return result.trim();
+}
+
+
+
 function openPdf(doc, filename = "siparis.pdf") {
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
@@ -132,13 +172,8 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
   try {
-    const resp = await fetch("/logo.png"); // public kökü
-    const blob = await resp.blob();
-    const leftImg = await new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(blob);
-    });
+    const leftImg = await getBrandImage();
+    if (!leftImg) throw new Error("Boş logo yanıtı");
 
     const inset = 2;
     const boxW = leftFinalW - 2 * inset;
@@ -268,7 +303,7 @@ export async function generateOrderPdf(ctx, pdfConfig = {}, brandConfig = {}) {
     ...sys,
     profiles:  (sys.profiles  || []).filter(p => p?.pdf?.siparisCiktisi === true),
     materials: (sys.materials || []).filter(m => m?.pdf?.siparisCiktisi === true),
-    // glasses tamamen yok sayılıyor (render edilmeyecek)
+    // glasses tablo olarak çizilmeyecek; ama summary’de kullanılacak
   }));
 
   // Her sistem kendi sayfasında
@@ -290,6 +325,7 @@ setFontSafe(doc, fontName, "bold");
 
 // 1) Birleştirilmiş özet metni hazırla
 const sysName = `${(sys.system?.name || "").toString()} ${sys.name || ""}`.trim();
+
 const summary = `Sistem: ${sysName}   En: ${sys.width_mm} mm   Boy: ${sys.height_mm} mm   Adet: ${sys.quantity}`;
 
 // 2) Metin tek satıra sığsın diye dinamik font küçültme
@@ -309,9 +345,37 @@ const centerY = cursorY + (boxH - fs * lfac) / 2 + fs;
 // 4) Tek satır, tek kolon, ortalı çiz
 doc.text(summary, midX, centerY, { align: "center" });
 
+// ─────────────────────────────────────────────────────────────
+// (YENİ) Summary kutusunun ALTINA, sistemdeki her CAM için bir kutu
+// ─────────────────────────────────────────────────────────────
+cursorY += boxH; // summary kutusu bitti, altından başlıyoruz
+const glassesAll = Array.isArray(sys.glasses) ? sys.glasses : [];
+for (const g of glassesAll) {
+  // cam bilgilerini hazırla
+  const gW = Number(g?.width_mm ?? 0);
+  const gH = Number(g?.height_mm ?? 0);
+  const gC = Number(g?.count ?? 0);
+  const camIsmi = buildGlassName(g); // mevcut yardımcı fonksiyon
+  const gSummary = `Cam: ${gW}x${gH} mm, Adet: ${gC}, Cam İsmi: ${camIsmi}`;
 
-    cursorY += boxH; // ➜ hemen altında tablolar başlar
+  // kutuyu çiz
+  doc.setLineWidth(0.8);
+  doc.rect(boxX, cursorY, boxW, boxH, "S");
 
+  // metni kutuya sığdır (summary ile aynı mantık)
+  setFontSafe(doc, fontName, "bold");
+  let gfs = 9;
+  doc.setFontSize(gfs);
+  while (doc.getTextWidth(gSummary) > (boxW - 2 * padX) && gfs > 6) {
+    gfs -= 1;
+    doc.setFontSize(gfs);
+  }
+  const gCenterY = cursorY + (boxH - gfs * lfac) / 2 + gfs;
+  doc.text(gSummary, midX, gCenterY, { align: "center" });
+
+  // bir sonraki cam kutusu için alta in
+  cursorY += boxH;
+}
     /* -------------------------- Profiller Tablosu -------------------------- */
     if ((sys.profiles || []).length > 0) {
       // Profil kesit görsellerini hazırla
@@ -351,7 +415,7 @@ autoTable(doc, {
   head, body,
   theme: "grid",
   styles: {
-    font: 'Roboto',fontStyle: 'bold', fontSize: 9, halign: 'center', valign: 'middle',
+    font: 'Roboto',fontStyle: 'bold', fontSize: 11, halign: 'center', valign: 'middle',
     textColor: [0, 0, 0], lineColor: [0, 0, 0]
   },
   tableLineColor: [0, 0, 0],
@@ -416,7 +480,7 @@ autoTable(doc, {
         body: olculu.map(m => [m.material?.diger_malzeme_isim || m.material?.name || "-", m.cut_length_mm, m.count]),
         theme: "grid",
         styles: {
-          font: 'Roboto', fontStyle: 'bold',fontSize: 9, minCellHeight: 18,
+          font: 'Roboto', fontStyle: 'bold',fontSize: 11, minCellHeight: 18,
           halign: 'center', valign: 'middle',
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0]
@@ -437,7 +501,7 @@ autoTable(doc, {
         body: adetli.map(m => [m.material?.diger_malzeme_isim || m.material?.name || "-", m.count]),
         theme: "grid",
         styles: {
-          font: 'Roboto', fontStyle: 'bold',fontSize: 9, minCellHeight: 22,
+          font: 'Roboto', fontStyle: 'bold',fontSize: 11, minCellHeight: 22,
           halign: 'center', valign: 'middle',
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0]
@@ -465,7 +529,7 @@ autoTable(doc, {
     doc.setLineWidth(0.8);
     doc.rect(rx, ry, rightBoxW, rightBoxH, "S");
     setFontSafe(doc, fontName, "bold");
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.text(`Toplam Profil Kg: ${toplamProfilKg.toFixed(2)}`, rx + rightBoxW / 2, ry + rightBoxH / 2 + 3, { align: "center" });
 
     cursorY += rightBoxH; // (ileride başka öğe eklemek istersen)

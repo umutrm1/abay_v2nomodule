@@ -232,23 +232,124 @@ export function getProformaRule () {
 }
 
 
-export function getBrandImage(brandId) {
+export async function getBrandImage() {
+  // Not: fetchWithAuth üçüncü parametre (dispatch) olmadan da çalışabiliyorsa 'undefined' geçiyoruz.
+  const res = await fetchWithAuth(
+    `${API_BASE_URL}/me/pdf/brand/image/file`,
+    {
+      method: "GET",
+      // Sunucu PNG döndürüyor; JSON beklemiyoruz.
+      headers: { accept: "image/png" },
+    },
+    undefined
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Brand image alınamadı: ${res.status} ${text}`);
+  }
+
+  // PNG baytlarını al
+  const buf = await res.arrayBuffer();
+  // base64'e çevir → data URL üret
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  const base64 = btoa(binary);
+  const dataUrl = `data:image/png;base64,${base64}`;
+  return dataUrl;
+}
+
+
+/**
+ * PDF BRAND IMAGE YÜKLE/GÜNCELLE (PUT /me/pdf/brand/image)
+ * - Payload: FormData { file: FileObject }
+ * - Content-Type: multipart/form-data (fetch tarafından otomatik ayarlanır)
+ */
+export function putBrandImage(file) {
   return async (dispatch) => {
-    const res = await fetchWithAuth(
-      `${API_BASE_URL}/me/pdf/brands/4e6a6a7a-8176-4281-8f9e-668108ce69c3/image`,
-      {
-        method: "GET",
-        headers: { accept: "application/json" },
-      },
-      dispatch
-    );
+    // Bu action type'ları actionTypes.js dosyanıza eklemeniz gerekecek
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`Brand image alınamadı: ${res.status} ${text}`);
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/me/pdf/brand/image`,
+        {
+          method: "PUT",
+          headers: {
+            accept: "application/json",
+            // ÖNEMLİ: 'Content-Type': 'multipart/form-data' YAZILMAMALI!
+            // fetch API'si, body FormData olduğunda 'boundary' ile birlikte
+            // Content-Type'ı otomatik olarak kendisi ekler. Manuel eklerseniz hata alırsınız.
+          },
+          body: formData,
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        toastError();
+        throw new Error(`Brand image güncellenemedi: ${res.status} ${text}`);
+      }
+
+      // Curl örneğindeki accept: application/json'a göre JSON yanıt bekliyoruz.
+      const data = await res.json().catch(() => ({}));
+      toastSuccess();
+      return data;
+    } catch (error) {
+      dispatch({
+        type: actionTypes.PUT_BRAND_IMAGE_FAILURE,
+        payload: error?.message || "Brand image güncellenemedi",
+      });
+      toastError();
+      throw error;
     }
+  };
+}
 
-    const data = await res.json();
-    dispatch({ type: actionTypes.GET_BRAND_IMAGE_SUCCESS, payload: data });
+/**
+ * PDF BRAND IMAGE SİL (DELETE /me/pdf/brand/image)
+ */
+export function deleteBrandImage() {
+  return async (dispatch) => {
+    // Bu action type'ları actionTypes.js dosyanıza eklemeniz gerekecek
+
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/me/pdf/brand/image`,
+        {
+          method: "DELETE",
+          headers: {
+            accept: "*/*", // curl örneğine göre
+          },
+          // Body yok
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        toastError();
+        throw new Error(`Brand image silinemedi: ${res.status} ${text}`);
+      }
+
+      // DELETE işlemi başarılı olduğunda (200 OK veya 204 No Content)
+      // Genellikle bir body dönmez. .json() hataya düşebilir.
+      // Diğer fonksiyonlardaki gibi .catch ile güvenli hale getiriyoruz.
+      const data = await res.json().catch(() => ({}));
+
+      toastSuccess();
+      return data;
+    } catch (error) {
+      dispatch({
+        type: actionTypes.DELETE_BRAND_IMAGE_FAILURE,
+        payload: error?.message || "Brand image silinemedi",
+      });
+      toastError();
+      throw error;
+    }
   };
 }

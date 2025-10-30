@@ -67,14 +67,16 @@ export function getProjeRequirementsFromApi(id) {
 }
 
 /* GET: Proje listesi — toast yok */
-export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
+export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10, arg4, arg5) {
   return async (dispatch) => {
     try {
       // ---- Parametreleri normalize et ----
       let page, limit, name, code, is_teklif,
-          paint_status, glass_status, production_status, customer_id;
+          paint_status, glass_status, production_status, customer_id,
+          proje_sorted, teklifler_sorted;
 
       if (typeof arg1 === "object" && arg1 !== null) {
+        // Önerilen yeni kullanım: tek bir options nesnesi
         ({
           page = 1,
           limit = 10,
@@ -84,10 +86,13 @@ export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
           paint_status = "",
           glass_status = "",
           production_status = "",
-          customer_id = ""
+          customer_id = "",
+          // YENİ: sıralama bayrakları
+          proje_sorted,
+          teklifler_sorted
         } = arg1);
       } else {
-        // Eski imza: (page, q=name, limit)
+        // Eski imza: (page, q=name, limit, proje_sorted?, teklifler_sorted?)
         page = arg1 ?? 1;
         name = arg2 || "";
         limit = arg3 ?? 10;
@@ -97,6 +102,9 @@ export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
         glass_status = "";
         production_status = "";
         customer_id = "";
+        // YENİ: varsa 4. ve 5. argümanları boolean olarak kabul et
+        proje_sorted = typeof arg4 === "boolean" ? arg4 : undefined;
+        teklifler_sorted = typeof arg5 === "boolean" ? arg5 : undefined;
       }
 
       // ---- URLSearchParams ----
@@ -108,7 +116,7 @@ export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
           const t = v.trim();
           if (t !== "") params.set(k, t);
         } else if (typeof v === "boolean") {
-          params.set(k, String(v));
+          params.set(k, String(v)); // "true" | "false"
         } else {
           params.set(k, String(v));
         }
@@ -123,6 +131,10 @@ export function getProjelerFromApi(arg1 = 1, arg2 = "", arg3 = 10) {
       setIfHas("glass_status", glass_status);
       setIfHas("production_status", production_status);
       setIfHas("customer_id", customer_id);
+
+      // YENİ: backend’in beklediği query anahtarlarıyla gönder
+      if (typeof proje_sorted === "boolean") setIfHas("proje_sorted", proje_sorted);
+      if (typeof teklifler_sorted === "boolean") setIfHas("teklifler_sorted", teklifler_sorted);
 
       const url = `${API_BASE_URL}/projects/?${params.toString()}`;
 

@@ -1,6 +1,6 @@
-// src/global/ContentArea.jsx
-import React, { useContext } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import React, { useContext, useEffect } from "react";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { SidebarContext } from "./SideBarContext.jsx";
 import SideBar from "./SideBar.jsx";
 import TopBar from "./TopBar.jsx";
@@ -32,11 +32,27 @@ import SetPasswordPage from "@/scenes/setpassword/SetPasswordPage.jsx";
 import ProfilAksesuarEdit from "@/scenes/projeekle/ProfilAksesuarEdit.jsx";
 import Ayarlar from "@/scenes/ayarlar/Ayarlar.jsx";
 import Teklifler from "@/scenes/teklifler/Teklifler.jsx";
+import { initAuth } from "@/redux/actions/authActions.js";
+import ForgotPassword from "@/scenes/forgotpassword/ForgotPassword.jsx";
+import ResetPasswordPage from "@/scenes/resetpassword/ResetPasswordPage.jsx";
 
 const ContentArea = () => {
+  const dispatch = useDispatch();
   const { expanded } = useContext(SidebarContext);
   const location = useLocation();
-  const isLogin = location.pathname === "/login" || location.pathname === "/set-password";
+  const isLogin = location.pathname === "/login" || location.pathname === "/set-password" || location.pathname === "/forgot-password" || location.pathname === "/reset-password";
+  const isAdmin = useSelector(s =>
+    s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
+  );
+
+
+  // 🔐 Sadece ProtectedRoute ile sarılı sayfalarda (yani login ekranı değilken) auth init yap
+  useEffect(() => {
+    if (!isLogin) {
+      dispatch(initAuth());
+    }
+  }, [dispatch, isLogin]);
+
 
   return (
     <div className="flex">
@@ -44,47 +60,71 @@ const ContentArea = () => {
       {!isLogin && <SideBar />}
       <div className="flex-1 flex flex-col">
         {!isLogin && <TopBar />}
+        
+        {/* --- DEĞİŞİKLİK BURADA --- */}
         <main
           className={`
-    mt-auto font-roboto bg-background text-foreground
-    ${!isLogin ? (expanded ? "ml-64" : "ml-20") : "mx-auto w-full max-w-md"}
-    transition-all p-6
-  `}
+            font-roboto bg-background text-foreground
+            ${!isLogin
+              // Giriş yapılmamışsa (App Shell Düzeni): Gerekli margin ve padding'i uygula
+              ? `mt-auto transition-all p-6 ${expanded ? "ml-64" : "ml-20"}`
+              // Giriş sayfasındaysa (Login Düzeni): Hiçbir layout sınıfı uygulama, LoginScreen tam kontrolü alsın
+              : "" 
+            }
+          `}
         >
+        {/* --- DEĞİŞİKLİK BİTTİ --- */}
 
           <Routes>
             {/* Login sayfası her zaman açık */}
             <Route path="/login" element={<LoginScreen />} />
             <Route path="/set-password" element={<SetPasswordPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Aşağıdaki rotalar ProtectedRoute ile korunuyor */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<AnaSayfa />} />
-              <Route path="/bayiler" element={<Bayiler />} />
-              <Route path="/musteriler" element={<Musteriler />} />
-              <Route path="/projeler" element={<Projeler />} />
-              <Route path="/teklifler" element={<Teklifler />} />
-              <Route path="/sistemler" element={<Sistemler />} />
-              <Route path="/profiller" element={<Profiller />} />
-              <Route path="/camlar" element={<Camlar />} />
-              <Route path="/digermalzemeler" element={<DigerMalzemeler />} />
-              <Route path="/bildirimler" element={<Bildirimler />} />
-              <Route path="/takvim" element={<Takvim />} />
-              <Route path="/bargrafigi" element={<BarGrafigi />} />
-              <Route path="/pastagrafigi" element={<PastaGrafigi />} />
-              <Route path="/cizgigrafigi" element={<CizgiGrafigi />} />
-              <Route path="/sss" element={<Sss />} />
-              <Route path="/projeduzenle" element={<ProjeDuzenle />} />
-              <Route path="/sistemekle/:projectId/:variantId" element={<SistemEkle />} />
-              <Route path="/projeduzenle/:id" element={<ProjeDuzenle />} />
-              <Route path="/profilaksesuar/edit/:id" element={<ProfilAksesuarEdit />} />
-              <Route path="/sistemsec/:projectId" element={<SistemSec />} />
-              <Route path="/ekstramalzemeekle/:projectId" element={<EkstraMalzemeEkle />} />
-              <Route path="*" element={<TanimlanmayanSayfa />} />
-              <Route path="/boyalar" element={<Boyalar />} />
-              <Route path="/sistemvaryantduzenle/:variantId" element={<SistemVaryantDuzenle />} />
-              <Route path="/kumandalar" element={<Kumandalar />} />
-              <Route path="/ayarlar" element={<Ayarlar />} />
+              {isAdmin ? (
+                <>
+                  <Route path="/" element={<Projeler />} />
+                  <Route path="/bayiler" element={<Bayiler />} />
+                  <Route path="/musteriler" element={<Musteriler />} />
+                  <Route path="/projeler" element={<Projeler />} />
+                  <Route path="/teklifler" element={<Teklifler />} />
+                  <Route path="/sistemler" element={<Sistemler />} />
+                  <Route path="/profiller" element={<Profiller />} />
+                  <Route path="/camlar" element={<Camlar />} />
+                  <Route path="/digermalzemeler" element={<DigerMalzemeler />} />
+                  <Route path="/bildirimler" element={<Bildirimler />} />
+                  <Route path="/takvim" element={<Takvim />} />
+                  <Route path="/bargrafigi" element={<BarGrafigi />} />
+                  <Route path="/pastagrafigi" element={<PastaGrafigi />} />
+                  <Route path="/cizgigrafigi" element={<CizgiGrafigi />} />
+                  <Route path="/sss" element={<Sss />} />
+                  <Route path="/projeduzenle" element={<ProjeDuzenle />} />
+                  <Route path="/sistemekle/:projectId/:variantId" element={<SistemEkle />} />
+                  <Route path="/projeduzenle/:id" element={<ProjeDuzenle />} />
+                  <Route path="/profilaksesuar/edit/:id" element={<ProfilAksesuarEdit />} />
+                  <Route path="/sistemsec/:projectId" element={<SistemSec />} />
+                  <Route path="/ekstramalzemeekle/:projectId" element={<EkstraMalzemeEkle />} />
+                  <Route path="/boyalar" element={<Boyalar />} />
+                  <Route path="/sistemvaryantduzenle/:variantId" element={<SistemVaryantDuzenle />} />
+                  <Route path="/kumandalar" element={<Kumandalar />} />
+                  <Route path="/ayarlar" element={<Ayarlar />} />
+                  <Route path="*" element={<TanimlanmayanSayfa />} />
+                </>
+              ) : (
+                <>
+                  {/* Non-admin için yalnızca bu dört rota */}
+                  <Route path="/musteriler" element={<Musteriler />} />
+                  <Route path="/projeler" element={<Projeler />} />
+                  <Route path="/teklifler" element={<Teklifler />} />
+                  <Route path="/ayarlar" element={<Ayarlar />} />
+                  {/* kök ve diğer yolları projelere yönlendir */}
+                  <Route path="/" element={<Navigate to="/projeler" replace />} />
+                  <Route path="*" element={<TanimlanmayanSayfa/>} />
+                </>
+              )}
 
 
             </Route>

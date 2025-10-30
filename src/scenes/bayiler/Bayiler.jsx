@@ -164,9 +164,9 @@ const Bayiler = () => {
 
         {/* Tablo */}
         <div className="flex-grow overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+          <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500 dark:border-gray-500">
+              <tr className="border-b border-base-500 border-gray-500">
                 <th>İsim</th>
                 <th>E-posta</th>
                 <th>Telefon</th>
@@ -179,14 +179,14 @@ const Bayiler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr className="border-b border-base-400 dark:border-gray-500">
+                <tr className="border-b border-base-400 border-gray-500">
                   <td colSpan={7}><Spinner /></td>
                 </tr>
               </tbody>
             ) : (data.items ?? []).length > 0 ? (
               <tbody>
                 {data.items.map(b => (
-                  <tr key={b.id} className="border-b border-base-300 dark:border-gray-500">
+                  <tr key={b.id} className="border-b  border-gray-500">
                     <td className="font-bold">{b.name}</td>
                     <td>{b.email}</td>
                     <td>{b.phone}</td>
@@ -229,7 +229,7 @@ const Bayiler = () => {
             ) : (
               <tbody>
                 <tr>
-                  <td colSpan={7} className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-10">
+                  <td colSpan={7} className="border-b border-base-500 border-gray-500 text-center text-muted-foreground py-10">
                     Gösterilecek bayi bulunamadı.
                   </td>
                 </tr>

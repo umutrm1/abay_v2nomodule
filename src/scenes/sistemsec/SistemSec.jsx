@@ -1,5 +1,5 @@
 // src/scenes/sistemler/SistemSec.jsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -65,6 +65,28 @@ const SistemSec = () => {
     return () => { mounted = false; };
   }, [dispatch]);
 
+  // --- SIRALAMALAR (sort_index’e göre) ---
+  const sortedSystems = useMemo(() => {
+    const arr = Array.isArray(sistemler?.items) ? [...sistemler.items] : [];
+    return arr.sort((a, b) => Number(a?.sort_index ?? 0) - Number(b?.sort_index ?? 0));
+  }, [sistemler?.items]);
+
+  const sortedVariants = useMemo(() => {
+    const arr = Array.isArray(systemVariants?.items) ? [...systemVariants.items] : [];
+    return arr.sort((a, b) => Number(a?.sort_index ?? 0) - Number(b?.sort_index ?? 0));
+  }, [systemVariants?.items]);
+
+  // --- AKTİF FİLTRELER ---
+  // İstek: section'larda is_active:false olanlar listelenmesin.
+  // Burada "false olmayan" her şeyi (true, undefined, null) gösteriyoruz; yalnızca explicit false olanları gizliyoruz.
+  const activeSortedSystems = useMemo(() => {
+    return sortedSystems.filter(s => s?.is_active !== false);
+  }, [sortedSystems]);
+
+  const activeSortedVariants = useMemo(() => {
+    return sortedVariants.filter(v => v?.is_active !== false);
+  }, [sortedVariants]);
+
   // --- Sistem foto GET: her id için sadece 1 kez ---
   const fetchSystemImageOnce = useCallback(async (systemId) => {
     if (sysImgPromisesRef.current.has(systemId)) {
@@ -95,14 +117,14 @@ const SistemSec = () => {
     return p;
   }, [dispatch, sysImageUrls]);
 
-  // Sistemler değişince eksik görselleri getir
+  // Sistemler değişince (aktif olanlar için) eksik görselleri getir
   useEffect(() => {
-    const items = sistemler?.items || [];
+    const items = activeSortedSystems || [];
     if (!items.length) return;
     items.forEach(s => {
       if (!sysImageUrls[s.id]) fetchSystemImageOnce(s.id);
     });
-  }, [sistemler?.items, sysImageUrls, fetchSystemImageOnce]);
+  }, [activeSortedSystems, sysImageUrls, fetchSystemImageOnce]);
 
   // 2) Sistem seçilince varyantları getir
   const handleSystemSelect = useCallback(async (sistemId) => {
@@ -143,14 +165,14 @@ const SistemSec = () => {
     return p;
   }, [dispatch, varImageUrls]);
 
-  // Varyant listesi değişince eksik görselleri getir
+  // Varyant listesi değişince (aktif olanlar için) eksik görselleri getir
   useEffect(() => {
-    const vItems = systemVariants?.items || [];
+    const vItems = activeSortedVariants || [];
     if (!vItems.length) return;
     vItems.forEach(v => {
       if (!varImageUrls[v.id]) fetchVariantImageOnce(v.id);
     });
-  }, [systemVariants?.items, varImageUrls, fetchVariantImageOnce]);
+  }, [activeSortedVariants, varImageUrls, fetchVariantImageOnce]);
 
   // 3) Variant seçimi → yönlendirme
   const handleVariantSelect = useCallback((variantId) => {
@@ -182,20 +204,19 @@ const SistemSec = () => {
         <section>
           {loadingSystems ? (
             <Spinner />
-          ) : !sistemler?.items?.length ? (
-            <div className="text-muted-foreground">Hiç Sistem Bulunmuyor</div>
+          ) : !activeSortedSystems.length ? (
+            <div className="text-muted-foreground">Hiç aktif Sistem bulunmuyor</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {sistemler.items.map((sistem) => {
+              {activeSortedSystems.map((sistem) => {
                 const imgUrl = sysImageUrls[sistem.id] || '/placeholder-system.png';
                 const isSysLoading = !!sysImgLoading[sistem.id];
                 const selected = selectedSistemId === sistem.id;
                 return (
                   <div
                     key={sistem.id}
-                    className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${
-                      selected ? 'border-primary shadow-lg' : 'border-border'
-                    }`}
+                    className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${selected ? 'border-primary shadow-lg' : 'border-border'
+                      }`}
                   >
                     {/* Sistem Fotoğrafı */}
                     <div className="mb-4 flex justify-center w-full">
@@ -233,18 +254,17 @@ const SistemSec = () => {
 
             {loadingVariants ? (
               <Spinner />
-            ) : systemVariants?.items?.length > 0 ? (
+            ) : activeSortedVariants.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {systemVariants.items.map((variant) => {
+                {activeSortedVariants.map((variant) => {
                   const vImgUrl = varImageUrls[variant.id] || '/placeholder-variant.png';
                   const isVarLoading = !!varImgLoading[variant.id];
                   const selected = selectedVariantId === variant.id;
                   return (
                     <div
                       key={variant.id}
-                      className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${
-                        selected ? 'border-success shadow-lg' : 'border-border'
-                      }`}
+                      className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${selected ? 'border-success shadow-lg' : 'border-border'
+                        }`}
                     >
                       {/* Variant Fotoğrafı */}
                       <div className="mb-4 flex justify-center w-full">
@@ -273,7 +293,7 @@ const SistemSec = () => {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground">Bu sisteme ait hiç alt sistem bulunmuyor.</p>
+              <p className="text-muted-foreground">Bu sisteme ait aktif alt sistem bulunmuyor.</p>
             )}
           </section>
         )}

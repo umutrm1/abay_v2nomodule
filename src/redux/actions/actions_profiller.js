@@ -108,8 +108,8 @@ export function sellProfillerOnApi(id) {
   return async (dispatch) => {
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/catalog/profiles/${id}`,
-        { method: "DELETE", headers: { Accept: "application/json" } },
+        `${API_BASE_URL}/catalog/profiles/${id}/deactivate`,
+        { method: "PUT", headers: { Accept: "application/json" } },
          dispatch
       )
       if (!res.ok) {

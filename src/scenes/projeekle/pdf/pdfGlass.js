@@ -2,7 +2,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { mapGlass } from "./mappers/glass.mapper.js";
-
+import { getBrandImage } from "@/redux/actions/actionsPdf.js";
 /* ===================== ortak yardımcılar ===================== */
 function arrayBufferToBase64(buf) {
   return new Promise((resolve, reject) => {
@@ -100,6 +100,18 @@ function sumField(rows, f) {
   return (rows || []).reduce((s, r) => s + (Number(pick(r, f)) || 0), 0);
 }
 
+// --- ek: index'e güvenli ekleme yardımcıları ---
+function clamp(n, min, max) {
+  const x = Number(n);
+  return Math.max(min, Math.min(max, Number.isFinite(x) ? x : min));
+}
+function insertAt(base, index, token) {
+  const s = String(base ?? "");
+  const i = clamp(index, 0, s.length); // boşluklar .length içinde doğal olarak sayılır
+  return s.slice(0, i) + String(token ?? "") + s.slice(i);
+}
+
+
 /* ============== split header (brand + pdf.infoRows merge) ============== */
 async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // brandConfig: leftImage + rightBox
@@ -173,13 +185,9 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
   try {
-    const resp = await fetch("/logo.png"); // public klasör kökü
-    const blob = await resp.blob();
-    const leftImg = await new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(blob);
-    });
+    // ✨ Marka logosunu doğrudan data URL olarak al
+    const leftImg = await getBrandImage(); // "data:image/png;base64,..." string
+    if (!leftImg) throw new Error("Boş logo yanıtı");
 
     const inset = 2;
     const boxW = leftFinalW - 2 * inset;           // max ~256 px
@@ -347,21 +355,18 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     // mm * mm * adet => mm² * adet. m²'ye çevirmek için 1e6'ya böl.
     const m2Float = (w * h * c) / 1e6;
 
-    // ---- İSİM OLUŞTURMA KURALI ----
-    const camIsim  = String(pick(r, "cam_isim") ?? "").trim();
-    const thick    = Number(pick(r, "thickness_mm")) || 0;
-    const c1       = String(pick(r, "color1_name") ?? "").trim();
-    const c2       = String(pick(r, "color2_name") ?? "").trim();
-
-    // Güvenli birleştir: boşları otomatik ayıkla
-    const joinNonEmpty = (...parts) => parts.filter(Boolean).join(" - ");
-
-    // Eğer thickness_mm === 1 ise: cam_isim - color1
-    // Aksi tüm durumlarda:      cam_isim - color1 - color2
-    const camFull =
-      thick === 1
-        ? joinNonEmpty(camIsim, c1)
-        : joinNonEmpty(camIsim, c1, c2);
+    // ---- İSİM OLUŞTURMA KURALI (INSERT ile) ----
+    const camIsim   = String(pick(r, "cam_isim") ?? "");
+    const thick     = Number(pick(r, "thickness_mm")) || 0;
+    const boya1     = String(pick(r, "color1_name") ?? ""); // önceki c1
+    const boya2     = String(pick(r, "color2_name") ?? ""); // önceki c2
+    const idx1      = Number(pick(r, "belirtec_1_value")) || 0;
+    const idx2      = Number(pick(r, "belirtec_2_value")) + String(boya1).length || 0;
+    // sıra: önce boya1'i ekle, ardından (gerekliyse) boya2'yi ekle
+    let camFull = camIsim;
+    if (boya1) camFull = insertAt(camFull, idx1, boya1);
+    if (thick === 2 && boya2) camFull = insertAt(camFull, idx2, boya2);
+ 
 
     return { ...r, m2: m2Float, cam_full_name: camFull };
   });

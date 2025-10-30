@@ -61,8 +61,8 @@ export function deleteKumandaOnApi(id) {
     try {
       if (!id) throw new Error("Silmek için 'id' gerekli.");
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/catalog/remotes/${encodeURIComponent(id)}`,
-        { method: "DELETE", headers: { Accept: "*/*" } },
+        `${API_BASE_URL}/catalog/remotes/${encodeURIComponent(id)}/deavtivate`,
+        { method: "PUT", headers: { Accept: "*/*" } },
         dispatch
       );
       if (!res.ok) {

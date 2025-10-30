@@ -16,6 +16,7 @@ import { ReactComponent as Settings } from "../icons/settings.svg";
 import { SidebarContext } from "./SideBarContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { ReactComponent as Paintbrush } from "../icons/paintbrush.svg";
+import { useSelector } from "react-redux";
 
 function SidebarShema({ children }) {
   const { expanded, setExpanded } = useContext(SidebarContext);
@@ -94,21 +95,42 @@ function SidebarItem({ icon, text, active, alert, onClick }) {
 
 const SideBar = () => {
   const navigate = useNavigate();
+  const isAdmin = useSelector(s =>
+    s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
+  );
+
+  // Admin değilse sadece bu 4 sayfa görünsün
+  const allowedForNonAdmin = new Set(["musteriler","projeler","teklifler","ayarlar"]);
+
+  const items = [
+    { key: "bayiler",        icon: <Store className="w-10" />,        text: "Bayiler" },
+    { key: "musteriler",     icon: <User className="w-10" />,         text: "Müşteriler" },
+    { key: "projeler",       icon: <Clipboardlist className="w-10" />,text: "Projeler" },
+    { key: "teklifler",      icon: <Offer className="w-10" />,        text: "Teklifler" },
+    { key: "sistemler",      icon: <Wrench className="w-10" />,       text: "Sistemler" },
+    { key: "profiller",      icon: <Pencilruler className="w-10" />,  text: "Profiller" },
+    { key: "camlar",         icon: <Grid2x2 className="w-10" />,      text: "Camlar" },
+    { key: "digermalzemeler",icon: <Package className="w-10" />,      text: "Diğer Malzemeler" },
+    { key: "boyalar",        icon: <Paintbrush className="w-8" />,    text: "Boyalar" },
+    { key: "kumandalar",     icon: <Remote className="w-8" />,        text: "Kumandalar" },
+    { key: "ayarlar",        icon: <Settings className="w-8" />,      text: "Ayarlar" },
+  ];
+
+  const visibleItems = isAdmin
+    ? items
+    : items.filter(it => allowedForNonAdmin.has(it.key));
+
+
   return (
     <SidebarShema>
-      {/* Örnek: active prop'u route'a göre verebilirsin */}
-      <SidebarItem onClick={() => navigate("bayiler")} icon={<Store className="w-10" />} text={"Bayiler"} />
-      <SidebarItem onClick={() => navigate("musteriler")} icon={<User className="w-10" />} text={"Müşteriler"} />
-      <SidebarItem onClick={() => navigate("projeler")} icon={<Clipboardlist className="w-10" />} text={"Projeler"} />
-      <SidebarItem onClick={() => navigate("teklifler")} icon={<Offer className="w-10" />} text={"Teklifler"} />
-   
-      <SidebarItem onClick={() => navigate("sistemler")} icon={<Wrench className="w-10" />} text={"Sistemler"} />
-      <SidebarItem onClick={() => navigate("profiller")} icon={<Pencilruler className="w-10" />} text={"Profiller"} />
-      <SidebarItem onClick={() => navigate("camlar")} icon={<Grid2x2 className="w-10" />} text={"Camlar"} />
-      <SidebarItem onClick={() => navigate("digermalzemeler")} icon={<Package className="w-10" />} text={"Diğer Malzemeler"} />
-      <SidebarItem onClick={() => navigate("boyalar")} icon={<Paintbrush className="w-8" />} text={"Boyalar"} />
-      <SidebarItem onClick={() => navigate("kumandalar")} icon={<Remote className="w-8" />} text={"Kumandalar"} />
-      <SidebarItem onClick={() => navigate("ayarlar")} icon={<Settings className="w-8" />} text={"Ayarlar"} />
+      {visibleItems.map(it => (
+        <SidebarItem
+          key={it.key}
+          onClick={() => navigate(it.key)}
+          icon={it.icon}
+          text={it.text}
+        />
+      ))}
     </SidebarShema>
   );
 };

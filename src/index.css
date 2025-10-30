@@ -127,3 +127,19 @@
 
 }
 
+.myToast {
+  width: 420px;           /* sabit genişlik */
+  max-width: 13vw;        /* mobilde taşmasın */
+  min-height: 10px;       /* yükseklik/padding tabanını büyütür */
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.myToastBody {
+  margin: 0;              /* Toastify gövdesindeki default margin’i sıfırlar */
+  white-space: pre-line;  /* çok satır desteklemek isterseniz */
+}
+
+/* progress bar yüksekliği */
+.myToast .Toastify__progress-bar {
+  height: 2px;
+}

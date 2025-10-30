@@ -70,9 +70,16 @@ const Camlar = () => {
 
   // Ekle / Düzenle
   const handleAddCam = useCallback(async (row) => {
+    // row beklenen şema:
+    // { cam_isim, thickness_mm, belirtec_1, belirtec_2 }
     setIsLoading(true);
     try {
-      await dispatch(addCamToApi(row));
+      await dispatch(addCamToApi({
+        cam_isim: row.cam_isim,
+        thickness_mm: row.thickness_mm,
+        belirtec_1: Number(row.belirtec_1) || 0,
+        belirtec_2: Number(row.thickness_mm) === 2 ? (Number(row.belirtec_2) || 0) : 0
+      }));
       const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
       await dispatch(getCamlarFromApi(currentPage, searchTerm, safeLimit));
     } finally {
@@ -81,11 +88,15 @@ const Camlar = () => {
   }, [dispatch, currentPage, searchTerm, limit]);
 
   const handleEditCam = useCallback(async (row) => {
+    // row beklenen şema:
+    // { id, cam_isim, thickness_mm, belirtec_1, belirtec_2 }
     setIsLoading(true);
     try {
       await dispatch(editCamOnApi(row.id, {
         cam_isim: row.cam_isim,
-        thickness_mm: row.thickness_mm
+        thickness_mm: row.thickness_mm,
+        belirtec_1: Number(row.belirtec_1) || 0,
+        belirtec_2: Number(row.thickness_mm) === 2 ? (Number(row.belirtec_2) || 0) : 0
       }));
       const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
       await dispatch(getCamlarFromApi(currentPage, searchTerm, safeLimit));
@@ -115,14 +126,12 @@ const Camlar = () => {
     }
   };
 
-
-// thickness_mm -> metin
-const camTuru = (v) => {
-  if (Number(v) === 1) return "Tek Cam";
-  if (Number(v) === 2) return "Çift Cam";
-  return "—";
-};
-
+  // thickness_mm -> metin
+  const camTuru = (v) => {
+    if (Number(v) === 1) return "Tek Cam";
+    if (Number(v) === 2) return "Çift Cam";
+    return "—";
+  };
 
   const totalPages = data.total_pages || 1;
 
@@ -141,7 +150,7 @@ const camTuru = (v) => {
             className="input input-bordered w-full md:max-w-sm"
           />
 
-        {/* 🆕 Kayıt Sayısı (limit) */}
+          {/* 🆕 Kayıt Sayısı (limit) */}
           <div className="flex items-center gap-2">
             <label className="text-sm opacity-80">Cam Sayısı</label>
             <input
@@ -155,70 +164,68 @@ const camTuru = (v) => {
             />
           </div>
 
-          {/* Not: DialogCamEkle kendi tetikleyicisini içeriyor. İstersen asChild ile AppButton'a taşıyabiliriz. */}
           <DialogCamEkle onSave={handleAddCam} />
         </div>
 
         {/* Tablo */}
-<div className="overflow-x-auto">
-  <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
-    <thead>
-      <tr className="border-b border-base-500 dark:border-gray-500">
-        <th>Cam İsmi</th>
-        <th className="text-center">Cam Türü</th> {/* ✅ yeni sütun */}
-        <th className="text-center">İşlemler</th>
-      </tr>
-    </thead>
+        <div className="overflow-x-auto">
+          <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
+            <thead>
+              <tr className="border-b border-base-500 border-gray-500">
+                <th>Cam İsmi</th>
+                <th className="text-center">Cam Türü</th>
+                <th className="text-center">İşlemler</th>
+              </tr>
+            </thead>
 
-    {isLoading ? (
-      <tbody>
-        <tr className="border-b border-base-400 dark:border-gray-500">
-          <td colSpan={3}>
-            <Spinner />
-          </td>
-        </tr>
-      </tbody>
-    ) : (data.items?.length > 0 ? (
-      <tbody>
-        {data.items.map(cam => (
-          <tr key={cam.id} className="border-b border-base-300 dark:border-gray-500">
-            <td>{cam.cam_isim}</td>
-            <td className="text-center">{camTuru(cam.thickness_mm)}</td> {/* ✅ tür */}
-            <td className="text-center space-x-2">
-              <DialogCamDuzenle cam={cam} onSave={handleEditCam} asChild>
-                <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
-                  Düzenle
-                </AppButton>
-              </DialogCamDuzenle>
+            {isLoading ? (
+              <tbody>
+                <tr className="border-b border-base-400 border-gray-500">
+                  <td colSpan={3}>
+                    <Spinner />
+                  </td>
+                </tr>
+              </tbody>
+            ) : (data.items?.length > 0 ? (
+              <tbody>
+                {data.items.map(cam => (
+                  <tr key={cam.id} className="border-b  border-gray-500">
+                    <td>{cam.cam_isim}</td>
+                    <td className="text-center">{camTuru(cam.thickness_mm)}</td>
+                    <td className="text-center space-x-2">
+                      <DialogCamDuzenle cam={cam} onSave={handleEditCam} asChild>
+                        <AppButton variant="sari" size="sm" shape="none" title="Düzenle">
+                          Düzenle
+                        </AppButton>
+                      </DialogCamDuzenle>
 
-              <AppButton
-                variant="kirmizi"
-                size="sm"
-                shape="none"
-                onClick={() => askDelete(cam)}
-                title="Sil"
-              >
-                Sil
-              </AppButton>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    ) : (
-      <tbody>
-        <tr>
-          <td
-            colSpan={3}
-            className="border-b border-base-500 dark:border-gray-500 text-center text-muted-foreground py-4"
-          >
-            Veri bulunamadı
-          </td>
-        </tr>
-      </tbody>
-    ))}
-  </table>
-</div>
-
+                      <AppButton
+                        variant="kirmizi"
+                        size="sm"
+                        shape="none"
+                        onClick={() => askDelete(cam)}
+                        title="Sil"
+                      >
+                        Sil
+                      </AppButton>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ) : (
+              <tbody>
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="border-b border-base-500 border-gray-500 text-center text-muted-foreground py-4"
+                  >
+                    Veri bulunamadı
+                  </td>
+                </tr>
+              </tbody>
+            ))}
+          </table>
+        </div>
 
         {/* Sayfalama */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">

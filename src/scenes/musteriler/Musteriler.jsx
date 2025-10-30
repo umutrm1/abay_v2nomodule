@@ -115,7 +115,7 @@ const Musteriler = () => {
     <div className="grid grid-rows-[60px_1fr]">
       <Header title="Müşteriler" />
 
-      <div className="bg-card w-full border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
+      <div className="bg-card w-full border borderorder rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama & Ekle & Kayıt Sayısı */}
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
           <input
@@ -144,9 +144,9 @@ const Musteriler = () => {
 
         {/* Tablo */}
         <div className="flex-grow overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+          <table className="table w-full border border-gray-500  rounded-lg">
             <thead>
-              <tr className="border-b border-base-500 dark:border-gray-500 ">
+              <tr className="border border-gray-500  ">
                 <th>Şirket İsmi</th>
                 <th>İsim</th>
                 <th>Telefon</th>
@@ -157,14 +157,14 @@ const Musteriler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr className="border-b border-base-400 dark:border-gray-500 ">
+                <tr className="border borderase-400 border-gray-500 ">
                   <td colSpan={5}><Spinner /></td>
                 </tr>
               </tbody>
             ) : ( (data.items ?? []).length > 0 ? (
               <tbody>
                 {data.items.map(m => (
-                  <tr key={m.id} className="border-b border-base-300 dark:border-gray-500 ">
+                  <tr key={m.id} className="border borderase-300 border-gray-500 ">
                     <td className="font-bold">{m.company_name}</td>
                     <td>{m.name}</td>
                     <td>{m.phone}</td>
@@ -187,7 +187,7 @@ const Musteriler = () => {
             ) : (
               <tbody>
                 <tr>
-                  <td colSpan={5} className="border-b border-base-500 text-center text-muted-foreground py-10">
+                  <td colSpan={5} className="border border-gray-500 text-center text-muted-foreground py-10">
                     Gösterilecek müşteri bulunamadı.
                   </td>
                 </tr>

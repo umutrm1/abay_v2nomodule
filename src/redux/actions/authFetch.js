@@ -1,4 +1,4 @@
-// src/redux/actions/authFetch.js  (mevcut dosyanın üstüne yaz)
+// src/redux/actions/authFetch.js 
 import { LOGIN_SUCCESS, LOAD_USER_FAIL, LOGOUT } from "./actionTypes.js";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -36,7 +36,15 @@ async function doRefresh(dispatch) {
 
     setStoredToken(newToken);
     // Redux’a başarılı login/refresh’i bildir
-    dispatch?.({ type: LOGIN_SUCCESS, payload: newToken });
+    // Redux’a başarılı login/refresh’i bildir (is_admin/role dahil)
+    dispatch?.({
+      type: LOGIN_SUCCESS,
+      payload: {
+        token: newToken,
+        is_admin: data?.is_admin ?? null,
+        role: data?.role ?? null,
+      }
+    });    
     return newToken;
   })();
 
@@ -58,10 +66,31 @@ export async function fetchWithAuth(url, options = {}, dispatch) {
     headers,
     credentials: "include", // CORS + cookie (refresh için önemli)
   });
+  // if (!token){
+  //   try {
+  //     const newToken = await doRefresh(dispatch);
+  //     const headers2 = new Headers(options.headers || {});
+  //     if (newToken) headers2.set("Authorization", `Bearer ${newToken}`);
+
+  //     res = await fetch(url, {
+  //       ...options,
+  //       headers: headers2,
+  //       credentials: "include",
+  //     });
+  //   } catch (e) {
+  //     // Refresh başarısız → store’u temizle ve kullanıcıyı dışarı al
+  //     try {
+  //       dispatch?.({ type: LOAD_USER_FAIL });
+  //       dispatch?.({ type: LOGOUT });
+  //     } catch {}
+  //     // Orijinal 401’i geri döndürüyoruz; çağıran yer isterse yakalayıp mesaj verebilir
+  //   }
+  // }
 
   // 2) 401 ise → bir kez refresh dene, sonra isteği aynı paramlarla tekrar et
   if (res.status === 401) {
     try {
+      console.log("fetchWithAuth 401")
       const newToken = await doRefresh(dispatch);
       const headers2 = new Headers(options.headers || {});
       if (newToken) headers2.set("Authorization", `Bearer ${newToken}`);

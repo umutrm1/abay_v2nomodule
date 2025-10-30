@@ -2,6 +2,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import optimizasyonYap from "@/scenes/optimizasyon/optimizasyon.js";
+import { getBrandImage } from "@/redux/actions/actionsPdf.js";
 
 /* ───── yardımcılar ───── */
 function arrayBufferToBase64(buf) {
@@ -117,34 +118,26 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   // Logo (public/logo.png)
   try {
-    const resp = await fetch("/logo.png");
-    if (resp.ok) {
-      const blob = await resp.blob();
-      const leftImg = await new Promise(res => {
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result);
-        reader.readAsDataURL(blob);
-      });
+    const leftImg = await getBrandImage();
+    if (!leftImg) throw new Error("Boş logo yanıtı");
 
-      const inset = 2;
-      const boxW = leftFinalW - 2 * inset;
-      const boxH = Math.max(0, leftFinalH - 2 * inset);
+    const inset = 2;
+    const boxW = leftFinalW - 2 * inset;
+    const boxH = Math.max(0, leftFinalH - 2 * inset);
 
-      const img = new Image();
-      img.src = leftImg;
-      await new Promise(r => { img.onload = r; });
+    const img = new Image();
+    img.src = leftImg;
+    await new Promise(r => { img.onload = r; });
 
-      const ratio = img.width / img.height;
+    const ratio = img.width / img.height;
+    let drawW = boxW;
+    let drawH = drawW / ratio;
+    if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
 
-      let drawW = boxW;
-      let drawH = drawW / ratio;
-      if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
+    const x = leftX + inset + (boxW - drawW) / 2;
+    const y = topY + inset + (boxH - drawH) / 2;
 
-      const x = leftX + inset + (boxW - drawW) / 2;
-      const y = topY + inset + (boxH - drawH) / 2;
-
-      doc.addImage(leftImg, headerCfg?.leftImage?.type || "PNG", x, y, drawW, drawH);
-    }
+    doc.addImage(leftImg, headerCfg?.leftImage?.type || "PNG", x, y, drawW, drawH);
   } catch (e) {
     console.warn("logo.png yüklenemedi:", e);
   }
@@ -303,22 +296,34 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
     const isim = entry?.profile?.profil_isim || '-';
     const boy = Number(entry?.profile?.boy_uzunluk || 0);
     const birimKg = Number(entry?.profile?.birim_agirlik || 0);
-    const adet = Number(res?.toplamBoySayisi || 0);
+    const adet = Number(res?.toplamBoySayisi - 1 || 0);
     const toplamKg = adet * boy / 1000 * birimKg;
 
     // Alt satır metni: son boy kesimleri toplamı + 50 mm
     const lastCuts = (res?.boyKesimlerDetay?.[res.boyKesimlerDetay.length - 1]?.cuts) || [];
     const lastCutsText = lastCuts.length ? lastCuts.join(", ") : "-";
     const arti50 = Number(res?.sonBoyToplamArti50 ?? 0);
+    const fire = Number(boy - arti50 ?? 0)
+    const ilaveKg = (arti50 / 1000) * birimKg; // ilave boy toplam kilo
 
     const mainRow = [kod, '', isim, adet, boy, birimKg.toFixed(2), toplamKg.toFixed(2)];
 
-    const subRowCell = {
-      content: `↳ Son boy kesimleri toplamı + 50 = ${arti50} mm  (Son boy kesimler: ${lastCutsText})`,
-      colSpan: 7,
-      styles: { halign: 'left', font: 'Roboto', fontStyle: 'bold', fontSize: 9, cellPadding: { top: 3, right: 6, bottom: 3, left: 10 } }
+    const subRowInfo = {
+      content: `↳ İlave boy kesimleri toplamı + 50 = ${arti50} mm  (İlave boy kesimler: ${lastCutsText})  Fire: ${fire} mm`,
+      colSpan: 6,
+      styles: {
+        halign: 'left',
+        font: 'Roboto',
+        fontStyle: 'bold',
+        fontSize: 9,
+        cellPadding: { top: 3, right: 6, bottom: 3, left: 10 }
+      }
     };
-    const subRow = [subRowCell];
+    const subRowKilo = {
+      content: ilaveKg.toFixed(2), // Toplam Kilo (kg) sütunu
+      styles: { halign: 'center', font: 'Roboto', fontStyle: 'bold', fontSize: 9 }
+    };
+    const subRow = [subRowInfo, subRowKilo];
 
     return [mainRow, subRow];
   });
@@ -434,10 +439,13 @@ export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
       if (!entry) return sum;
       const boy = Number(entry?.profile?.boy_uzunluk || 0);
       const birimKg = Number(entry?.profile?.birim_agirlik || 0);
-      // DİKKAT: adet = toplamBoySayisi (boy sayısı), yani kaç stock kullanıldıysa
-      const adet = Number(res?.toplamBoySayisi || 0);
-      const toplam = adet * boy / 1000 * birimKg; // kg
-      return sum + toplam;
+      // Full boy adedi (ilave boy hariç)
+      const adetFull = Math.max(0, Number(res?.toplamBoySayisi || 0) - 1);
+      // İlave boyun toplam mm’i (kesimler toplamı + 50)
+      const ilaveMm = Number(res?.sonBoyToplamArti50 || 0);
+      const toplamFullKg = (adetFull * boy / 1000) * birimKg;
+      const toplamIlaveKg = (ilaveMm / 1000) * birimKg;
+      return sum + toplamFullKg + toplamIlaveKg;
     }, 0);
     const label = `Toplam Kilo: ${genelToplamKg.toFixed(2)} kg`;
 

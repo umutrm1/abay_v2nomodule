@@ -76,8 +76,8 @@ export function deleteColorFromApi(id) {
   return async (dispatch) => {
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/colors/${id}`,
-        { method: "DELETE", headers: { Accept: "*/*" } },
+        `${API_BASE_URL}/colors/${id}/deactivate`,
+        { method: "PUT", headers: { Accept: "*/*" } },
         dispatch
       );
 

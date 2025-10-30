@@ -3,43 +3,52 @@ import { fetchWithAuth } from "./authFetch.js";
 import { toastSuccess, toastError } from "../../lib/toast.js";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+
 /**
  * 1) GET /api/me/profile-picture
  * - Sunucu JSON dönebilir (ör: { url: "..." }) veya doğrudan image binary dönebilir.
  * - Her iki senaryoyu da destekler: JSON ise JSON’u; image ise { blob, url } döner.
  */
-export async function getProfilePicture() {
+
+export async function getProfilePicture({ cacheBust = false } = {}) {
+  const url = `${API_BASE_URL}/me/profile-picture${cacheBust ? `?_=${Date.now()}` : ""}`;
+
   try {
     const res = await fetchWithAuth(
-      `${API_BASE_URL}/api/me/profile-picture`,
+      url,
       {
         method: "GET",
-        headers: { Accept: "application/json" },
-      }
+        headers: { accept: "image/jpeg" }, // ÖNEMLİ: JSON değil, görsel bekliyoruz
+      },
+      undefined // dispatch gerekmiyorsa undefined kalabilir
     );
 
     if (!res.ok) {
-      const errText = await safeText(res);
-      throw new Error(errText || `GET failed (${res.status})`);
+      const text = await safeText(res);
+      throw new Error(`Profil foto alınamadı: ${res.status} ${text}`);
     }
 
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    if (ct.includes("application/json")) {
-      const data = await res.json();
-      return data; // ör: { url: "https://..." } ya da başka JSON şeması
-    }
+    // JPEG baytlarını oku
+    const buf = await res.arrayBuffer();
 
-    // Görsel gibi binary gelmişse:
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    return { blob, url };
+    // İstersen BURADA blob/objectURL da üretebilirsin:
+    // const blob = new Blob([buf], { type: "image/jpeg" });
+    // const objectUrl = URL.createObjectURL(blob);
+
+    // base64'e çevir → data URL üret (brand mantığıyla bire bir aynı)
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    const base64 = btoa(binary);
+    const dataUrl = `data:image/jpeg;base64,${base64}`;
+
+    return dataUrl; // <img src={dataUrl}> olarak direkt kullanılır
   } catch (err) {
     console.error("getProfilePicture error:", err);
-    toast?.error?.("Profil fotoğrafı alınamadı.");
+    toastError("Profil fotoğrafı alınamadı.");
     throw err;
   }
 }
-
 /**
  * İç yardımcı: fetch error body güvenli okuma
  */
@@ -66,7 +75,7 @@ export async function updateProfilePicture(file, filename = "profile.jpg") {
     form.append("file", file, file.name || filename);
 
     const res = await fetchWithAuth(
-      `${API_BASE_URL}/api/me/profile-picture`,
+      `${API_BASE_URL}/me/profile-picture`,
       {
         method: "PUT",
         // DİKKAT: Content-Type'ı elle vermiyoruz; boundary’yi fetch ayarlar
@@ -82,12 +91,11 @@ export async function updateProfilePicture(file, filename = "profile.jpg") {
 
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     let data = ct.includes("application/json") ? await res.json() : await res.text();
-
-    toast?.success?.("Profil fotoğrafı güncellendi.");
+    toastSuccess("Profil fotoğrafı güncellendi.");
     return data;
   } catch (err) {
     console.error("updateProfilePicture error:", err);
-    toast?.error?.("Profil fotoğrafı güncellenemedi.");
+    toastError("Profil fotoğrafı güncellenemedi.");
     throw err;
   }
 }
@@ -105,7 +113,7 @@ export async function uploadProfilePicture(file, filename = "profile.jpg") {
     form.append("file", file, file.name || filename);
 
     const res = await fetchWithAuth(
-      `${API_BASE_URL}/api/me/profile-picture`,
+      `${API_BASE_URL}/me/profile-picture`,
       {
         method: "POST",
         headers: { Accept: "application/json" },
@@ -121,11 +129,11 @@ export async function uploadProfilePicture(file, filename = "profile.jpg") {
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     let data = ct.includes("application/json") ? await res.json() : await res.text();
 
-    toast?.success?.("Profil fotoğrafı yüklendi.");
+    toastSuccess("Profil fotoğrafı yüklendi.");
     return data;
   } catch (err) {
     console.error("uploadProfilePicture error:", err);
-    toast?.error?.("Profil fotoğrafı yüklenemedi.");
+    toastError("Profil fotoğrafı yüklenemedi.");
     throw err;
   }
 }
@@ -136,7 +144,7 @@ export async function uploadProfilePicture(file, filename = "profile.jpg") {
 export async function deleteProfilePicture() {
   try {
     const res = await fetchWithAuth(
-      `${API_BASE_URL}/api/me/profile-picture`,
+      `${API_BASE_URL}/me/profile-picture`,
       {
         method: "DELETE",
         headers: { Accept: "*/*" },
@@ -157,11 +165,11 @@ export async function deleteProfilePicture() {
       // no body
     }
 
-    toast?.success?.("Profil fotoğrafı silindi.");
+    toastSuccess("Profil fotoğrafı silindi.");
     return out;
   } catch (err) {
     console.error("deleteProfilePicture error:", err);
-    toast?.error?.("Profil fotoğrafı silinemedi.");
+    toastError("Profil fotoğrafı silinemedi.");
     throw err;
   }
 }

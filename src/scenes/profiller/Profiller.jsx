@@ -188,7 +188,7 @@ const Profiller = () => {
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Profiller" />
 
-      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
+      <div className="bg-card border borderorder rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama + Limit + Ekle */}
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
           <input
@@ -218,9 +218,9 @@ const Profiller = () => {
 
         {/* Tablo */}
         <div className="overflow-x-auto">
-          <table className="table w-full border border-base-500 dark:border-gray-500 rounded-lg">
+          <table className="table w-full border  border-gray-500 rounded-lg">
             <thead>
-              <tr className="border-b border-base-500">
+              <tr className="border border-gray-500">
                 <th>Profil Kodu</th>
                 <th>Profil Adı</th>
                 <th>Kesit Fotoğraf</th>
@@ -232,7 +232,7 @@ const Profiller = () => {
 
             {isLoading ? (
               <tbody>
-                <tr className="border-b border-base-400">
+                <tr className="border border-gray-500">
                   <td colSpan={6}><Spinner /></td>
                 </tr>
               </tbody>
@@ -244,7 +244,7 @@ const Profiller = () => {
                   const failed = !!entry?.error;
                   const isLoadingImg = loadingImgIds.has(profil.id);
                   return (
-                    <tr key={profil.id} className="border-b border-base-300">
+                    <tr key={profil.id} className="border border-gray-500">
                       <td>{profil.profil_kodu}</td>
                       <td>{profil.profil_isim}</td>
                       <td>
@@ -252,7 +252,7 @@ const Profiller = () => {
                           <img
                             src={imgSrc}
                             alt={`${profil.profil_isim} kesit`}
-                            className="h-10 w-16 object-contain border border-border rounded"
+                            className="h-10 w-16 object-contain border border-gray-500 rounded"
                             loading="lazy"
                           />
                         ) : failed ? (
@@ -316,7 +316,7 @@ const Profiller = () => {
                   );
                 }) : (
                   <tr>
-                    <td colSpan={6} className="border-b border-base-500 text-center text-muted-foreground py-4">
+                    <td colSpan={6} className="border border-gray-500 text-center text-muted-foreground py-4">
                       Veri bulunamadı
                     </td>
                   </tr>

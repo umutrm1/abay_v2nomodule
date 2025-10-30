@@ -337,7 +337,7 @@ export function getSistemlerFromApi(page = 1, q = "", limit = 5) {
   };
 }
 
-export function getSystemVariantsOfSystemFromApi(systemId, page = 1, q = "", limit = 50) {
+export function getSystemVariantsOfSystemFromApi(systemId, page = 1, q = "", limit = "all") {
   return async (dispatch) => {
     const params = new URLSearchParams();
     if (q !== "") params.set("q", q);
