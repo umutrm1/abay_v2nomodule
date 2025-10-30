@@ -300,10 +300,7 @@ export function putBrandImage(file) {
       toastSuccess();
       return data;
     } catch (error) {
-      dispatch({
-        type: actionTypes.PUT_BRAND_IMAGE_FAILURE,
-        payload: error?.message || "Brand image güncellenemedi",
-      });
+
       toastError();
       throw error;
     }

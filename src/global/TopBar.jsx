@@ -80,7 +80,7 @@ export default function TopBar() {
         ${expanded ? "ml-64" : "ml-20"}
         transition-all h-20
         flex items-center px-4
-        bg-card text-foreground border-b border-border
+        bg-card text-foreground border-b border
       `}
     >
       <div className="flex-1" />

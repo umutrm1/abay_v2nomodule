@@ -111,7 +111,7 @@ const SideBar = () => {
     { key: "profiller",      icon: <Pencilruler className="w-10" />,  text: "Profiller" },
     { key: "camlar",         icon: <Grid2x2 className="w-10" />,      text: "Camlar" },
     { key: "digermalzemeler",icon: <Package className="w-10" />,      text: "Diğer Malzemeler" },
-    { key: "boyalar",        icon: <Paintbrush className="w-8" />,    text: "Boyalar" },
+    { key: "boyalar",        icon: <Paintbrush className="w-7" />,    text: "Boyalar" },
     { key: "kumandalar",     icon: <Remote className="w-8" />,        text: "Kumandalar" },
     { key: "ayarlar",        icon: <Settings className="w-8" />,      text: "Ayarlar" },
   ];
