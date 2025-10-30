@@ -79,8 +79,8 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-xl shadow-md border border-border">
         
         <img 
-          src="/UELogo.png" 
-          alt="UE Logo" 
+          src="/Logo.png" 
+          alt="Logo" 
           className="w-32 h-auto mx-auto" 
         />
 
