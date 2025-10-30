@@ -430,7 +430,7 @@ const Sistemler = () => {
                   {filteredVariantItems.length > 0 ? (
                     filteredVariantItems.map(variant => (
                       <tr key={variant.id} className="border borderase-300 border-gray-500">
-                        <td>{variant.name}</td>
+                        <td>{variant.name} | {variant.system_name}</td>
                         <td className="text-center">
                           <div className="flex items-center justify-center gap-2 text-xs">
                             <span className={`px-2 py-1 rounded-md ${variant.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
