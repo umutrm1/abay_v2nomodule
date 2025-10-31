@@ -45,7 +45,6 @@ export async function getProfilePicture({ cacheBust = false } = {}) {
     return dataUrl; // <img src={dataUrl}> olarak direkt kullanılır
   } catch (err) {
     console.error("getProfilePicture error:", err);
-    toastError("Profil fotoğrafı alınamadı.");
     throw err;
   }
 }

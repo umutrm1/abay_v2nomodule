@@ -110,7 +110,6 @@ export const loginUser = (username, password, rememberMe = false) => async dispa
       }
     })
 
-    toastSuccess('Giriş başarılı')
     await dispatch(loadCurrentUser()) // token'ı içerden okuyacak
   } catch (err) {
     const msg = err?.response?.status === 401
@@ -121,7 +120,6 @@ export const loginUser = (username, password, rememberMe = false) => async dispa
       type: LOGIN_FAILURE,
       payload: msg
     })
-    toastError(msg)
   }
 }
 

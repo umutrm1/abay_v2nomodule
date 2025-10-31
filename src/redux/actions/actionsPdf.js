@@ -166,10 +166,26 @@ export function updatePdfBrand({ key, config_json = {} }) {
  * - Payload: { prefix, separator, padding, start_number }
  * - Curl örneğinizle birebir aynı alan adları.
  */
-export function updateProformaRule({ prefix, separator, padding, start_number }) {
+
+
+export function updateProformaRule(payload = {}) {
   return async (dispatch) => {
-    dispatch({ type: actionTypes.UPDATE_PROFORMA_RULE_REQUEST });
     try {
+      // payload içinden alanları güvenle çıkar + prefix'i backend gereksinimine göre upper-case yap
+      const {
+        prefix = "",
+        separator = "-",
+        start_number = 0,
+        reset_sequence = true,
+      } = payload;
+
+      const body = {
+        prefix: String(prefix || "").toUpperCase(),
+        separator,
+        start_number,
+        reset_sequence,
+      };
+
       const res = await fetchWithAuth(
         `${API_BASE_URL}/me/project-code/rule`,
         {
@@ -178,7 +194,7 @@ export function updateProformaRule({ prefix, separator, padding, start_number })
             accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ prefix, separator, padding, start_number }),
+          body: JSON.stringify(body),
         },
         dispatch
       );
@@ -186,18 +202,17 @@ export function updateProformaRule({ prefix, separator, padding, start_number })
       if (!res.ok) {
         const text = await res.text().catch(() => "");
         toastError();
-        throw new Error(`Proforma kuralı güncellenemedi: ${res.status} ${text}`);
+        throw new Error(
+          `Proforma kuralı güncellenemedi: ${res.status} ${text}`
+        );
       }
 
       const data = await res.json().catch(() => ({}));
-      dispatch({ type: actionTypes.UPDATE_PROFORMA_RULE_SUCCESS, payload: data });
       toastSuccess();
       return data;
     } catch (error) {
-      dispatch({
-        type: actionTypes.UPDATE_PROFORMA_RULE_FAILURE,
-        payload: error?.message || "Proforma kuralı güncellenemedi",
-      });
+      // Burada özel actionTypes tanımlamadığın için generic failure dispatch etmiyoruz;
+      // istersen actionTypes ekleyip burada dispatch edebilirsin.
       toastError();
       throw error;
     }

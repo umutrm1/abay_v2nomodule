@@ -7,19 +7,12 @@ import TopBar from "./TopBar.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import LoginScreen from "@/scenes/login_screen/LoginScreen.jsx";
 import Profiller from "../scenes/profiller/Profiller.jsx";
-import AnaSayfa from "../scenes/ana_sayfa/AnaSayfa.jsx";
 import Bayiler from "../scenes/bayiler/Bayiler.jsx";
 import Musteriler from "../scenes/musteriler/Musteriler.jsx";
 import Projeler from "../scenes/projeler/Projeler.jsx";
 import Sistemler from "../scenes/sistemler/Sistemler.jsx";
 import Camlar from "../scenes/camlar/Camlar.jsx";
 import DigerMalzemeler from "../scenes/diger_malzemeler/DigerMalzemeler.jsx";
-import Bildirimler from "../scenes/bildirimler/Bildirimler.jsx";
-import Takvim from "../scenes/takvim/Takvim.jsx";
-import BarGrafigi from "../scenes/bar_grafigi/BarGrafigi.jsx";
-import PastaGrafigi from "../scenes/pasta_grafigi/PastaGrafigi.jsx";
-import CizgiGrafigi from "../scenes/cizgi_grafigi/CizgiGrafigi.jsx";
-import Sss from "../scenes/sss/Sss.jsx";
 import ProjeDuzenle from "@/scenes/projeekle/ProjeDuzenle.jsx";
 import SistemEkle from "@/scenes/sistem_ekle/SistemEkle.jsx";
 import SistemSec from "@/scenes/sistemsec/SistemSec.jsx";
@@ -41,9 +34,12 @@ const ContentArea = () => {
   const { expanded } = useContext(SidebarContext);
   const location = useLocation();
   const isLogin = location.pathname === "/login" || location.pathname === "/set-password" || location.pathname === "/forgot-password" || location.pathname === "/reset-password";
+  // Rol bilgisi gelene kadar "null" kalsın; böylece UI'yi blur'layabiliriz.
   const isAdmin = useSelector(s =>
-    s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
+    (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null)
   );
+  // F5/ilk giriş sırasında rol bilgisi bekleniyorsa blur/overlay aktif olsun
+  const isBootstrapping = !isLogin && (isAdmin === null);
 
 
   // 🔐 Sadece ProtectedRoute ile sarılı sayfalarda (yani login ekranı değilken) auth init yap
@@ -55,25 +51,24 @@ const ContentArea = () => {
 
 
   return (
-    <div className="flex">
-      {/* /login değilse göster */}
-      {!isLogin && <SideBar />}
-      <div className="flex-1 flex flex-col">
-        {!isLogin && <TopBar />}
-        
-        {/* --- DEĞİŞİKLİK BURADA --- */}
-        <main
-          className={`
-            font-roboto bg-background text-foreground
-            ${!isLogin
-              // Giriş yapılmamışsa (App Shell Düzeni): Gerekli margin ve padding'i uygula
-              ? `mt-auto transition-all p-6 ${expanded ? "ml-64" : "ml-20"}`
-              // Giriş sayfasındaysa (Login Düzeni): Hiçbir layout sınıfı uygulama, LoginScreen tam kontrolü alsın
-              : "" 
-            }
-          `}
-        >
-        {/* --- DEĞİŞİKLİK BİTTİ --- */}
+    <div className="relative">
+      {/* Blur uygulanacak asıl içerik */}
+      <div className={isBootstrapping ? "blur-sm pointer-events-none" : ""}>
+        <div className="flex">
+          {/* /login değilse göster */}
+          {!isLogin && <SideBar />}
+          <div className="flex-1 flex flex-col">
+            {!isLogin && <TopBar />}
+
+            <main
+              className={`
+                font-roboto bg-background text-foreground
+                ${!isLogin
+                  ? `mt-auto transition-all p-6 ${expanded ? "ml-64" : "ml-20"}`
+                  : "" 
+                }
+              `}
+            >
 
           <Routes>
             {/* Login sayfası her zaman açık */}
@@ -86,51 +81,66 @@ const ContentArea = () => {
             <Route element={<ProtectedRoute />}>
               {isAdmin ? (
                 <>
-                  <Route path="/" element={<Projeler />} />
+                  <Route path="/kumandalar" element={<Kumandalar />} />
                   <Route path="/bayiler" element={<Bayiler />} />
-                  <Route path="/musteriler" element={<Musteriler />} />
-                  <Route path="/projeler" element={<Projeler />} />
-                  <Route path="/teklifler" element={<Teklifler />} />
                   <Route path="/sistemler" element={<Sistemler />} />
                   <Route path="/profiller" element={<Profiller />} />
                   <Route path="/camlar" element={<Camlar />} />
                   <Route path="/digermalzemeler" element={<DigerMalzemeler />} />
-                  <Route path="/bildirimler" element={<Bildirimler />} />
-                  <Route path="/takvim" element={<Takvim />} />
-                  <Route path="/bargrafigi" element={<BarGrafigi />} />
-                  <Route path="/pastagrafigi" element={<PastaGrafigi />} />
-                  <Route path="/cizgigrafigi" element={<CizgiGrafigi />} />
-                  <Route path="/sss" element={<Sss />} />
-                  <Route path="/projeduzenle" element={<ProjeDuzenle />} />
+                  <Route path="/boyalar" element={<Boyalar />} />
+                  <Route path="/sistemvaryantduzenle/:variantId" element={<SistemVaryantDuzenle />} />
+
+                  <Route path="/" element={<Projeler />} />
+                  <Route path="/musteriler" element={<Musteriler />} />
+                  <Route path="/projeler" element={<Projeler />} />
+                  <Route path="/teklifler" element={<Teklifler />} />
                   <Route path="/sistemekle/:projectId/:variantId" element={<SistemEkle />} />
                   <Route path="/projeduzenle/:id" element={<ProjeDuzenle />} />
                   <Route path="/profilaksesuar/edit/:id" element={<ProfilAksesuarEdit />} />
                   <Route path="/sistemsec/:projectId" element={<SistemSec />} />
                   <Route path="/ekstramalzemeekle/:projectId" element={<EkstraMalzemeEkle />} />
-                  <Route path="/boyalar" element={<Boyalar />} />
-                  <Route path="/sistemvaryantduzenle/:variantId" element={<SistemVaryantDuzenle />} />
-                  <Route path="/kumandalar" element={<Kumandalar />} />
                   <Route path="/ayarlar" element={<Ayarlar />} />
                   <Route path="*" element={<TanimlanmayanSayfa />} />
                 </>
               ) : (
                 <>
-                  {/* Non-admin için yalnızca bu dört rota */}
+
+                  <Route path="/" element={<Projeler />} />
                   <Route path="/musteriler" element={<Musteriler />} />
                   <Route path="/projeler" element={<Projeler />} />
                   <Route path="/teklifler" element={<Teklifler />} />
+                  <Route path="/sistemekle/:projectId/:variantId" element={<SistemEkle />} />
+                  <Route path="/projeduzenle/:id" element={<ProjeDuzenle />} />
+                  <Route path="/profilaksesuar/edit/:id" element={<ProfilAksesuarEdit />} />
+                  <Route path="/sistemsec/:projectId" element={<SistemSec />} />
+                  <Route path="/ekstramalzemeekle/:projectId" element={<EkstraMalzemeEkle />} />
                   <Route path="/ayarlar" element={<Ayarlar />} />
-                  {/* kök ve diğer yolları projelere yönlendir */}
-                  <Route path="/" element={<Navigate to="/projeler" replace />} />
-                  <Route path="*" element={<TanimlanmayanSayfa/>} />
+                  <Route path="*" element={<TanimlanmayanSayfa />} />
+
                 </>
               )}
 
 
             </Route>
-          </Routes>
-        </main>
+              </Routes>
+            </main>
+          </div>
+        </div>
       </div>
+
+      {/* Üstte sabit overlay + spinner: sadece is_admin bilinmiyorken */}
+      {isBootstrapping && (
+        <div
+          className="pointer-events-none absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+            <div className="text-sm text-muted-foreground">Yetki bilgileri yükleniyor…</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

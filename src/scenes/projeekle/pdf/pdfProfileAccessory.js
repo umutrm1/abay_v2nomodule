@@ -93,6 +93,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
     const titleH = titleFontSize * lineFactor + 2 * padY;
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.8);
     doc.rect(rightX, ry, rightW, titleH, "S");
     const cx = rightX + rightW / 2;
@@ -110,6 +111,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
       : (String(line.text || line.value || line.href || ""));
     const lines = doc.splitTextToSize(txt, Math.max(10, rightW - 2 * padX));
     const h = Math.max(22, lines.length * (baseFontSize * lineFactor) + 2 * padY);
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.8);
     doc.rect(rightX, ry, rightW, h, "S");
     doc.setFontSize(baseFontSize);
@@ -124,6 +126,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const rightBottom = ry;
   const leftFinalW = leftRequestedW;
   const leftFinalH = rightBottom - topY;
+  doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.8);
   doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
@@ -201,6 +204,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
       let cx = gridLeftX;
       for (const m of prepared) {
+        doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.8);
         doc.rect(cx, gy, cellW, rowMaxH, "S");
 
@@ -234,6 +238,22 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 /* ========== ANA: Profil + Aksesuar + Kumanda (sipariş) ========== */
 export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, options = {}) {
   const { dispatch, getProfilImageFromApi, requirements } = ctx;
+  // Profiller reducer'ındaki görsel cache (isteğe bağlı iletilir)
+  const imageCache = (ctx && ctx.imageCache) || {};
+  // Tek noktadan görsel çözücü: önce cache, yoksa fetch
+  const resolveProfileImage = async (profileId) => {
+    if (!profileId) return null;
+    const entry = imageCache[profileId];
+    const cached = typeof entry === "string" ? entry : entry?.imageData;
+    if (cached) return cached;
+    if (!dispatch || !getProfilImageFromApi) return null;
+    try {
+      const dataUrl = await dispatch(getProfilImageFromApi(profileId));
+      return dataUrl || null;
+    } catch {
+      return null;
+    }
+  };
 
   // PDF dokümanı ve yazı tipi
   const doc = await createPdfDoc();
@@ -289,8 +309,13 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     usedExternalRows = true;
 
     for (const r of options.rows) {
-      const imageCell = r?.imageData
-        ? { content: "", raw: { type: "image", imageData: r.imageData } }
+      // Görsel: öncelik r.imageData; yoksa profileId üzerinden çöz
+      let imgData = r?.imageData || null;
+      if (!imgData && r?.profileId) {
+        imgData = await resolveProfileImage(r.profileId);
+      }
+      const imageCell = imgData
+        ? { content: "", raw: { type: "image", imageData: imgData } }
         : "";
 
       body.push([
@@ -334,17 +359,12 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     (filtered.systems || []).forEach(sys => (sys.profiles || []).forEach(pushProfile));
     (filtered.extra_profiles || []).forEach(pushProfile);
 
-    // Profil kesit görselleri
+    // Profil kesit görselleri: önce cache, yoksa fetch
     const imageMap = {};
-    await Promise.all(
-      Array.from(profAgg.values()).map(async (row) => {
-        if (!row.id) return;
-        try {
-          const dataUrl = await dispatch(getProfilImageFromApi(row.id));
-          imageMap[row.id] = dataUrl;
-        } catch { /* sessiz geç */ }
-      })
-    );
+    await Promise.all(Array.from(profAgg.values()).map(async (row) => {
+      if (!row.id) return;
+      imageMap[row.id] = await resolveProfileImage(row.id);
+    }));
 
     // Fiyatlandırma
     for (const { id, kod, ad, adet, boy_m, birimKg, isPainted } of profAgg.values()) {
@@ -379,7 +399,9 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
 
       body.push([
         kod,
-        { content: "", raw: { type: "image", imageData } },
+        (imageData
+          ? { content: "", raw: { type: "image", imageData } }
+          : ""),
         ad,
         adet,
         boy_m,
@@ -541,8 +563,28 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     head,
     body,
     theme: "grid",
-    styles: { font: fontName, fontStyle: "bold", fontSize: 9, halign: "center", valign: "middle" },
-    headStyles: { font: fontName, fontStyle: "bold", fontSize: 9, halign: "center", fillColor: [120, 160, 210] },
+    styles: {
+      font: fontName,
+      fontStyle: "bold",
+      fontSize: 9,
+      halign: "center",
+      valign: "middle",
+      lineWidth: 0.8,
+      lineColor: [0, 0, 0]
+    },
+    headStyles: {
+      font: fontName,
+      fontStyle: "bold",
+      fontSize: 9,
+      halign: "center",
+      fillColor: [120, 160, 210]
+    },
+    bodyStyles: {
+      fontStyle: "bold",
+      textColor: [0, 0, 0]
+    },
+    tableLineColor: [0, 0, 0],
+    tableLineWidth: 0.8,
 
     // Profil Kesit sütunu: genişliği görsel + padding kadar sabitle
     columnStyles: { 1: { cellWidth: IMG_MAX_W + 2 * IMG_PAD, halign: "center" } },
@@ -623,23 +665,23 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
   }
 
   const totalsFontSize = 9;
-  const drawRightRow = (y, label, val, fillBlue = false) => {
+  const drawRightRow = (y, label, val, fillBlue = false, h = boxH) => {
     const half = rightW / 2;
     const padL = 6, padR = 6;
     const fs = totalsFontSize;
 
     if (fillBlue) {
       doc.setFillColor(120, 160, 210);
-      doc.rect(xRight, y, rightW, boxH, "F");
+      doc.rect(xRight, y, rightW, h, "F");
     }
 
-    doc.setDrawColor(150);
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.8);
-    doc.rect(xRight, y, half, boxH, "S");
-    doc.rect(xRight + half, y, half, boxH, "S");
+    doc.rect(xRight, y, half, h, "S");
+    doc.rect(xRight + half, y, half, h, "S");
 
     const lfac = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
-    const cy = y + (boxH - fs * lfac) / 2 + fs;
+    const cy = y + (h - fs * lfac) / 2 + fs;
 
     // Sol hücre (etiket) — BOLD
     setFontSafe(doc, fontName, "bold");
@@ -656,13 +698,14 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     setFontSafe(doc, fontName, "bold");
   };
 
-  drawRightRow(y0 + 0 * boxH, "TOPLAM", toplamFiyat, false);
-  drawRightRow(y0 + 1 * boxH, "KDV (%20)", kdv, true);
-  drawRightRow(y0 + 2 * boxH, "GENEL TOPLAM", genelToplam, false);
+  const rowH = boxH * 4 / 3; // 3 satırın toplamı = 4*boxH olacak
+  drawRightRow(y0 + 0 * rowH, "TOPLAM", toplamFiyat, false, rowH);
+  drawRightRow(y0 + 1 * rowH, "KDV (%20)", kdv, true, rowH);
+  drawRightRow(y0 + 2 * rowH, "GENEL TOPLAM", genelToplam, false, rowH);
 
- // Sol tarafta açıklama kutusu
-  const leftBoxH = boxH * 3;
-  doc.setDrawColor(150); doc.setLineWidth(0.8);
+  // Sol tarafta açıklama kutusu
+  const leftBoxH = boxH * 4;
+  doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.8);
   doc.rect(xLeft, y0, leftW, leftBoxH, "S");
 
   const aciklamaText = [
@@ -674,15 +717,28 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
     "5. Ürün teslimi : Fiyatlarımız Ankara İvedik fabrika teslim fiyatıdır. Kargo/ambar/kurye taşımalarında oluşabilecek hasar ve gecikmelerden firmamız sorumlu değildir."
   ].join("\n");
 
-  const padX = 8, padY = 8;
+  const padX = 8, padY = 2;
   setFontSafe(doc, fontName, "bold");
-  
-  doc.setFontSize(5); // <<< DEĞİŞİKLİK: Yazı boyutu 5 yapıldı.
-  
+
+  // (1) Yazı boyutu ve satır yüksekliği
+  const fsDesc = 6.5;                      // açıklama yazı boyutu
+  doc.setFontSize(fsDesc);
+  const lfacDesc = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
+
+  // (2) Satırları sar ve toplam metin yüksekliğini hesapla
   let lines = doc.splitTextToSize(aciklamaText, leftW - 2 * padX);
-  
-  // <<< DEĞİŞİKLİK: Kutuya dikey ortalamak için Y koordinatı ve valign eklendi.
-  doc.text(lines, xLeft + padX, y0 + leftBoxH / 2, { align: "left", valign: "middle" });
+  let contentH = lines.length * fsDesc * lfacDesc;
+
+  // (3) Dikey başlangıç Y’yi hesapla (overflow korumalı)
+  let startY = y0 + (leftBoxH - contentH) / 2 + fsDesc;
+  const maxContentH = leftBoxH - 2 * padY;
+  if (contentH > maxContentH) {
+    // Ortalamak taşıracaksa üstten başlat
+    startY = y0 + padY + fsDesc;
+  }
+
+  // (4) Metni yaz
+  doc.text(lines, xLeft + padX, startY, { align: "left" });
 
   // Alt uyarı
   const warnY = y0 + leftBoxH;
@@ -690,18 +746,33 @@ export async function generateProfileAccessoryPdf(ctx, pdfConfig, brandConfig, o
   const warnText =
     "PROJE ÖLÇÜLERİNİZİ VE SİSTEM ÖZELLİKLERİNİ KONTROL EDİNİZ. ONAY VERİLEN ÖLÇÜ VE SİSTEM ÖZELLİKLERİNDEN DOĞAN YANLIŞ ÖLÇÜ VE SİSTEM ÖZELLİKLERİNDEN FİRMAMIZ SORUMLU DEĞİLDİR.";
 
-  doc.setDrawColor(150); doc.setLineWidth(0.8);
+  doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.8);
   doc.rect(leftMargin, warnY, pageW - leftMargin - rightMargin, warnH, "S");
   setFontSafe(doc, fontName, "bold");
-  
-  doc.setFontSize(5); // <<< DEĞİŞİKLİK: Yazı boyutu 5 yapıldı. (Önceki 4 yerine)
-  
+
+  // (1) Uyarı yazı boyutu ve satır yüksekliği
+  const fsWarn = 6;
+  doc.setFontSize(fsWarn);
+  const lfacWarn = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
+
   doc.setTextColor(200, 0, 0);
-  const warnLines = doc.splitTextToSize(warnText, pageW - leftMargin - rightMargin - 2 * padX);
-  
-  // <<< DEĞİŞİKLİK: Dikey ortalama (valign) eklendi.
-  doc.text(warnLines, leftMargin + (pageW - leftMargin - rightMargin) / 2, warnY + warnH / 2, { align: "center", valign: "middle" });
-  
+
+  // (2) Uyarı satırları ve yükseklik
+  const warnAvailW = pageW - leftMargin - rightMargin - 2 * padX;
+  let warnLines = doc.splitTextToSize(warnText, Math.max(10, warnAvailW));
+  let warnContentH = warnLines.length * fsWarn * lfacWarn;
+
+  // (3) Uyarı dikey başlangıç Y (overflow korumalı)
+  let warnStartY = warnY + (warnH - warnContentH) / 2 + fsWarn;
+  const warnMaxContentH = warnH - 2 * padY;
+  if (warnContentH > warnMaxContentH) {
+    warnStartY = warnY + padY + fsWarn;
+  }
+
+  // (4) Uyarıyı yaz (yatayda merkez)
+  const warnCenterX = leftMargin + (pageW - leftMargin - rightMargin) / 2;
+  doc.text(warnLines, warnCenterX, warnStartY, { align: "center" });
+
   doc.setTextColor(0, 0, 0);
 
   // PDF’i aç

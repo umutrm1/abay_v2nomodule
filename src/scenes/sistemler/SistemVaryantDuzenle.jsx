@@ -27,6 +27,8 @@ const SistemVaryantDuzenle = () => {
 
   const seciliVaryant = useSelector(s => s.getSystemFullVariantsOfSystemFromApiReducer) || {};
   const [openVariantPhotoDlg, setOpenVariantPhotoDlg] = useState(false);
+
+  // PDF dialog state’leri: hangi satırdan açıldıysa type/rowKey tutuyoruz, draft veriyi gönderiyoruz
   const [openPdfDlg, setOpenPdfDlg] = useState(false);
   const [pdfTarget, setPdfTarget] = useState({ type: null, rowKey: null });
   const [pdfDraft, setPdfDraft] = useState(null);
@@ -107,7 +109,7 @@ const SistemVaryantDuzenle = () => {
           siparisCiktisi: t.pdf?.siparisCiktisi ?? true,
           boyaCiktisi: t.pdf?.boyaCiktisi ?? true,
           profilAksesuarCiktisi: t.pdf?.profilAksesuarCiktisi ?? true,
-          camCiktisi: t.pdf?.camCiktisi ?? true,
+          camCiktisi: true, // 🔒 Profiller: her zaman TRUE (UI’da da force edilecek)
         }
       })));
 
@@ -182,11 +184,9 @@ const SistemVaryantDuzenle = () => {
     try {
       await dispatch(changeSystemOfSystemVariant(variantId, newSystemId));
       setSelectedSystem(newSystemId);
-      // Varyant detayını tazele (UI'daki system name vs. güncellensin)
       await dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
     } catch (err) {
       console.error("Sistem değiştirilemedi:", err);
-      // toastError thunk içinde çalışıyor; burada sadece logluyoruz.
     }
   };
 
@@ -202,7 +202,7 @@ const SistemVaryantDuzenle = () => {
       siparisCiktisi: true,
       boyaCiktisi: true,
       profilAksesuarCiktisi: true,
-      camCiktisi: true,
+      camCiktisi: true, // 🔒 Profiller: her zaman TRUE
     }
   }]);
   const removeProfileRow = rowKey => setProfiles(ps => ps.filter(r => r.rowKey !== rowKey));
@@ -294,7 +294,8 @@ const SistemVaryantDuzenle = () => {
         formula_cut_count: r.formula_cut_count,
         order_index: idx,
         is_painted: r.is_painted,
-        pdf: r.pdf
+        // 🔒 Profiller: camCiktisi DAİMA true gönderilir (yüksek emniyet – dialog ve state’e ek olarak payload’ta da kilit)
+        pdf: { ...r.pdf, camCiktisi: true },
       })),
       glass_templates: glasses.map((r, idx) => ({
         glass_type_id: r.glass_type_id,
@@ -302,7 +303,7 @@ const SistemVaryantDuzenle = () => {
         formula_height: r.formula_height,
         formula_count: r.formula_count,
         order_index: idx,
-        pdf: r.pdf
+        pdf: r.pdf,
       })),
       material_templates: materials.map((r, idx) => ({
         material_id: r.material_id,
@@ -311,12 +312,12 @@ const SistemVaryantDuzenle = () => {
         type: r.chunk_enabled ? 'chunk_by_length' : 'none',
         piece_length_mm: r.chunk_enabled ? (Number(r.piece_length_mm) || 0) : 0,
         order_index: idx,
-        pdf: r.pdf
+        pdf: r.pdf,
       })),
       remote_templates: remotes.map((r, idx) => ({
         remote_id: r.remote_id,
         order_index: idx,
-        pdf: r.pdf
+        pdf: r.pdf,
       }))
     };
 
@@ -423,7 +424,11 @@ const SistemVaryantDuzenle = () => {
                 size="xs"
                 variant="kurumsalmavi"
                 shape="none"
-                onClick={() => { setPdfTarget({ type: 'profile', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
+                onClick={() => {
+                  setPdfTarget({ type: 'profile', rowKey: row.rowKey });
+                  setPdfDraft(row.pdf);
+                  setOpenPdfDlg(true);
+                }}
               >
                 PDF
               </AppButton>
@@ -476,7 +481,11 @@ const SistemVaryantDuzenle = () => {
                 size="xs"
                 variant="kurumsalmavi"
                 shape="none"
-                onClick={() => { setPdfTarget({ type: 'glass', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
+                onClick={() => {
+                  setPdfTarget({ type: 'glass', rowKey: row.rowKey });
+                  setPdfDraft(row.pdf);
+                  setOpenPdfDlg(true);
+                }}
               >
                 PDF
               </AppButton>
@@ -562,7 +571,11 @@ const SistemVaryantDuzenle = () => {
                 size="xs"
                 variant="kurumsalmavi"
                 shape="none"
-                onClick={() => { setPdfTarget({ type: 'material', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
+                onClick={() => {
+                  setPdfTarget({ type: 'material', rowKey: row.rowKey });
+                  setPdfDraft(row.pdf);
+                  setOpenPdfDlg(true);
+                }}
               >
                 PDF
               </AppButton>
@@ -588,7 +601,11 @@ const SistemVaryantDuzenle = () => {
                 size="xs"
                 variant="kurumsalmavi"
                 shape="none"
-                onClick={() => { setPdfTarget({ type: 'remote', rowKey: row.rowKey }); setPdfDraft(row.pdf); setOpenPdfDlg(true); }}
+                onClick={() => {
+                  setPdfTarget({ type: 'remote', rowKey: row.rowKey });
+                  setPdfDraft(row.pdf);
+                  setOpenPdfDlg(true);
+                }}
               >
                 PDF
               </AppButton>
@@ -649,13 +666,17 @@ const SistemVaryantDuzenle = () => {
           }}
         />
 
+        {/* 📄 PDF Ayar Dialog — section prop’u ile hangi section olduğunu bildiriyoruz */}
         <DialogPdfAyar
           open={openPdfDlg}
           onOpenChange={setOpenPdfDlg}
           initial={pdfDraft}
+          section={pdfTarget.type || "profile"}
           onSave={(val) => {
             if (pdfTarget.type === 'profile') {
-              setProfiles(ps => ps.map(r => r.rowKey === pdfTarget.rowKey ? ({ ...r, pdf: { ...r.pdf, ...val } }) : r));
+              // Profiller: camCiktisi dialog içinde de force; burada da tekrar kilitliyoruz.
+              const fixed = { ...val, camCiktisi: true };
+              setProfiles(ps => ps.map(r => r.rowKey === pdfTarget.rowKey ? ({ ...r, pdf: { ...r.pdf, ...fixed } }) : r));
             } else if (pdfTarget.type === 'glass') {
               setGlasses(gs => gs.map(r => r.rowKey === pdfTarget.rowKey ? ({ ...r, pdf: { ...r.pdf, ...val } }) : r));
             } else if (pdfTarget.type === 'material') {

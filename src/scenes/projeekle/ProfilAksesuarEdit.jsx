@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Header from "@/components/mycomponents/Header.jsx";
@@ -13,6 +13,13 @@ import AppButton from "@/components/ui/AppButton.jsx";
 const Spinner = () => (
   <div className="flex justify-center items-center py-10 w-full h-full">
     <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin"></div>
+  </div>
+);
+
+// Hücre içi ufak spinner (görsel yüklenirken)
+const CellSpinner = () => (
+  <div className="inline-flex items-center justify-center w-16 h-12">
+    <span className="loading loading-spinner loading-sm" />
   </div>
 );
 
@@ -32,9 +39,13 @@ export default function ProfilAksesuarEdit() {
     extra_profiles: [],
     extra_glasses: [],
   };
-
+  // Profiller reducer'ındaki görsel cache (Profiller.jsx ile aynı kaynağı kullanıyoruz)
+  const imageCache = useSelector((s) => s.getProfilImageFromApiReducer) || {};
   const [rows, setRows] = useState([]);
   const [totals, setTotals] = useState({ toplam: 0, kdv: 0, genelToplam: 0 });
+  // Görsel fetch kontrolü (Profiller.jsx tekniği)
+  const requestedRef = useRef(new Set());
+  const [loadingImgIds, setLoadingImgIds] = useState(new Set());
 
   useEffect(() => {
     const run = async () => {
@@ -328,6 +339,7 @@ export default function ProfilAksesuarEdit() {
         const toplamFiyatR = round2(birimFiyatR ? toplamKgR * birimFiyatR : 0);
         profRows.push({
           lineType: "profile",
+          profileId: pid,
           kod,
           ad,
           adet: adetR,
@@ -336,10 +348,8 @@ export default function ProfilAksesuarEdit() {
           toplamKg: toplamKgR,
           birimFiyat: birimFiyatR,
           toplamFiyat: toplamFiyatR,
-          imageData: null,
           orderIndex: safeIndex(minOrderIndex),
         });
-        try { await dispatch(getProfilImageFromApi(pid)); } catch {}
       }
 
       // MALZEME satırları
@@ -363,7 +373,6 @@ export default function ProfilAksesuarEdit() {
           toplamKg: toplamKgR,
           birimFiyat: birimFiyatR,
           toplamFiyat: toplamFiyatR,
-          imageData: null,
           orderIndex: safeIndex(minOrderIndex),
         });
       }
@@ -382,6 +391,32 @@ export default function ProfilAksesuarEdit() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requirements, proje, mode, dispatch]);
+
+  // Görünen satırlardaki profil kesit görsellerini önceden çek
+  useEffect(() => {
+    rows
+      .filter((r) => r.lineType === "profile" && r.profileId)
+      .forEach((r) => {
+        const id = r.profileId;
+        const entry = imageCache[id];
+        const hasImg = (typeof entry === "string") || !!entry?.imageData;
+        const failed = !!entry?.error;
+        const isLoading = loadingImgIds.has(id);
+        if (!hasImg && !failed && !isLoading && !requestedRef.current.has(id)) {
+          requestedRef.current.add(id);
+          setLoadingImgIds((prev) => new Set(prev).add(id));
+          Promise.resolve(dispatch(getProfilImageFromApi(id))).finally(() => {
+            setLoadingImgIds((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          });
+        }
+      });
+  }, [rows, imageCache, loadingImgIds, dispatch]);
+
+
 
   const toNum = (x) => {
     const n = Number(x);
@@ -515,16 +550,28 @@ export default function ProfilAksesuarEdit() {
                 <tr key={i}>
                   <td className="min-w-[120px]">{r.kod || ""}</td>
                   <td className="min-w-[80px]">
-                    {r.imageData ? (
-                      <div className="w-16 h-12 flex items-center justify-center">
-                        <img
-                          src={r.imageData}
-                          alt="kesit"
-                          className="max-w-full max-h-full object-contain"
-                          draggable={false}
-                        />
-                      </div>
-                    ) : (
+                    {r.lineType === "profile" ? (() => {
+                      const entry = r.profileId ? imageCache[r.profileId] : null;
+                      const imgSrc = typeof entry === "string" ? entry : entry?.imageData;
+                      const failed = !!entry?.error;
+                      const isLoadingImg = r.profileId ? loadingImgIds.has(r.profileId) : false;
+                      if (imgSrc) {
+                        return (
+                          <div className="w-16 h-12 flex items-center justify-center">
+                            <img
+                              src={imgSrc}
+                              alt="kesit"
+                              className="max-w-full max-h-full object-contain"
+                              draggable={false}
+                              loading="lazy"
+                            />
+                          </div>
+                        );
+                      }
+                      if (isLoadingImg) return <CellSpinner />;
+                      if (failed) return <span className="text-xs text-muted-foreground">—</span>;
+                      return <span className="text-xs text-muted-foreground">—</span>;
+                    })() : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>

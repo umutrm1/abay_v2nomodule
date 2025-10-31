@@ -95,10 +95,10 @@ function SidebarItem({ icon, text, active, alert, onClick }) {
 
 const SideBar = () => {
   const navigate = useNavigate();
+  // Rol henüz gelmediyse null kalsın → skeleton gösterelim (flicker olmasın)
   const isAdmin = useSelector(s =>
-    s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
+    (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null)
   );
-
   // Admin değilse sadece bu 4 sayfa görünsün
   const allowedForNonAdmin = new Set(["musteriler","projeler","teklifler","ayarlar"]);
 
@@ -116,9 +116,19 @@ const SideBar = () => {
     { key: "ayarlar",        icon: <Settings className="w-8" />,      text: "Ayarlar" },
   ];
 
-  const visibleItems = isAdmin
-    ? items
-    : items.filter(it => allowedForNonAdmin.has(it.key));
+  let visibleItems = [];
+  if (isAdmin === null) {
+    // Yükleniyor iskeleti: 6 sahte satır
+    visibleItems = Array.from({ length: 6 }, (_, i) => ({
+      key: `skeleton-${i}`,
+      icon: <div className="w-8 h-8 rounded bg-muted-foreground/20" />,
+      text: "Yükleniyor..."
+    }));
+  } else {
+    visibleItems = isAdmin
+      ? items
+      : items.filter(it => allowedForNonAdmin.has(it.key));
+  }
 
 
   return (
@@ -126,7 +136,10 @@ const SideBar = () => {
       {visibleItems.map(it => (
         <SidebarItem
           key={it.key}
-          onClick={() => navigate(it.key)}
+          onClick={() => {
+            // skeleton satırları tıklanamaz
+            if (!it.key.startsWith?.("skeleton-")) navigate(it.key);
+          }}
           icon={it.icon}
           text={it.text}
         />
