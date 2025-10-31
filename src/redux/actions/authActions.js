@@ -71,8 +71,11 @@ export const refreshAccessToken = () => async (dispatch) => {
     // Sessiz yenileme -> kullanıcıyı bildirim bombardımanına tutmamak için toast koymuyoruz.
     return newToken
   } catch (err) {
-    // refresh başarısız: tamamen çıkış
+    // 🔴 ARTIK: refresh token geçersiz/çıkarılmış ise kesin logout.
     dispatch({ type: LOAD_USER_FAIL })
+    dispatch({ type: LOGOUT })
+    // İsteğe bağlı kısa bir bilgilendirme ekleyebilirsiniz (toast):
+    // toastError('Oturum yenileme başarısız. Lütfen tekrar giriş yapın.')
     throw err
   }
 }
@@ -159,10 +162,14 @@ export const loadCurrentUser = () => async dispatch => {
         return
       } catch {
         // refresh de başarısız
+        // 🔴 refresh de başarısız → kesin logout
+        dispatch({ type: LOAD_USER_FAIL })
+        dispatch({ type: LOGOUT })
+        return
       }
     }
-    dispatch({ type: LOAD_USER_FAIL })
-
+      dispatch({ type: LOAD_USER_FAIL })
+      dispatch({ type: LOGOUT }) // refresh yoksa oturum yok
   }
 }
 
