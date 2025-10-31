@@ -73,8 +73,6 @@ export const refreshAccessToken = () => async (dispatch) => {
   } catch (err) {
     // refresh başarısız: tamamen çıkış
     dispatch({ type: LOAD_USER_FAIL })
-    toastError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.')
-    dispatch(logoutUser())
     throw err
   }
 }
@@ -164,13 +162,22 @@ export const loadCurrentUser = () => async dispatch => {
       }
     }
     dispatch({ type: LOAD_USER_FAIL })
-    localStorage.removeItem('token')
-    sessionStorage.removeItem('token')
+
   }
 }
 
 export const initAuth = () => async (dispatch) => {
-  // Token elde etmeyi dener (yoksa refresh eder), sonra /auth/me çeker
+  // axios default Authorization'ı, elde token varsa baştan set et
+  try {
+    const stored = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (stored) {
+      // api burada closure’dan erişilebilir
+      // eslint-disable-next-line no-undef
+      api.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
+    }
+  } catch {}
+
+
   try {
     await dispatch(loadCurrentUser()); // loadCurrentUser zaten yoksa refresh deniyor
   } catch {

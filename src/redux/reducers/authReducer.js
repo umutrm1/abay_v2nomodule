@@ -39,7 +39,7 @@ export default function auth(state = initialState, action) {
         role: action.payload?.role ?? state.role,
       }    
       case LOAD_USER_FAIL:
-      return { ...state, user: null, is_admin: null, role: null, token: null, bootstrapped: true }
+      return { ...state, user: null, is_admin: null, role: null, bootstrapped: true }
     case LOGOUT:
       return { ...initialState, bootstrapped: true }; // Artık login’e gidecek; karar verildi
     default:
