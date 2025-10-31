@@ -12,7 +12,7 @@ export default function LoginScreen() {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   // Tema durumu
   const { isDark, toggleTheme } = useTheme();
@@ -149,19 +149,7 @@ export default function LoginScreen() {
             {/* Beni Hatırla & Şifremi Unuttum */}
             <div className="flex justify-between items-center text-sm">
               {/* Oturumu açık tut (Sol Taraf) */}
-              <div className="flex items-center gap-2">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                  className="checkbox checkbox-primary"
-                />
-                <label htmlFFor="remember" className="text-sm cursor-pointer">
-                  Oturumu açık tut
-                </label>
-              </div>
-              
+
               {/* Şifremi Unuttum (Sağ Taraf) */}
               <button
                 type="button" // Formu submit etmesini engeller
