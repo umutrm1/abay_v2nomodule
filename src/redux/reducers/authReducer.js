@@ -9,7 +9,8 @@ token: localStorage.getItem('token') || sessionStorage.getItem('token') || null,
   user: null,
   error: null,
   is_admin: null,
-  role: null
+  role: null,
+  bootstrapped: false
 }
 
 export default function auth(state = initialState, action) {
@@ -25,6 +26,7 @@ export default function auth(state = initialState, action) {
         token: isObj ? action.payload.token : action.payload,
         is_admin: isObj && 'is_admin' in action.payload ? action.payload.is_admin : state.is_admin,
         role: isObj && 'role' in action.payload ? action.payload.role : state.role,
+        bootstrapped: true,
       }    
       case LOGIN_FAILURE:
       return { ...state, loading: false, error: action.payload }
@@ -37,9 +39,9 @@ export default function auth(state = initialState, action) {
         role: action.payload?.role ?? state.role,
       }    
       case LOAD_USER_FAIL:
-      return { ...state, user: null, is_admin: null, role: null }
+      return { ...state, user: null, is_admin: null, role: null, token: null, bootstrapped: true }
     case LOGOUT:
-      return { ...initialState };
+      return { ...initialState, bootstrapped: true }; // Artık login’e gidecek; karar verildi
     default:
       return state
   }

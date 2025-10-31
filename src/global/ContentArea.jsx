@@ -35,11 +35,10 @@ const ContentArea = () => {
   const location = useLocation();
   const isLogin = location.pathname === "/login" || location.pathname === "/set-password" || location.pathname === "/forgot-password" || location.pathname === "/reset-password";
   // Rol bilgisi gelene kadar "null" kalsın; böylece UI'yi blur'layabiliriz.
-  const isAdmin = useSelector(s =>
-    (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null)
-  );
-  // F5/ilk giriş sırasında rol bilgisi bekleniyorsa blur/overlay aktif olsun
-  const isBootstrapping = !isLogin && (isAdmin === null);
+  const isAdmin = useSelector(s => (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null));
+  const bootstrapped = useSelector(s => !!s.auth?.bootstrapped);
+  // Karar verilene kadar (login/refresh sonucu belli olana kadar) blur
+  const isBootstrapping = !isLogin && !bootstrapped;
 
 
   // 🔐 Sadece ProtectedRoute ile sarılı sayfalarda (yani login ekranı değilken) auth init yap

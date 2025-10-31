@@ -95,10 +95,8 @@ function SidebarItem({ icon, text, active, alert, onClick }) {
 
 const SideBar = () => {
   const navigate = useNavigate();
-  // Rol henüz gelmediyse null kalsın → skeleton gösterelim (flicker olmasın)
-  const isAdmin = useSelector(s =>
-    (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null)
-  );
+  const isAdmin = useSelector(s => (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null));
+  const bootstrapped = useSelector(s => !!s.auth?.bootstrapped);
   // Admin değilse sadece bu 4 sayfa görünsün
   const allowedForNonAdmin = new Set(["musteriler","projeler","teklifler","ayarlar"]);
 
@@ -117,7 +115,7 @@ const SideBar = () => {
   ];
 
   let visibleItems = [];
-  if (isAdmin === null) {
+  if ((!bootstrapped)) {
     // Yükleniyor iskeleti: 6 sahte satır
     visibleItems = Array.from({ length: 6 }, (_, i) => ({
       key: `skeleton-${i}`,

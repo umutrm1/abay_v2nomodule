@@ -16,7 +16,6 @@ const api = axios.create({
 })
 
 function setAccessToken(token, rememberMe = false) {
-  // Not: Şu an her iki durumda da sessionStorage kullanıyor. İstersen rememberMe=true için localStorage'a yazalım.
   if (rememberMe) {
     sessionStorage.setItem('token', token)
   } else {
@@ -141,6 +140,15 @@ export const loadCurrentUser = () => async dispatch => {
       headers: { Authorization: `Bearer ${token}` }
     })
     dispatch({ type: LOAD_USER, payload: data })
+    // /auth/me is_admin/role DÖNDÜRMÜYORSA: tek atımlık refresh ile bu alanları garantile
+    const meHasIsAdmin = Object.prototype.hasOwnProperty.call(data || {}, 'is_admin')
+    if (!meHasIsAdmin) {
+      try {
+        await dispatch(refreshAccessToken()) // LOGIN_SUCCESS ile is_admin/role store’a yazılır
+      } catch {
+        // refresh başarısızsa sessiz geç: en azından /auth/me yüklenmiştir
+      }
+    }
   } catch (err) {
     // access token süresi bitmiş olabilir → refresh dene ve tekrar çağır
     if (err?.response?.status === 401) {
