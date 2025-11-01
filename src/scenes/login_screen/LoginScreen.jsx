@@ -94,12 +94,7 @@ export default function LoginScreen() {
             />
           </div>
           
-          {/* Telefonlar (Altta) */}
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">Telefon Numarası:</p>
-            <p className="text-lg font-medium text-foreground tracking-wider">0555 041 31 83</p>
-            <p className="text-lg font-medium text-foreground tracking-wider">0531 662 53 67</p>
-          </div>
+
         </div>
 
         {/* 4. Sağ Taraf (Giriş Formu) */}
