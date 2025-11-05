@@ -123,7 +123,6 @@ const Teklifler = () => {
   const handleAddProje = useCallback(async (newProje) => {
     setIsOverlayLoading(true);
     const payload = {
-      customer_id: newProje.customer_id ?? "8a9c492c-08be-4426-919b-0c1b334b139c",
       project_name: newProje.project_name,
       created_by: newProje.created_by ?? "23691d1d-7545-46b1-bcc3-141a96a7ad3b",
       is_teklif: true
