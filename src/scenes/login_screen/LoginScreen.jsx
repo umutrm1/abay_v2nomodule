@@ -111,7 +111,7 @@ export default function LoginScreen() {
             {/* Kullanıcı Adı */}
             <div>
               <label htmlFor="username" className="block mb-2 text-sm font-medium">
-                Kullanıcı Adı
+                Kullanıcı Adı Giriniz
               </label>
               <input
                 id="username"
