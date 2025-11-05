@@ -124,7 +124,7 @@ const Teklifler = () => {
     setIsOverlayLoading(true);
     const payload = {
       project_name: newProje.project_name,
-      created_by: newProje.created_by ?? "23691d1d-7545-46b1-bcc3-141a96a7ad3b",
+      created_by:"23691d1d-7545-46b1-bcc3-141a96a7ad3b",
       is_teklif: true
     };
 
