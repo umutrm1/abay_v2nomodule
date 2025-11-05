@@ -127,6 +127,7 @@ const Teklifler = () => {
       created_by:"23691d1d-7545-46b1-bcc3-141a96a7ad3b",
       is_teklif: true
     };
+    console.log(payload)
 
     try {
       const created = await dispatch(actions_projeler.addProjeToApi(payload));
