@@ -127,7 +127,7 @@ export function updatePdfBrand({ key, config_json = {} }) {
     dispatch({ type: actionTypes.UPDATE_PDF_BRAND_REQUEST });
     try {
       const res = await fetchWithAuth(
-        `${API_BASE_URL}/me/pdf/brands/773363d4-56b6-42a5-9953-7b5339d92acc`,
+        `${API_BASE_URL}/me/pdf/brand`,
         {
           method: "PUT",
           headers: {

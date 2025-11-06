@@ -17,7 +17,6 @@ const DialogProfilDuzenle = ({ profil, onSave, children }) => {
     birim_agirlik: 0,
     boy_uzunluk: 0,
     unit_price: 0,
-    profil_kesit_fotograf: 'string',
   });
 
   // 2) Props değişince formu güncelle
