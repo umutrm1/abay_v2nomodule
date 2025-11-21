@@ -30,9 +30,9 @@ const DialogProjeEkle = ({ onSave }) => {
 
   const handleSave = async () => {
     const name = form.project_name.trim();
-    if (!name) return; // boş/whitespace engelle
+    if (!name) return;
     await onSave?.({ project_name: name });
-    setOpen(false); // kapanınca reset tetiklenecek
+    setOpen(false);
   };
 
   const submitOnEnter = (e) => {
@@ -47,7 +47,12 @@ const DialogProjeEkle = ({ onSave }) => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">
+        <AppButton
+          variant="kurumsalmavi"
+          size="mdtxtlg"
+          // ✅ responsive trigger: mobilde full, sm+ sabit
+          className="w-full sm:w-40 sm:ml-auto"
+        >
           + Teklif Ekle
         </AppButton>
       </DialogTrigger>

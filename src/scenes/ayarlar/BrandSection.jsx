@@ -1,6 +1,6 @@
 // File: BrandSection.jsx (aynı klasör)
 // ==================================
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import AppButton from "@/components/ui/AppButton.jsx";
 import { Spinner, CellSpinner } from "./Spinner.jsx";
@@ -156,14 +156,18 @@ export default function BrandSection() {
 
   return (
     <section className="border border-border rounded-2xl p-4">
-      <header className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">PDF Üst Başlık Değiştirme</h2>
+      {/* Mobilde header alt alta, desktopta yan yana */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <h2 className="text-base sm:text-lg font-semibold">
+          PDF Üst Başlık Değiştirme
+        </h2>
         <AppButton
           onClick={saveBrand}
           disabled={brandLoading || !brandDoc}
           loading={brandSaving}
           size="md"
           variant="kurumsalmavi"
+          className="w-full sm:w-auto"
         >
           Kaydet
         </AppButton>
@@ -176,15 +180,17 @@ export default function BrandSection() {
           {/* Brand Image */}
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-muted-foreground">Brand Image (Logo)</label>
-              <div className="border border-border rounded-xl p-2 flex items-center justify-center bg-muted/30 min-h-[100px]">
+              <label className="text-sm text-muted-foreground">
+                Brand Image (Logo)
+              </label>
+              <div className="border border-border rounded-xl p-2 flex items-center justify-center bg-muted/30 min-h-[130px] sm:min-h-[100px]">
                 {brandImageLoading ? (
                   <CellSpinner />
                 ) : (
                   <img
                     src={brandImage || "https://placehold.co/980x300/eee/ccc?text=Logo+Yok"}
                     alt="Brand Image"
-                    className="max-h-24 rounded-lg object-contain"
+                    className="max-h-28 sm:max-h-24 rounded-lg object-contain"
                     onError={(e) => (e.currentTarget.src = "https://placehold.co/980x300/eee/ccc?text=Logo+Yok")}
                   />
                 )}
@@ -202,11 +208,14 @@ export default function BrandSection() {
                   Seçilen: {brandImageFile.name} ({Math.round(brandImageFile.size / 1024)} KB)
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">980x300 px PNG yükleyin.</span>
+                <span className="text-xs text-muted-foreground">
+                  980x300 px PNG yükleyin.
+                </span>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Mobilde butonlar tam genişlik */}
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
               <AppButton
                 onClick={handleBrandImageUpload}
                 disabled={brandImageSaving || !brandImageFile}
@@ -214,6 +223,7 @@ export default function BrandSection() {
                 size="md"
                 variant="yesil"
                 title="Yeni logoyu yükle/güncelle"
+                className="w-full sm:w-auto"
               >
                 Yükle/Güncelle
               </AppButton>
@@ -223,6 +233,7 @@ export default function BrandSection() {
                 loading={brandImageDeleting}
                 size="md"
                 variant="kirmizi"
+                className="w-full sm:w-auto"
               >
                 Sil
               </AppButton>
@@ -244,22 +255,25 @@ export default function BrandSection() {
           {/* rightBox.lines */}
           <div className="md:col-span-2">
             <h3 className="text-sm font-medium mb-2">Sağ Kutu Satırları</h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {(brandLines || []).map((ln, idx) => (
                 <div key={idx} className="border border-border rounded-xl p-3 flex flex-col gap-2">
-                  <div className="grid grid-cols-3 gap-2 items-center">
-                    <span className="text-xs text-muted-foreground col-span-3 md:col-span-1">Başlık</span>
+                  {/* Mobilde label üstte, desktopta grid */}
+                  <div className="flex flex-col md:grid md:grid-cols-3 gap-2 md:items-center">
+                    <span className="text-xs text-muted-foreground md:col-span-1">Başlık</span>
                     <input
-                      className="col-span-3 md:col-span-2 border border-border rounded-lg px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
+                      className="md:col-span-2 border border-border rounded-lg px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
                       type="text"
                       value={ln.label ?? ""}
                       onChange={(e) => handleBrandChange(["rightBox", "lines", idx, "label"], e.target.value)}
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-2 items-center">
-                    <span className="text-xs text-muted-foreground col-span-3 md:col-span-1">Değer</span>
+
+                  <div className="flex flex-col md:grid md:grid-cols-3 gap-2 md:items-center">
+                    <span className="text-xs text-muted-foreground md:col-span-1">Değer</span>
                     <textarea
-                      className="col-span-3 md:col-span-2 border border-border rounded-lg px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
+                      className="md:col-span-2 border border-border rounded-lg px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
                       rows={2}
                       value={ln.value ?? ""}
                       onChange={(e) => handleBrandChange(["rightBox", "lines", idx, "value"], e.target.value)}

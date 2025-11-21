@@ -68,7 +68,6 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
     try {
       setSavingEdit(true);
 
-      // Girdi güvenliği + yuvarlama
       const W = Math.round(Number(width_mm) || 0);
       const H = Math.round(Number(height_mm) || 0);
       const Q = Math.round(Number(quantity) || 0);
@@ -79,8 +78,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         sistem_adet: Q,
       };
 
-      // ——— PROFİLLER ———
-      const profiles = (seciliSistemTam.profile_templates || []).map((tpl, idx) => {
+      const profiles = (seciliSistemTam.profile_templates || []).map((tpl) => {
         const cut_length_mm = Math.round(guvenliHesapla(tpl.formula_cut_length, scope));
         const cut_count     = Math.round(guvenliHesapla(tpl.formula_cut_count,   scope));
         const birimAgirlik  = Number(tpl.profile?.birim_agirlik || 0);
@@ -98,8 +96,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         };
       });
 
-      // ——— CAMLAR ———
-      const glasses = (seciliSistemTam.glass_templates || []).map((tpl, idx) => {
+      const glasses = (seciliSistemTam.glass_templates || []).map((tpl) => {
         const gW = Math.round(guvenliHesapla(tpl.formula_width,  scope));
         const gH = Math.round(guvenliHesapla(tpl.formula_height, scope));
         const gC = Math.round(guvenliHesapla(tpl.formula_count,  scope));
@@ -116,8 +113,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         };
       });
 
-      // ——— MALZEMELER ———
-      const materials = (seciliSistemTam.material_templates || []).map((tpl, idx) => {
+      const materials = (seciliSistemTam.material_templates || []).map((tpl) => {
         const rq = guvenliHesapla(tpl.formula_quantity,   scope);
         const rl = guvenliHesapla(tpl.formula_cut_length, scope);
 
@@ -142,8 +138,7 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
         };
       });
 
-      // ——— REMOTELAR ———
-      const remotes = (seciliSistemTam.remote_templates || []).map((tpl, idx) => ({
+      const remotes = (seciliSistemTam.remote_templates || []).map((tpl) => ({
         remote_id: tpl.remote_id,
         count: 0,
         order_index: tpl?.order_index,
@@ -198,29 +193,96 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
   });
 
   return (
-    <div className="overflow-auto mt-5 rounded-2xl border bg-card text-foreground border-border">
-      <table className="table w-full">
-        <thead className="bg-muted/50 text-foreground">
-          <tr>
-            <th>Sistem İsmi</th>
-            <th>En (mm)</th>
-            <th>Boy (mm)</th>
-            <th>Adet</th>
-            <th className="text-right">İşlemler</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.length > 0 ? (
-            sorted.map((sys) => {
+    <div className="mt-5 rounded-2xl border bg-card text-foreground border-border p-2 sm:p-3">
+      {/* ===== Desktop/Tablet TABLO (md+) ===== */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="table w-full">
+          <thead className="bg-muted/50 text-foreground">
+            <tr>
+              <th>Sistem İsmi</th>
+              <th>En (mm)</th>
+              <th>Boy (mm)</th>
+              <th>Adet</th>
+              <th className="text-right">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.length > 0 ? (
+              sorted.map((sys) => {
+                const fullName = `${sys.system?.name || ''} ${sys.name || ''}`;
+                const isRowDeleting = deleting && deletingId === sys.project_system_id;
+                return (
+                  <tr key={sys.project_system_id} className="hover:bg-muted/40">
+                    <td>{fullName}</td>
+                    <td>{sys.width_mm}</td>
+                    <td>{sys.height_mm}</td>
+                    <td>{sys.quantity}</td>
+                    <td className="text-right">
+                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                        <AppButton
+                          onClick={() => handleEdit(sys)}
+                          variant="sari"
+                          size="sm"
+                          shape="none"
+                          disabled={savingEdit || deleting}
+                          title="Sistemi düzenle"
+                        >
+                          {savingEdit && selectedSys?.project_system_id === sys.project_system_id
+                            ? 'Kaydediliyor…'
+                            : 'Düzenle'}
+                        </AppButton>
+
+                        <AppButton
+                          variant="kirmizi"
+                          size="sm"
+                          shape="none"
+                          disabled={savingEdit || deleting}
+                          title="Sistemi sil"
+                          onClick={() => requestDelete(sys)}
+                        >
+                          {isRowDeleting ? 'Siliniyor…' : 'Sil'}
+                        </AppButton>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-center text-muted-foreground">
+                  Sistem bulunamadı
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ===== MOBİL KART GÖRÜNÜMÜ (md-) ===== */}
+      <div className="md:hidden">
+        {sorted.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {sorted.map((sys) => {
               const fullName = `${sys.system?.name || ''} ${sys.name || ''}`;
               const isRowDeleting = deleting && deletingId === sys.project_system_id;
+
               return (
-                <tr key={sys.project_system_id} className="hover:bg-muted/40">
-                  <td>{fullName}</td>
-                  <td>{sys.width_mm}</td>
-                  <td>{sys.height_mm}</td>
-                  <td>{sys.quantity}</td>
-                  <td className="text-right space-x-2">
+                <div
+                  key={sys.project_system_id}
+                  className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">
+                        {fullName || "—"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        En: {sys.width_mm} mm • Boy: {sys.height_mm} mm • Adet: {sys.quantity}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <AppButton
                       onClick={() => handleEdit(sys)}
                       variant="sari"
@@ -244,19 +306,17 @@ const SistemEkleTables = ({ systems = [], onRefresh }) => {
                     >
                       {isRowDeleting ? 'Siliniyor…' : 'Sil'}
                     </AppButton>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               );
-            })
-          ) : (
-            <tr>
-              <td colSpan={5} className="text-center text-muted-foreground">
-                Sistem bulunamadı
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            })}
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-8 text-sm">
+            Sistem bulunamadı
+          </div>
+        )}
+      </div>
 
       {/* Düzenleme diyaloğu */}
       <DialogSistemDuzenleOnProject

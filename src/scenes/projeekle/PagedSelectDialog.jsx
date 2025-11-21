@@ -74,25 +74,30 @@ const PagedSelectDialog = ({
     }
   };
 
+  const items = data.items ?? [];
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      {/* ✅ mobilde taşmaması için max-h ve scroll */}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 overflow-hidden">
           {/* Arama */}
           <input
             type="text"
             placeholder={searchPlaceholder || "Ara..."}
             value={searchTerm}
             onChange={onSearchChange}
-            className="input input-bordered w-full"
+            className="input input-bordered w-full text-sm"
           />
 
-          {/* Tablo */}
-          <div className="overflow-x-auto">
+          {/* ===================================================== */}
+          {/* ✅ Desktop / Tablet: TABLO (md ve üstü) — ESKİSİ GİBİ */}
+          {/* ===================================================== */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="table w-full">
               <thead>
                 <tr>
@@ -113,14 +118,13 @@ const PagedSelectDialog = ({
                 </tbody>
               ) : (
                 <tbody>
-                  {(data.items ?? []).length > 0 ? (
-                    data.items.map((item) => (
+                  {items.length > 0 ? (
+                    items.map((item) => (
                       <tr key={item.id}>
                         {columns.map((c) => (
                           <td key={c.key}>{item[c.key]}</td>
                         ))}
                         <td className="text-right">
-                          {/* Kapanmayı tetikler */}
                           <DialogClose asChild>
                             <AppButton
                               onClick={() => onSelect(item)}
@@ -150,74 +154,127 @@ const PagedSelectDialog = ({
             </table>
           </div>
 
+          {/* =============================================== */}
+          {/* ✅ Mobil: KART GÖRÜNÜMÜ (md altı) */}
+          {/* =============================================== */}
+          <div className="md:hidden overflow-auto">
+            {loading ? (
+              <Spinner />
+            ) : items.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                  >
+                    {/* Kolon değerleri */}
+                    <div className="grid grid-cols-1 gap-2 text-sm">
+                      {columns.map((c) => (
+                        <div key={c.key} className="flex justify-between gap-3">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {c.label}
+                          </span>
+                          <span className="font-medium text-right truncate">
+                            {item?.[c.key] ?? "—"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Seç butonu */}
+                    <div className="flex justify-end">
+                      <DialogClose asChild>
+                        <AppButton
+                          onClick={() => onSelect(item)}
+                          variant="kurumsalmavi"
+                          size="sm"
+                          shape="none"
+                          title="Seç"
+                        >
+                          Seç
+                        </AppButton>
+                      </DialogClose>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-4 text-sm">
+                Veri bulunamadı
+              </div>
+            )}
+          </div>
+
           {/* Sayfalama */}
-          <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
-            <AppButton
-              variant="kurumsalmavi"
-              size="sm"
-              shape="none"
-              onClick={goFirst}
-              disabled={(page || 1) === 1}
-              title="İlk sayfa"
-            >
-              « İlk
-            </AppButton>
-            <AppButton
-              variant="kurumsalmavi"
-              size="sm"
-              shape="none"
-              onClick={goPrev}
-              disabled={!data.has_prev || page <= 1}
-              title="Önceki sayfa"
-            >
-              ‹ Önceki
-            </AppButton>
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-2 sm:gap-3">
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={goFirst}
+                disabled={(page || 1) === 1}
+                title="İlk sayfa"
+              >
+                « İlk
+              </AppButton>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={goPrev}
+                disabled={!data.has_prev || page <= 1}
+                title="Önceki sayfa"
+              >
+                ‹ Önceki
+              </AppButton>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const val = parseInt(e.target.elements.pageNum.value, 10);
-                if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                  setPage(val);
-                }
-              }}
-              className="flex items-center gap-1"
-            >
-              <input
-                type="number"
-                name="pageNum"
-                min={1}
-                max={totalPages}
-                value={page}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  setPage(isNaN(val) ? 1 : Math.max(1, Math.min(totalPages, val)));
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const val = parseInt(e.target.elements.pageNum.value, 10);
+                  if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                    setPage(val);
+                  }
                 }}
-                className="input input-bordered input-sm w-16 text-center"
-              />
-              <span className="text-sm">/ {totalPages}</span>
-            </form>
+                className="flex items-center gap-1"
+              >
+                <input
+                  type="number"
+                  name="pageNum"
+                  min={1}
+                  max={totalPages}
+                  value={page}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setPage(isNaN(val) ? 1 : Math.max(1, Math.min(totalPages, val)));
+                  }}
+                  className="input input-bordered input-sm w-16 text-center"
+                />
+                <span className="text-sm">/ {totalPages}</span>
+              </form>
 
-            <AppButton
-              variant="kurumsalmavi"
-              size="sm"
-              shape="none"
-              onClick={goNext}
-              disabled={!data.has_next || page >= totalPages}
-              title="Sonraki sayfa"
-            >
-              Sonraki ›
-            </AppButton>
-            <AppButton
-              variant="kurumsalmavi"
-              size="sm"
-              shape="none"
-              onClick={goLast}
-              disabled={page >= totalPages}
-              title="Son sayfa"
-            >
-              Son »
-            </AppButton>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={goNext}
+                disabled={!data.has_next || page >= totalPages}
+                title="Sonraki sayfa"
+              >
+                Sonraki ›
+              </AppButton>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={goLast}
+                disabled={page >= totalPages}
+                title="Son sayfa"
+              >
+                Son »
+              </AppButton>
+            </div>
           </div>
         </div>
       </DialogContent>

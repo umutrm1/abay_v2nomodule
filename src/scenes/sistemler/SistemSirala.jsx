@@ -14,29 +14,21 @@ const InlineSpinner = () => (
   </div>
 );
 
-/**
- * Props:
- *  - open, onOpenChange
- */
 export default function SistemSirala({ open, onOpenChange }) {
   const dispatch = useDispatch();
 
-  // Ana reducer: sayfada zaten kullanılan listeyi okuyoruz.
   const systemsPage = useSelector((s) => s.getSistemlerFromApiReducer) || EMPTY_PAGE;
 
-  // Store → items dizisini normalize et
   const storeItems = useMemo(() => {
     if (Array.isArray(systemsPage)) return systemsPage;
     if (Array.isArray(systemsPage?.items)) return systemsPage.items;
     return [];
   }, [systemsPage]);
 
-  // Local sıralama listesi
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Modal açıldığında TÜM sistemleri limit=all ile çek
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -49,7 +41,6 @@ export default function SistemSirala({ open, onOpenChange }) {
     })();
   }, [open, dispatch]);
 
-  // Store değişince local listeyi sort_index'e göre sırala ve kopyala
   useEffect(() => {
     if (!open) return;
     const sorted = [...storeItems]
@@ -57,7 +48,6 @@ export default function SistemSirala({ open, onOpenChange }) {
         const ai = Number(a?.sort_index ?? 0);
         const bi = Number(b?.sort_index ?? 0);
         if (ai === bi) {
-          // eşit durumda deterministik: ada göre
           return String(a?.name || "").localeCompare(String(b?.name || ""), "tr");
         }
         return ai - bi;
@@ -65,29 +55,24 @@ export default function SistemSirala({ open, onOpenChange }) {
     setList(sorted);
   }, [storeItems, open]);
 
-  // Yukarı/aşağı taşı
   const moveUp = (idx) => {
     if (idx <= 0) return;
     setList((prev) => {
       const cp = [...prev];
-      const t = cp[idx - 1];
-      cp[idx - 1] = cp[idx];
-      cp[idx] = t;
-      return cp;
-    });
-  };
-  const moveDown = (idx) => {
-    setList((prev) => {
-      if (idx >= prev.length - 1) return prev;
-      const cp = [...prev];
-      const t = cp[idx + 1];
-      cp[idx + 1] = cp[idx];
-      cp[idx] = t;
+      [cp[idx - 1], cp[idx]] = [cp[idx], cp[idx - 1]];
       return cp;
     });
   };
 
-  // Değişiklik var mı?
+  const moveDown = (idx) => {
+    setList((prev) => {
+      if (idx >= prev.length - 1) return prev;
+      const cp = [...prev];
+      [cp[idx + 1], cp[idx]] = [cp[idx], cp[idx + 1]];
+      return cp;
+    });
+  };
+
   const hasChanges = useMemo(() => {
     if (list.length !== storeItems.length) return true;
     for (let i = 0; i < list.length; i++) {
@@ -97,7 +82,6 @@ export default function SistemSirala({ open, onOpenChange }) {
     return false;
   }, [list, storeItems]);
 
-  // Kaydet
   const onSave = async () => {
     if (!hasChanges || saving) {
       onOpenChange(false);
@@ -105,7 +89,6 @@ export default function SistemSirala({ open, onOpenChange }) {
     }
     setSaving(true);
     try {
-      // 1..N yeni index’leri hesapla
       const updates = list.map((sys, i) => ({
         id: sys.id,
         prevIndex: Number(sys?.sort_index ?? 0),
@@ -113,15 +96,11 @@ export default function SistemSirala({ open, onOpenChange }) {
       }));
       const changed = updates.filter((u) => u.prevIndex !== u.nextIndex);
 
-      // Sadece değişenlere PUT
       for (const u of changed) {
         await dispatch(editSystemOnApi(u.id, { sort_index: u.nextIndex }));
       }
 
-      // Doğrulama için tekrar full listeyi çek
       await dispatch(getSistemlerFromApi(1, "", "all"));
-
-      // Modalı kapat
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -136,11 +115,11 @@ export default function SistemSirala({ open, onOpenChange }) {
                      data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200
                      data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-200"
         />
-        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+        <div className="fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
           <RadixDialog.Content
             className="relative w-full max-w-[720px] max-h-[90vh]
                        bg-card text-foreground border border-border rounded-2xl shadow-xl
-                       p-5 overflow-hidden flex flex-col"
+                       p-4 sm:p-5 overflow-hidden flex flex-col"
           >
             {(loading || saving) && (
               <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-20 flex items-center justify-center">
@@ -148,7 +127,7 @@ export default function SistemSirala({ open, onOpenChange }) {
               </div>
             )}
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 gap-2">
               <RadixDialog.Title className="text-lg font-semibold">
                 Sistemleri Sırala
               </RadixDialog.Title>
@@ -157,7 +136,8 @@ export default function SistemSirala({ open, onOpenChange }) {
               </RadixDialog.Close>
             </div>
 
-            <div className="overflow-auto border border-border rounded-xl">
+            {/* ===== md+ TABLO ===== */}
+            <div className="hidden md:block overflow-auto border border-border rounded-xl">
               <table className="table w-full">
                 <thead>
                   <tr>
@@ -187,26 +167,8 @@ export default function SistemSirala({ open, onOpenChange }) {
                       </td>
                       <td className="text-center">
                         <div className="inline-flex items-center gap-2">
-                          <AppButton
-                            size="sm"
-                            variant="gri"
-                            shape="none"
-                            onClick={() => moveUp(idx)}
-                            disabled={idx === 0}
-                            title="Yukarı taşı"
-                          >
-                            ↑
-                          </AppButton>
-                          <AppButton
-                            size="sm"
-                            variant="gri"
-                            shape="none"
-                            onClick={() => moveDown(idx)}
-                            disabled={idx === list.length - 1}
-                            title="Aşağı taşı"
-                          >
-                            ↓
-                          </AppButton>
+                          <AppButton size="sm" variant="gri" shape="none" onClick={() => moveUp(idx)} disabled={idx === 0}>↑</AppButton>
+                          <AppButton size="sm" variant="gri" shape="none" onClick={() => moveDown(idx)} disabled={idx === list.length - 1}>↓</AppButton>
                         </div>
                       </td>
                     </tr>
@@ -222,18 +184,62 @@ export default function SistemSirala({ open, onOpenChange }) {
               </table>
             </div>
 
-            <div className="mt-4 flex items-center justify-end gap-2">
+            {/* ===== md- MOBİL KART ===== */}
+            <div className="md:hidden overflow-auto">
+              {list.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {list.map((s, idx) => (
+                    <div
+                      key={s.id}
+                      className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-2"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm truncate">
+                            {idx + 1}. {s.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground break-words">
+                            {s.description || "—"}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1 text-[11px] items-end">
+                          <span className={`px-2 py-0.5 rounded-md ${s.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                            {s.is_published ? 'Yayında' : 'Taslak'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md ${s.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                            {s.is_active ? 'Aktif' : 'Pasif'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <AppButton size="sm" variant="gri" shape="none" onClick={() => moveUp(idx)} disabled={idx === 0}>▲</AppButton>
+                        <AppButton size="sm" variant="gri" shape="none" onClick={() => moveDown(idx)} disabled={idx === list.length - 1}>▼</AppButton>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  Sistem bulunamadı.
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
               <AppButton
                 variant="gri"
                 size="sm"
                 shape="none"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   const restored = [...storeItems]
                     .sort((a, b) => Number(a?.sort_index ?? 0) - Number(b?.sort_index ?? 0));
                   setList(restored);
                 }}
                 disabled={list.length === 0}
-                title="Değişiklikleri geri al"
               >
                 Sıralamayı Sıfırla
               </AppButton>
@@ -242,9 +248,9 @@ export default function SistemSirala({ open, onOpenChange }) {
                 variant="yesil"
                 size="sm"
                 shape="none"
+                className="w-full sm:w-auto"
                 onClick={onSave}
                 disabled={list.length === 0 || saving || !hasChanges}
-                title="Yeni sıralamayı kaydet (1..N)"
               >
                 Kaydet
               </AppButton>

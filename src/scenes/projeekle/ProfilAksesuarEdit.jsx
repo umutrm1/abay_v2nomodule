@@ -39,11 +39,11 @@ export default function ProfilAksesuarEdit() {
     extra_profiles: [],
     extra_glasses: [],
   };
-  // Profiller reducer'ındaki görsel cache (Profiller.jsx ile aynı kaynağı kullanıyoruz)
+
   const imageCache = useSelector((s) => s.getProfilImageFromApiReducer) || {};
   const [rows, setRows] = useState([]);
   const [totals, setTotals] = useState({ toplam: 0, kdv: 0, genelToplam: 0 });
-  // Görsel fetch kontrolü (Profiller.jsx tekniği)
+
   const requestedRef = useRef(new Set());
   const [loadingImgIds, setLoadingImgIds] = useState(new Set());
 
@@ -255,7 +255,6 @@ export default function ProfilAksesuarEdit() {
       adetMap = new Map();
     }
 
-    // PROFİLLER
     const profAgg = new Map();
     const addedKeys = new Set();
     const addProfile = (p) => {
@@ -300,7 +299,6 @@ export default function ProfilAksesuarEdit() {
     (requirements?.systems || []).forEach((sys) => (sys.profiles || []).forEach(addProfile));
     (requirements?.extra_profiles || []).forEach(addProfile);
 
-    // MALZEMELER
     const matAgg = new Map();
     const addMaterial = (m) => {
       if (!pdfAllow(m)) return;
@@ -328,7 +326,6 @@ export default function ProfilAksesuarEdit() {
     const remoteRows = buildRemotePlanRowsFromRequirements(requirements);
 
     (async () => {
-      // PROFİL satırları
       const profRows = [];
       for (const { pid, kod, ad, adet, boy_m, birimKg, birimFiyat, minOrderIndex } of profAgg.values()) {
         const adetR = round2(adet);
@@ -352,7 +349,6 @@ export default function ProfilAksesuarEdit() {
         });
       }
 
-      // MALZEME satırları
       const matRows = [];
       for (const { ad, adet, cutLen, birimKg, hesapTuru, birimFiyat, minOrderIndex } of matAgg.values()) {
         const adetR = round2(adet);
@@ -392,7 +388,6 @@ export default function ProfilAksesuarEdit() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requirements, proje, mode, dispatch]);
 
-  // Görünen satırlardaki profil kesit görsellerini önceden çek
   useEffect(() => {
     rows
       .filter((r) => r.lineType === "profile" && r.profileId)
@@ -415,8 +410,6 @@ export default function ProfilAksesuarEdit() {
         }
       });
   }, [rows, imageCache, loadingImgIds, dispatch]);
-
-
 
   const toNum = (x) => {
     const n = Number(x);
@@ -474,16 +467,17 @@ export default function ProfilAksesuarEdit() {
   return (
     <div className="grid grid-rows-[60px_1fr] h-full bg-background text-foreground">
       {/* Üst bar */}
-      <div className="flex items-center justify-between px-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between px-3 sm:px-5 gap-2">
         <Header title={`Profil Aksesuar – ${proje?.project_kodu || ""} ${proje?.project_name || ""}`} />
-        <div className="flex gap-2">
-          <AppButton variant="gri" size="sm" shape="none" onClick={() => navigate(-1)} title="Geri">
+        <div className="flex flex-wrap gap-2 md:justify-end">
+          <AppButton variant="gri" size="sm" shape="none" className="w-full sm:w-auto" onClick={() => navigate(-1)} title="Geri">
             Geri
           </AppButton>
           <AppButton
             variant="kurumsalmavi"
             size="sm"
             shape="none"
+            className="w-full sm:w-auto"
             onClick={handleCreatePdf}
             title="PDF çıktısı oluştur"
           >
@@ -493,9 +487,9 @@ export default function ProfilAksesuarEdit() {
       </div>
 
       {/* İçerik kartı */}
-      <div className="w-full border border-border rounded-2xl p-5 h-full flex flex-col gap-4 overflow-hidden bg-card">
+      <div className="w-full border border-border rounded-2xl p-3 sm:p-5 h-full flex flex-col gap-4 overflow-hidden bg-card">
         {/* Toplamlar */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3 border border-border rounded-xl bg-card">
             <label className="block text-xs mb-1 text-muted-foreground">TOPLAM</label>
             <input
@@ -529,8 +523,10 @@ export default function ProfilAksesuarEdit() {
           </div>
         </div>
 
-        {/* Tablo */}
-        <div className="overflow-auto border border-border rounded-xl">
+        {/* ===================================================== */}
+        {/* ✅ Desktop / Tablet: Tablo görünümü (md ve üstü) */}
+        {/* ===================================================== */}
+        <div className="hidden md:block overflow-auto border border-border rounded-xl">
           <table className="table table-zebra w-full text-sm">
             <thead className="sticky top-0 bg-muted z-10">
               <tr className="text-foreground">
@@ -636,7 +632,130 @@ export default function ProfilAksesuarEdit() {
           </table>
         </div>
 
-        <div className="flex justify-end gap-2">
+        {/* ===================================================== */}
+        {/* ✅ Mobil: Kart görünümü (md altı) */}
+        {/* ===================================================== */}
+        <div className="md:hidden overflow-auto">
+          {rows.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {rows.map((r, i) => {
+                const entry = r.profileId ? imageCache[r.profileId] : null;
+                const imgSrc = typeof entry === "string" ? entry : entry?.imageData;
+                const failed = !!entry?.error;
+                const isLoadingImg = r.profileId ? loadingImgIds.has(r.profileId) : false;
+
+                return (
+                  <div
+                    key={i}
+                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                  >
+                    {/* üst satır: kod + kesit */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-xs text-muted-foreground">Profil Kodu</div>
+                        <div className="font-semibold text-sm truncate">
+                          {r.kod || "—"}
+                        </div>
+                      </div>
+
+                      <div className="w-16 h-12 flex items-center justify-center border border-border rounded bg-card shrink-0">
+                        {r.lineType === "profile" ? (
+                          imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt="kesit"
+                              className="max-w-full max-h-full object-contain"
+                              draggable={false}
+                              loading="lazy"
+                            />
+                          ) : isLoadingImg ? (
+                            <CellSpinner />
+                          ) : failed ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* isim */}
+                    <div className="min-w-0">
+                      <div className="text-xs text-muted-foreground">Profil / Malzeme / Kumanda</div>
+                      <div className="font-medium text-sm truncate">{r.ad}</div>
+                    </div>
+
+                    {/* inputlar grid */}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <label className="text-xs text-muted-foreground">Adet</label>
+                      <input
+                        type="number"
+                        step="1"
+                        className="input input-bordered input-sm w-full"
+                        value={r.adet}
+                        onChange={(e) => onCellChange(i, "adet", e.target.value)}
+                      />
+
+                      <label className="text-xs text-muted-foreground">Boy (m)</label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        className="input input-bordered input-sm w-full"
+                        value={r.boy_m}
+                        onChange={(e) => onCellChange(i, "boy_m", e.target.value)}
+                      />
+
+                      <label className="text-xs text-muted-foreground">Birim Kilo (kg)</label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        className="input input-bordered input-sm w-full"
+                        value={r.birimKg}
+                        onChange={(e) => onCellChange(i, "birimKg", e.target.value)}
+                      />
+
+                      <label className="text-xs text-muted-foreground">Toplam Kilo (kg)</label>
+                      <input
+                        type="number"
+                        step="0.00001"
+                        className="input input-bordered input-sm w-full"
+                        value={r.toplamKg}
+                        onChange={(e) => onCellChange(i, "toplamKg", e.target.value)}
+                      />
+
+                      <label className="text-xs text-muted-foreground">Birim Fiyat</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="input input-bordered input-sm w-full"
+                        value={r.birimFiyat}
+                        onChange={(e) => onCellChange(i, "birimFiyat", e.target.value)}
+                      />
+
+                      <label className="text-xs text-muted-foreground">Toplam Fiyat</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="input input-bordered input-sm w-full"
+                        value={r.toplamFiyat}
+                        onChange={(e) => onCellChange(i, "toplamFiyat", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-4 text-sm">
+              Veri bulunamadı
+            </div>
+          )}
+        </div>
+
+        {/* alt butonlar */}
+        <div className="flex flex-col sm:flex-row justify-end gap-2">
           <AppButton variant="gri" onClick={recalcTotals} title="Toplamları yeniden hesapla">
             Toplamları Yeniden Hesapla
           </AppButton>

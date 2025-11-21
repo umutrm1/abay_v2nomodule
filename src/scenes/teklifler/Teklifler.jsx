@@ -11,7 +11,7 @@ import AppButton from "@/components/ui/AppButton.jsx";
 
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
-    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
   </div>
 );
 
@@ -35,6 +35,27 @@ const EMPTY_PAGE = {
   has_prev: false,
 };
 
+const formatOnlyDate = (val) => {
+  if (!val) return "—";
+  try {
+    if (typeof val === "string") {
+      const m = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) {
+        const [, y, mo, d] = m;
+        return `${d}/${mo}/${y}`;
+      }
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "—";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch {
+    return "—";
+  }
+};
+
 const Teklifler = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -43,8 +64,10 @@ const Teklifler = () => {
 
   const [isOverlayLoading, setIsOverlayLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+
   const [sortTeklifler, setSortTeklifler] = useState(false);
   const [sortTekliflerDir, setSortTekliflerDir] = useState(null);
+
   const [searchCode, setSearchCode] = useState('');
   const [searchName, setSearchName] = useState('');
   const debouncedCode = useDebounced(searchCode, 300);
@@ -64,29 +87,6 @@ const Teklifler = () => {
   const [pendingMove, setPendingMove] = useState(null);
   const [moving, setMoving] = useState(false);
 
-  const formatOnlyDate = (val) => {
-    if (!val) return "—";
-    try {
-      // En güvenlisi: string başında YYYY-MM-DD yakala ve dönüştür
-      if (typeof val === "string") {
-        const m = val.match(/^(\d{4})-(\d{2})-(\d{2})/); // 2025-10-28 veya 2025-10-28T...
-        if (m) {
-          const [, y, mo, d] = m;
-          return `${d}/${mo}/${y}`;
-        }
-      }
-      // Diğer durumlar: Date nesnesine çevirip yerel tarihten oluştur
-      const d = new Date(val);
-      if (isNaN(d.getTime())) return "—";
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      return `${dd}/${mm}/${yyyy}`;
-    } catch {
-      return "—";
-    }
-  };
-
   useEffect(() => {
     setListLoading(true);
     Promise.resolve(
@@ -102,16 +102,18 @@ const Teklifler = () => {
         })
       )
     ).finally(() => setListLoading(false));
-  }, [dispatch, page, debouncedName, debouncedCode, limit, selectedCustomer?.id,sortTeklifler]);
+  }, [
+    dispatch,
+    page,
+    debouncedName,
+    debouncedCode,
+    limit,
+    selectedCustomer?.id,
+    sortTeklifler
+  ]);
 
-  const onSearchName = (e) => {
-    setSearchName(e.target.value);
-    setPage(1);
-  };
-  const onSearchCode = (e) => {
-    setSearchCode(e.target.value);
-    setPage(1);
-  };
+  const onSearchName = (e) => { setSearchName(e.target.value); setPage(1); };
+  const onSearchCode = (e) => { setSearchCode(e.target.value); setPage(1); };
 
   const onLimitChange = (e) => {
     const raw = parseInt(e.target.value, 10);
@@ -124,10 +126,8 @@ const Teklifler = () => {
     setIsOverlayLoading(true);
     const payload = {
       project_name: newProje.project_name,
-      created_by:"23691d1d-7545-46b1-bcc3-141a96a7ad3b",
       is_teklif: true
     };
-    console.log(payload)
 
     try {
       const created = await dispatch(actions_projeler.addProjeToApi(payload));
@@ -211,6 +211,7 @@ const Teklifler = () => {
     }
   };
 
+  const items = data.items ?? [];
   const totalPages = data.total_pages || 1;
   const COL_COUNT = 5;
 
@@ -218,105 +219,119 @@ const Teklifler = () => {
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       {isOverlayLoading && (
         <div className="fixed inset-0 bg-foreground/10 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-muted-foreground/30 border-t-primary"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-muted-foreground/30 border-t-primary" />
         </div>
       )}
 
       <Header title="Teklifler" />
 
-      <div className="bg-card border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
-        {/* Arama + Ekle */}
-        <div className="flex flex-col md:flex-row items-center gap-3 md:gap-0 w-full justify-evenly">
-          <input
-            type="text"
-            placeholder="Proje koduna göre ara..."
-            value={searchCode}
-            onChange={onSearchCode}
-            className="input input-bordered w-full md:max-w-sm"
-          />
-          <input
-            type="text"
-            placeholder="Proje adına göre ara..."
-            value={searchName}
-            onChange={onSearchName}
-            className="input input-bordered w-full md:max-w-sm ml-10"
-          />
-
-          <div className="flex items-center gap-2 ml-10">
-            <AppButton
-              variant="gri"
-              size="sm"
-              className="md:!h-10"
-              onClick={() => setCustomerDialogOpen(true)}
-              title="Müşteriye göre filtrele"
-            >
-              Müşteriye Göre Ara
-            </AppButton>
-
-            {selectedCustomer?.id && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-gray-500 text-sm">
-                <span className="truncate max-w-[12rem]">
-                  {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
-                </span>
-                <AppButton
-                  size="xs"
-                  variant="gri"
-                  shape="none"
-                  onClick={() => { setSelectedCustomer(null); setPage(1); }}
-                  title="Müşteri filtresini temizle"
-                >
-                  ✕
-                </AppButton>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 ml-10">
-            <label className="text-sm opacity-80">Teklif Sayısı</label>
+      <div className="bg-card w-full border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-y-4 text-foreground">
+        {/* ====== ÜST TOOLBAR (Musteriler formatı) ====== */}
+        <div className="flex flex-col md:flex-row md:items-center gap-3 w-full">
+          {/* Kod arama */}
+          <div className="w-full md:max-w-sm">
             <input
-              type="number"
-              min={1}
-              max={200}
-              value={limit}
-              onChange={onLimitChange}
-              className="input input-bordered input-sm w-24 text-center"
-              title="Sayfa Başına Teklif Sayısı (min:1/max:200)"
+              type="text"
+              placeholder="Proje koduna göre ara..."
+              value={searchCode}
+              onChange={onSearchCode}
+              className="input input-bordered w-full text-sm"
             />
           </div>
 
-          <DialogProjeEkle onSave={handleAddProje} />
+          {/* Ad arama */}
+          <div className="w-full md:max-w-sm">
+            <input
+              type="text"
+              placeholder="Proje adına göre ara..."
+              value={searchName}
+              onChange={onSearchName}
+              className="input input-bordered w-full text-sm"
+            />
+          </div>
+
+          {/* Sağ blok: müşteri + limit + ekle */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto md:ml-4">
+            {/* Müşteri seç */}
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <AppButton
+                variant="gri"
+                size="sm"
+                shape="none"
+                className="w-full sm:w-auto"
+                onClick={() => setCustomerDialogOpen(true)}
+                title="Müşteriye göre filtrele"
+              >
+                Müşteriye Göre Ara
+              </AppButton>
+
+              {selectedCustomer?.id && (
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-xs sm:text-sm max-w-full">
+                  <span className="truncate max-w-[12rem]">
+                    {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
+                  </span>
+                  <button
+                    className="cursor-pointer"
+                    onClick={() => { setSelectedCustomer(null); setPage(1); }}
+                    title="Müşteri filtresini temizle"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Limit */}
+            <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+              <label className="text-xs sm:text-sm opacity-80 whitespace-nowrap">
+                Teklif Sayısı
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={200}
+                value={limit}
+                onChange={onLimitChange}
+                className="input input-bordered input-sm w-24 text-center"
+                title="Sayfa Başına Teklif Sayısı (min:1/max:200)"
+              />
+            </div>
+
+            {/* Ekle */}
+            <div className="w-full sm:w-auto sm:ml-auto">
+              <DialogProjeEkle onSave={handleAddProje} />
+            </div>
+          </div>
         </div>
 
-        {/* Tablo */}
-        <div className="overflow-x-auto">
-          <table className="table w-full border borderase-500 rounded-lg">
+        {/* ====== Desktop/Tablet TABLO (md+) ====== */}
+        <div className="hidden md:block flex-grow overflow-x-auto">
+          <table className="table w-full border border-gray-500 rounded-lg">
             <thead>
-              <tr className="border borderase-500 border-gray-500">
-              <th>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 hover:opacity-80 cursor-pointer select-none "
-                  title="Oluşturma tarihine göre sırala"
-                  onClick={() => {
-                    if(sortTeklifler==false){
-                    setSortTeklifler(true);
-                    setSortTekliflerDir(prev => (prev === "asc" ? "desc" : "asc"));
-                    setPage(1);
-                  }
-                  else{
-                    setSortTeklifler(false);
-                    setSortTekliflerDir(prev => (prev === "asc" ? "desc" : "asc"));
-                    setPage(1);            
-                  }}
-                }
-
-                >
-                  <span>Oluşturma Tarihi</span>
-                  <span className={sortTeklifler ? "" : "opacity-50"}>
-                    {sortTekliflerDir === "asc" ? "▲" : "▼"}
-                  </span>
-                </button>
-              </th>
+              <tr className="border border-gray-500">
+                <th>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 hover:opacity-80 cursor-pointer select-none"
+                    title="Oluşturma tarihine göre sırala"
+                    onClick={() => {
+                      if (sortTeklifler === false) {
+                        setSortTeklifler(true);
+                        setSortTekliflerDir(prev => (prev === "asc" ? "desc" : "asc"));
+                        setPage(1);
+                      } else {
+                        setSortTeklifler(false);
+                        setSortTekliflerDir(prev => (prev === "asc" ? "desc" : "asc"));
+                        setPage(1);
+                      }
+                    }}
+                  >
+                    <span>Oluşturma Tarihi</span>
+                    <span className={sortTeklifler ? "" : "opacity-50"}>
+                      {sortTekliflerDir === "asc" ? "▲" : "▼"}
+                    </span>
+                  </button>
+                </th>
                 <th>Proje Kodu</th>
                 <th>Müşteri Adı</th>
                 <th>Proje Adı</th>
@@ -326,55 +341,58 @@ const Teklifler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr className="border borderase-400 border-gray-500">
+                <tr className="border border-gray-500">
                   <td colSpan={COL_COUNT}><Spinner /></td>
                 </tr>
               </tbody>
-            ) : (data.items ?? []).length > 0 ? (
+            ) : items.length > 0 ? (
               <tbody>
-                {data.items.map(proje => (
-                  <tr key={proje.id} className="border borderase-300 border-gray-500">
-                    <td>
-                      {formatOnlyDate(proje?.created_at ?? proje?.requirements?.created_at)}
-                    </td>
+                {items.map(proje => (
+                  <tr key={proje.id} className="border border-gray-500">
+                    <td>{formatOnlyDate(proje?.created_at ?? proje?.requirements?.created_at)}</td>
                     <td>{proje.project_kodu}</td>
                     <td>{proje.customer_name || '—'}</td>
                     <td>{proje.project_name}</td>
-                    <td className="text-center space-x-2">
-                      <AppButton
-                        size="sm"
-                        variant="kurumsalmavi"
-                        onClick={() => askMove(proje)}
-                        title="Teklifi projeye taşı"
-                      >
-                        Projelere Taşı
-                      </AppButton>
+                    <td className="text-center">
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                        <AppButton
+                          size="sm"
+                          variant="kurumsalmavi"
+                          shape="none"
+                          onClick={() => askMove(proje)}
+                          title="Teklifi projeye taşı"
+                        >
+                          Projelere Taşı
+                        </AppButton>
 
-                      <AppButton
-                        size="sm"
-                        variant="sari"
-                        onClick={() => navigate(`/projeduzenle/${proje.id}`)}
-                        title="Teklifi düzenle"
-                      >
-                        Düzenle
-                      </AppButton>
+                        <AppButton
+                          size="sm"
+                          variant="sari"
+                          shape="none"
+                          onClick={() => navigate(`/projeduzenle/${proje.id}`)}
+                          title="Teklifi düzenle"
+                        >
+                          Düzenle
+                        </AppButton>
 
-                      <AppButton
-                        size="sm"
-                        variant="kirmizi"
-                        onClick={() => askDelete(proje)}
-                        title="Teklifi sil"
-                      >
-                        Sil
-                      </AppButton>
+                        <AppButton
+                          size="sm"
+                          variant="kirmizi"
+                          shape="none"
+                          onClick={() => askDelete(proje)}
+                          title="Teklifi sil"
+                        >
+                          Sil
+                        </AppButton>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             ) : (
               <tbody>
-                <tr className="border borderase-500">
-                  <td colSpan={COL_COUNT} className="text-center text-muted-foreground py-10">
+                <tr>
+                  <td colSpan={COL_COUNT} className="border border-gray-500 text-center text-muted-foreground py-10">
                     Gösterilecek teklif bulunamadı.
                   </td>
                 </tr>
@@ -383,63 +401,146 @@ const Teklifler = () => {
           </table>
         </div>
 
-        {/* Sayfalama */}
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-          <AppButton
-            size="sm"
-            variant="kurumsalmavi"
-            onClick={() => setPage(1)}
-            disabled={data.page === 1}
-          >
-            « İlk
-          </AppButton>
-          <AppButton
-            size="sm"
-            variant="kurumsalmavi"
-            onClick={() => setPage(p => Math.max(p - 1, 1))}
-            disabled={!data.has_prev}
-          >
-            ‹ Önceki
-          </AppButton>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = parseInt(e.target.elements.pageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= totalPages) setPage(val);
-            }}
-            className="flex items-center gap-1"
-          >
-            <input
-              type="number"
-              name="pageNum"
-              min={1}
-              max={totalPages}
-              value={page}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (isNaN(val)) return setPage(1);
-                setPage(Math.min(Math.max(1, val), totalPages));
+        {/* ====== MOBİL KART (md-) ====== */}
+        <div className="md:hidden">
+          {listLoading ? (
+            <Spinner />
+          ) : items.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {items.map(proje => (
+                <div
+                  key={proje.id}
+                  className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                >
+                  {/* Üst satır: teklif adı + tarih */}
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">
+                        {proje.project_name || "—"}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {proje.customer_name || "Müşteri yok"} • {proje.project_kodu || "Kod yok"}
+                      </div>
+                    </div>
+
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/70 text-[11px] whitespace-nowrap">
+                      {formatOnlyDate(proje?.created_at ?? proje?.requirements?.created_at)}
+                    </span>
+                  </div>
+
+                  {/* Aksiyonlar */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <AppButton
+                      size="sm"
+                      variant="kurumsalmavi"
+                      shape="none"
+                      onClick={() => askMove(proje)}
+                      title="Teklifi projeye taşı"
+                    >
+                      Projelere Taşı
+                    </AppButton>
+
+                    <AppButton
+                      size="sm"
+                      variant="sari"
+                      shape="none"
+                      onClick={() => navigate(`/projeduzenle/${proje.id}`)}
+                      title="Teklifi düzenle"
+                    >
+                      Düzenle
+                    </AppButton>
+
+                    <AppButton
+                      size="sm"
+                      variant="kirmizi"
+                      shape="none"
+                      onClick={() => askDelete(proje)}
+                      title="Teklifi sil"
+                    >
+                      Sil
+                    </AppButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8 text-sm">
+              Gösterilecek teklif bulunamadı.
+            </div>
+          )}
+        </div>
+
+        {/* ====== Pagination (Musteriler formatı) ====== */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center sm:justify-between items-center gap-2 sm:gap-3 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+            <AppButton
+              size="sm"
+              variant="kurumsalmavi"
+              shape="none"
+              onClick={() => setPage(1)}
+              disabled={data.page === 1}
+              title="İlk sayfa"
+            >
+              « İlk
+            </AppButton>
+
+            <AppButton
+              size="sm"
+              variant="kurumsalmavi"
+              shape="none"
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              disabled={!data.has_prev}
+              title="Önceki sayfa"
+            >
+              ‹ Önceki
+            </AppButton>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = parseInt(e.target.elements.pageNum.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) setPage(val);
               }}
-              className="input input-bordered input-sm w-16 text-center"
-            />
-            <span className="text-sm">/ {totalPages}</span>
-          </form>
-          <AppButton
-            size="sm"
-            variant="kurumsalmavi"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={!data.has_next}
-          >
-            Sonraki ›
-          </AppButton>
-          <AppButton
-            size="sm"
-            variant="kurumsalmavi"
-            onClick={() => setPage(totalPages)}
-            disabled={data.page === totalPages || totalPages <= 1}
-          >
-            Son »
-          </AppButton>
+              className="flex items-center gap-1"
+            >
+              <input
+                type="number"
+                name="pageNum"
+                min={1}
+                max={totalPages}
+                value={page}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (isNaN(val)) return setPage(1);
+                  setPage(Math.min(Math.max(1, val), totalPages));
+                }}
+                className="input input-bordered input-sm w-16 text-center"
+              />
+              <span className="text-sm">/ {totalPages}</span>
+            </form>
+
+            <AppButton
+              size="sm"
+              variant="kurumsalmavi"
+              shape="none"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={!data.has_next}
+              title="Sonraki sayfa"
+            >
+              Sonraki ›
+            </AppButton>
+
+            <AppButton
+              size="sm"
+              variant="kurumsalmavi"
+              shape="none"
+              onClick={() => setPage(totalPages)}
+              disabled={data.page === totalPages || totalPages <= 1}
+              title="Son sayfa"
+            >
+              Son »
+            </AppButton>
+          </div>
         </div>
       </div>
 

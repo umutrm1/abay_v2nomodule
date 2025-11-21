@@ -77,7 +77,7 @@ export default function TopBar() {
   return (
     <div
       className={`
-        ${expanded ? "ml-64" : "ml-20"}
+        
         transition-all h-20
         flex items-center px-4
         bg-card text-foreground border-b border

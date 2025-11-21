@@ -44,7 +44,6 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave, children }) => {
 
   return (
     <Dialog>
-      {/* Tetikleyici: children gelirse onu, gelmezse varsayılan AppButton kullan */}
       <DialogTrigger asChild>
         {children ? (
           children
@@ -55,47 +54,52 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave, children }) => {
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
           <DialogTitle>Malzemeyi Düzenle</DialogTitle>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <label>İsim</label>
           <input
             name="diger_malzeme_isim"
             value={form.diger_malzeme_isim}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
+
           <label>Birim</label>
           <input
             name="birim"
             value={form.birim}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
+
           <label>Birim Ağırlık</label>
           <input
             type="number"
             name="birim_agirlik"
             value={form.birim_agirlik}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
+
           <label>Birim Fiyat</label>
           <input
             type="number"
             name="unit_price"
             value={form.unit_price}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
+
           <label>Hesaplama Türü</label>
           <select
             name="hesaplama_turu"
             value={form.hesaplama_turu}
             onChange={handleChange}
-            className="select select-bordered"
+            className="select select-bordered w-full"
           >
             <option value="olculu">ölçülü</option>
             <option value="adetli">adetli</option>
@@ -108,6 +112,7 @@ const DialogDigerMalzemeDuzenle = ({ item, onSave, children }) => {
             variant="kurumsalmavi"
             size="md"
             shape="none"
+            className="w-full sm:w-auto"
             title="Güncelle ve kapat"
           >
             Güncelle

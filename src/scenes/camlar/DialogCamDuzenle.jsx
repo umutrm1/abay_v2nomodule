@@ -1,3 +1,4 @@
+// src/scenes/camlar/DialogCamDuzenle.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
@@ -17,11 +18,12 @@ function insertAt(base, index, token) {
   const i = clamp(Number(index) || 0, 0, base.length);
   return base.slice(0, i) + token + base.slice(i);
 }
- // Boşluklar da dahil edilerek uzunluk sayımı
- function countWithSpaces(str) {
-   return (str ?? '').length; // boşluklar DAHİL
- }
- const ArrowStepper = ({ label, value, setValue, min = 0, max = 0, disabled = false }) => {
+
+function countWithSpaces(str) {
+  return (str ?? '').length;
+}
+
+const ArrowStepper = ({ label, value, setValue, min = 0, max = 0, disabled = false }) => {
   const dec = () => !disabled && setValue(v => clamp((Number(v) || 0) - 1, min, max));
   const inc = () => !disabled && setValue(v => clamp((Number(v) || 0) + 1, min, max));
   const onChange = (e) => {
@@ -65,7 +67,6 @@ const PreviewLine = ({ title, value }) => (
 );
 
 const DialogCamDuzenle = ({ cam, onSave, children }) => {
-  // 🧱 Düzenleme state'i
   const [form, setForm] = useState({
     cam_isim: '',
     thickness_mm: 1,
@@ -73,9 +74,8 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
     belirtec_2: 0
   });
 
-  // cam_isim uzunluğu, indeks sınırı için
-  const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+5);
-  // 🔄 cam prop'u gelince formu doldur
+  const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim]) + 5);
+
   useEffect(() => {
     if (cam) {
       setForm({
@@ -87,7 +87,6 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
     }
   }, [cam]);
 
-  // cam_isim değişince indeksleri clamp et
   useEffect(() => {
     setForm(prev => ({
       ...prev,
@@ -96,14 +95,12 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
     }));
   }, [nameLen]);
 
-  // Tek cam ise belirtec_2'yi 0'la ve kapat
   useEffect(() => {
     if (Number(form.thickness_mm) !== 2 && Number(form.belirtec_2) !== 0) {
       setForm(prev => ({ ...prev, belirtec_2: 0 }));
     }
   }, [form.thickness_mm]);
 
-  // Ortak handler
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
@@ -112,13 +109,11 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
     }));
   };
 
-  // ArrowStepper setterleri
   const setBel1 = (updater) =>
     setForm(prev => ({ ...prev, belirtec_1: typeof updater === 'function' ? updater(prev.belirtec_1) : updater }));
   const setBel2 = (updater) =>
     setForm(prev => ({ ...prev, belirtec_2: typeof updater === 'function' ? updater(prev.belirtec_2) : updater }));
 
-  // 🔍 Önizlemeler
   const previewBoya1 = useMemo(() => {
     const base = form.cam_isim || '';
     return insertAt(base, form.belirtec_1, 'boya1');
@@ -126,13 +121,10 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
 
   const previewBoya12 = useMemo(() => {
     const base = form.cam_isim || '';
-    // sırayla uygula: önce boya1, sonra boya2 (boya2 indeksi, ORİJİNAL base’e göre niyetlenilmiş olsa da
-    // pratikte kullanıcı açısından “sonuç” merak edildiği için ardıl uygulama gösteriyoruz)
     const with1 = insertAt(base, form.belirtec_1, 'boya1');
     return insertAt(with1, form.belirtec_2, 'boya2');
   }, [form.cam_isim, form.belirtec_1, form.belirtec_2]);
 
-  // Kaydet
   const handleSave = () => {
     const isDouble = Number(form.thickness_mm) === 2;
     onSave({
@@ -149,21 +141,14 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        {children ? (
-          children
-        ) : (
-          <AppButton
-            variant="sari"
-            size="sm"
-            shape="none"
-            title="Cam bilgisini düzenle"
-          >
+        {children ? children : (
+          <AppButton variant="sari" size="sm" shape="none">
             Düzenle
           </AppButton>
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
           <DialogTitle>Cam Düzenle{cam?.cam_isim ? `: ${cam.cam_isim}` : ""}</DialogTitle>
         </DialogHeader>
@@ -175,7 +160,7 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
             name="cam_isim"
             value={form.cam_isim}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label htmlFor="thickness_mm">Cam Türü</label>
@@ -186,7 +171,7 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
             onChange={(e) =>
               setForm(prev => ({ ...prev, thickness_mm: Number(e.target.value) }))
             }
-            className="select select-bordered"
+            className="select select-bordered w-full"
           >
             <option value="1">Tek Cam</option>
             <option value="2">Çift Cam</option>
@@ -208,7 +193,6 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
                 max={nameLen}
                 disabled={false}
               />
-              {/* 1. önizleme (sadece boya1) */}
               <PreviewLine title="Önizleme (boya1 uygulanmış)" value={isDouble ? previewBoya12 : previewBoya1} />
 
               <ArrowStepper
@@ -219,7 +203,6 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
                 max={nameLen}
                 disabled={!isDouble}
               />
-              {/* 2. önizleme (boya1 + boya2) */}
               <PreviewLine
                 title={`Önizleme (boya1${isDouble ? ' + boya2' : ''} uygulanmış)`}
                 value={isDouble ? previewBoya12 : previewBoya1}
@@ -240,7 +223,7 @@ const DialogCamDuzenle = ({ cam, onSave, children }) => {
             variant="kurumsalmavi"
             size="md"
             shape="none"
-            title="Güncelle ve kapat"
+            className="w-full sm:w-auto"
           >
             Güncelle
           </AppButton>

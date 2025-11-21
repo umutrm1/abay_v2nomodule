@@ -10,25 +10,11 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-/**
- * DialogResendInvite
- *
- * Props:
- * - open: boolean
- * - onOpenChange: (open:boolean) => void
- * - debugToken?: string  // reSendInviteOnApi'den dönen token
- *
- * .env tarafında aşağıdakilerden birini tanımlaman yeterli:
- * VITE_APP_BASE_URL  | VITE_WEB_BASE_URL | VITE_CLIENT_BASE_URL
- * Örn: VITE_APP_BASE_URL=https://panel.senin-domenin.com
- */
 export default function DialogResendInvite({ open, onOpenChange, debugToken = "" }) {
   const [copied, setCopied] = useState(false);
 
-  const BASE_URL =
-    import.meta.env.VITE_API_INVITE_URL;
+  const BASE_URL = import.meta.env.VITE_API_INVITE_URL;
 
-  // Sağlam birleştirme: sondaki "/"ları temizle, path'i ekle
   const fullUrl = useMemo(() => {
     const cleanBase = (BASE_URL || "").replace(/\/+$/, "");
     const path = "/set-password";
@@ -41,14 +27,12 @@ export default function DialogResendInvite({ open, onOpenChange, debugToken = ""
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // noop
-    }
+    } catch {}
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[42rem]">
+      <DialogContent className="w-[94vw] max-w-[42rem]">
         <DialogHeader>
           <DialogTitle>Tekrar Davet Bağlantısı</DialogTitle>
           <DialogDescription>
@@ -58,14 +42,16 @@ export default function DialogResendInvite({ open, onOpenChange, debugToken = ""
 
         <div className="grid gap-3">
           <label className="text-sm opacity-80">Bağlantı</label>
-          <div className="flex gap-2">
+
+          {/* Mobilde alt alta, desktopta yan yana */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               readOnly
               value={fullUrl}
               className="input input-bordered w-full font-mono text-sm"
               title="Davet bağlantısı"
             />
-            <AppButton variant="kurumsalmavi" onClick={handleCopy}>
+            <AppButton variant="kurumsalmavi" onClick={handleCopy} className="w-full sm:w-auto">
               {copied ? "Kopyalandı" : "Kopyala"}
             </AppButton>
           </div>
@@ -81,7 +67,7 @@ export default function DialogResendInvite({ open, onOpenChange, debugToken = ""
 
         <div className="flex justify-end mt-6">
           <DialogClose asChild>
-            <AppButton variant="neutral">Kapat</AppButton>
+            <AppButton variant="neutral" className="w-full sm:w-auto">Kapat</AppButton>
           </DialogClose>
         </div>
       </DialogContent>

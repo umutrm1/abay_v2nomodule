@@ -8,7 +8,7 @@ import AppButton from '@/components/ui/AppButton.jsx';
 
 const initialForm = { name: '', unit_cost: 0 };
 
-const DialogCamBoyaEkle = ({ onSave }) => {
+const DialogCamBoyaEkle = ({ onSave, children }) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
 
@@ -16,7 +16,7 @@ const DialogCamBoyaEkle = ({ onSave }) => {
 
   const handleOpenChange = (next) => {
     setOpen(next);
-    if (!next) resetForm(); // Modal kapandı: her durumda sıfırla
+    if (!next) resetForm();
   };
 
   const handleChange = (e) => {
@@ -26,35 +26,45 @@ const DialogCamBoyaEkle = ({ onSave }) => {
 
   const handleSave = async () => {
     await onSave?.({ ...form, type: 'glass' });
-    setOpen(false); // kapanınca onOpenChange(false) -> resetForm()
+    setOpen(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">+ Cam Boya Ekle</AppButton>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-full md:w-40 md:ml-auto"
+          >
+            + Cam Boya Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
           <DialogTitle>Yeni Cam Boyası Ekle</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <label>Boya İsmi</label>
+        <div className="grid gap-3 py-4">
+          <label className="font-semibold">Boya İsmi</label>
           <input
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
         </div>
 
-        <div className="mt-2 flex justify-end gap-2">
+        <div className="mt-2 flex flex-col sm:flex-row justify-end gap-2">
           <DialogClose asChild>
-            <AppButton variant="gri">Vazgeç</AppButton>
+            <AppButton variant="gri" className="w-full sm:w-auto">Vazgeç</AppButton>
           </DialogClose>
-          <AppButton variant="kurumsalmavi" onClick={handleSave}>
+          <AppButton variant="kurumsalmavi" onClick={handleSave} className="w-full sm:w-auto">
             Kaydet
           </AppButton>
         </div>

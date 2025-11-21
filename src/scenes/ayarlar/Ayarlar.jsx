@@ -19,32 +19,46 @@ export default function Ayarlar() {
   const [active, setActive] = useState("brand");
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 text-foreground">
+    <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 text-foreground">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Sol Dikey Menü */}
+        {/* Mobil: üst yatay sekme menü / Desktop: sol dikey menü */}
         <aside className="md:col-span-3">
-          <nav className="sticky top-4 flex md:block gap-2">
-            {SECTIONS.map((s) => (
-              <AppButton
-                key={s.id}
-                onClick={() => setActive(s.id)}
-                variant="seffaf"
-                size="md"
-                shape="xl"
-                className={[
-                  "w-full mb-5 text-left px-3 py-2 border transition",
-                  active === s.id
-                    ? "border-primary"
-                    : "border-border ",
-                ].join(" ")}
-              >
-                {s.label}
-              </AppButton>
-            ))}
+          <nav
+            className="
+              sticky top-4
+              flex md:block gap-2
+              md:pr-2
+              overflow-x-auto md:overflow-visible
+              pb-2 md:pb-0
+            "
+          >
+            {SECTIONS.map((s) => {
+              const isActive = active === s.id;
+              return (
+                <AppButton
+                  key={s.id}
+                  onClick={() => setActive(s.id)}
+                  variant="seffaf"
+                  size="md"
+                  shape="xl"
+                  className={[
+                    // Mobilde pill gibi, yatay kayar
+                    "shrink-0 md:shrink w-auto md:w-full",
+                    "mb-0 md:mb-5 text-left px-3 py-2 border transition",
+                    "rounded-full md:rounded-2xl",
+                    isActive
+                      ? "border-primary bg-secondary/60 text-foreground"
+                      : "border-border hover:bg-secondary/40",
+                  ].join(" ")}
+                >
+                  {s.label}
+                </AppButton>
+              );
+            })}
           </nav>
         </aside>
 
-        {/* Sağ İçerik */}
+        {/* Sağ içerik */}
         <main className="md:col-span-9">
           {active === "brand" && <BrandSection />}
           {active === "title" && <TitleSection />}

@@ -4,9 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import {
-  getSistemlerFromApi,                 // tüm sistemler (all)
-  getSystemVariantsOfSystemFromApi,    // seçili sistemin varyantları
-  // Foto GET aksiyonlarını sadece "return değeri" için kullanıyoruz (reducer'a yazsın yazmasın fark etmez)
+  getSistemlerFromApi,
+  getSystemVariantsOfSystemFromApi,
   getSystemImageFromApi,
   getSystemVariantImageFromApi,
 } from '@/redux/actions/actions_sistemler.js';
@@ -14,10 +13,11 @@ import AppButton from "@/components/ui/AppButton.jsx";
 
 /** Spinner (temalı) */
 const Spinner = () => (
-  <div className="flex justify-center items-center py-10 w-full h-full">
+  <div className="flex justify-center items-center py-10 w-full">
     <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
   </div>
 );
+
 const MiniSpinner = () => (
   <div className="flex justify-center items-center w-full h-40">
     <div className="w-6 h-6 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
@@ -30,26 +30,26 @@ const SistemSec = () => {
   const navigate = useNavigate();
 
   // --- Listeler (fotoğraflar hariç) ---
-  const sistemler = useSelector(state => state.getSistemlerFromApiReducer); // { items: [...] }
-  const systemVariants = useSelector(state => state.systemVariantsOfSystem); // { items: [...] }
+  const sistemler = useSelector(state => state.getSistemlerFromApiReducer);
+  const systemVariants = useSelector(state => state.systemVariantsOfSystem);
 
   // --- FOTOĞRAF CACHE (sadece component içinde) ---
-  const [sysImageUrls, setSysImageUrls] = useState({});      // systemId -> ObjectURL
-  const [varImageUrls, setVarImageUrls] = useState({});      // variantId -> ObjectURL
+  const [sysImageUrls, setSysImageUrls] = useState({});
+  const [varImageUrls, setVarImageUrls] = useState({});
 
-  const sysImgPromisesRef = useRef(new Map());   // systemId -> Promise
-  const varImgPromisesRef = useRef(new Map());   // variantId -> Promise
+  const sysImgPromisesRef = useRef(new Map());
+  const varImgPromisesRef = useRef(new Map());
 
-  const sysObjUrlsRef = useRef(new Set());       // Set<string>
-  const varObjUrlsRef = useRef(new Set());       // Set<string>
+  const sysObjUrlsRef = useRef(new Set());
+  const varObjUrlsRef = useRef(new Set());
 
   // --- UI seçim/yükleme durumları ---
   const [selectedSistemId, setSelectedSistemId] = useState(null);
   const [selectedVariantId, setSelectedVariantId] = useState(null);
   const [loadingSystems, setLoadingSystems] = useState(false);
   const [loadingVariants, setLoadingVariants] = useState(false);
-  const [sysImgLoading, setSysImgLoading] = useState({}); // systemId -> bool
-  const [varImgLoading, setVarImgLoading] = useState({}); // variantId -> bool
+  const [sysImgLoading, setSysImgLoading] = useState({});
+  const [varImgLoading, setVarImgLoading] = useState({});
 
   // 1) İlk yüklemede tüm sistemleri getir
   useEffect(() => {
@@ -77,8 +77,6 @@ const SistemSec = () => {
   }, [systemVariants?.items]);
 
   // --- AKTİF FİLTRELER ---
-  // İstek: section'larda is_active:false olanlar listelenmesin.
-  // Burada "false olmayan" her şeyi (true, undefined, null) gösteriyoruz; yalnızca explicit false olanları gizliyoruz.
   const activeSortedSystems = useMemo(() => {
     return sortedSystems.filter(s => s?.is_active !== false);
   }, [sortedSystems]);
@@ -94,7 +92,6 @@ const SistemSec = () => {
     }
     if (sysImageUrls[systemId]) return;
 
-    // BAŞLANGIÇ: Yükleniyor işaretini aç
     setSysImgLoading(prev => ({ ...prev, [systemId]: true }));
 
     const p = (async () => {
@@ -105,9 +102,8 @@ const SistemSec = () => {
           setSysImageUrls(prev => ({ ...prev, [systemId]: res.imageUrl }));
         }
       } catch {
-        // foto yoksa sessiz geçiyoruz
+        // foto yoksa sessiz geç
       } finally {
-        // BİTİŞ
         setSysImgLoading(prev => ({ ...prev, [systemId]: false }));
         sysImgPromisesRef.current.delete(systemId);
       }
@@ -117,7 +113,7 @@ const SistemSec = () => {
     return p;
   }, [dispatch, sysImageUrls]);
 
-  // Sistemler değişince (aktif olanlar için) eksik görselleri getir
+  // Sistemler değişince eksik görselleri getir
   useEffect(() => {
     const items = activeSortedSystems || [];
     if (!items.length) return;
@@ -165,7 +161,7 @@ const SistemSec = () => {
     return p;
   }, [dispatch, varImageUrls]);
 
-  // Varyant listesi değişince (aktif olanlar için) eksik görselleri getir
+  // Varyant listesi değişince eksik görselleri getir
   useEffect(() => {
     const vItems = activeSortedVariants || [];
     if (!vItems.length) return;
@@ -191,15 +187,21 @@ const SistemSec = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-5">
-      <div className="w-full flex items-center gap-3">
-        <h1 className="text-3xl font-bold mb-4">Sistem Seç</h1>
-        <AppButton variant="gri" className="ml-auto" onClick={() => navigate(`/projeduzenle/${projectId}`)}>
+    <div className="min-h-screen bg-background text-foreground p-3 sm:p-5">
+      {/* Üst bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Sistem Seç</h1>
+
+        <AppButton
+          variant="gri"
+          className="sm:ml-auto w-full sm:w-auto"
+          onClick={() => navigate(`/projeduzenle/${projectId}`)}
+        >
           Projeye Dön
         </AppButton>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl w-full min-h-300 h-full p-5 overflow-auto">
+      <div className="bg-card border border-border rounded-2xl w-full min-h-[300px] p-3 sm:p-5">
         {/* Sistemler Bölümü */}
         <section>
           {loadingSystems ? (
@@ -207,34 +209,38 @@ const SistemSec = () => {
           ) : !activeSortedSystems.length ? (
             <div className="text-muted-foreground">Hiç aktif Sistem bulunmuyor</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
               {activeSortedSystems.map((sistem) => {
                 const imgUrl = sysImageUrls[sistem.id] || '/placeholder-system.png';
                 const isSysLoading = !!sysImgLoading[sistem.id];
                 const selected = selectedSistemId === sistem.id;
+
                 return (
                   <div
                     key={sistem.id}
-                    className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${selected ? 'border-primary shadow-lg' : 'border-border'
-                      }`}
+                    className={`bg-card rounded-2xl border p-3 sm:p-4 flex flex-col transition-all
+                      ${selected ? 'border-primary shadow-lg' : 'border-border hover:shadow-md'}`}
                   >
                     {/* Sistem Fotoğrafı */}
-                    <div className="mb-4 flex justify-center w-full">
+                    <div className="w-full aspect-video bg-muted/10 rounded-xl border border-border overflow-hidden flex items-center justify-center">
                       {isSysLoading ? (
                         <MiniSpinner />
                       ) : (
                         <img
                           src={imgUrl}
                           alt={sistem.name}
-                          className="w-full max-w-70 max-h-40 h-auto object-contain rounded"
+                          className="w-full h-full object-contain"
+                          loading="lazy"
                         />
                       )}
                     </div>
 
-                    <h3 className="text-xl font-semibold mb-2 mt-auto text-center">{sistem.name}</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold mt-3 text-center line-clamp-2">
+                      {sistem.name}
+                    </h3>
 
                     <AppButton
-                      className="mt-auto"
+                      className="mt-3 w-full"
                       variant="kurumsalmavi"
                       onClick={() => handleSystemSelect(sistem.id)}
                     >
@@ -249,40 +255,46 @@ const SistemSec = () => {
 
         {/* Variant’lar Bölümü */}
         {selectedSistemId && (
-          <section>
-            <h2 className="text-2xl font-bold mb-4 mt-5">Alt Sistem Seç</h2>
+          <section className="mt-6 sm:mt-8">
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+              Alt Sistem Seç
+            </h2>
 
             {loadingVariants ? (
               <Spinner />
             ) : activeSortedVariants.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                 {activeSortedVariants.map((variant) => {
                   const vImgUrl = varImageUrls[variant.id] || '/placeholder-variant.png';
                   const isVarLoading = !!varImgLoading[variant.id];
                   const selected = selectedVariantId === variant.id;
+
                   return (
                     <div
                       key={variant.id}
-                      className={`bg-card w-80 h-70 rounded-2xl border p-4 flex flex-col items-center transition-shadow ${selected ? 'border-success shadow-lg' : 'border-border'
-                        }`}
+                      className={`bg-card rounded-2xl border p-3 sm:p-4 flex flex-col transition-all
+                        ${selected ? 'border-success shadow-lg' : 'border-border hover:shadow-md'}`}
                     >
                       {/* Variant Fotoğrafı */}
-                      <div className="mb-4 flex justify-center w-full">
+                      <div className="w-full aspect-video bg-muted/10 rounded-xl border border-border overflow-hidden flex items-center justify-center">
                         {isVarLoading ? (
                           <MiniSpinner />
                         ) : (
                           <img
                             src={vImgUrl}
                             alt={variant.name}
-                            className="w-full max-w-70 max-h-40 h-auto object-contain rounded"
+                            className="w-full h-full object-contain"
+                            loading="lazy"
                           />
                         )}
                       </div>
 
-                      <h3 className="text-lg mt-auto font-medium mb-2 text-center">{variant.name}</h3>
+                      <h3 className="text-base sm:text-lg mt-3 font-medium text-center line-clamp-2">
+                        {variant.name}
+                      </h3>
 
                       <AppButton
-                        className="mt-auto"
+                        className="mt-3 w-full"
                         variant="kurumsalmavi"
                         onClick={() => handleVariantSelect(variant.id)}
                       >
@@ -293,7 +305,9 @@ const SistemSec = () => {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground">Bu sisteme ait aktif alt sistem bulunmuyor.</p>
+              <p className="text-muted-foreground">
+                Bu sisteme ait aktif alt sistem bulunmuyor.
+              </p>
             )}
           </section>
         )}

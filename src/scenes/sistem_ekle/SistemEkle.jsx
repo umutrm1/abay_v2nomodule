@@ -22,12 +22,10 @@ const Spinner = () => (
   </div>
 );
 
-
 const EMPTY_PAGE = { items: [], total: 0, page: 1, limit: 5, total_pages: 1, has_next: false, has_prev: false };
 const LIMIT = 5;
 
-
- const SistemEkle = () => {
+const SistemEkle = () => {
   const { projectId, variantId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -39,23 +37,21 @@ const LIMIT = 5;
   const [sistemYukseklik, setSistemYukseklik] = useState(0);
   const [sistemAdet, setSistemAdet] = useState(0);
 
-   const [colorDialogOpen, setColorDialogOpen] = useState(false);
-   const [whichColorSelecting, setWhichColorSelecting] = useState(null); // 1 veya 2
-   const [renk1Id, setRenk1Id] = useState(null);
-   const [renk1Name, setRenk1Name] = useState('-');
-   const [renk2Id, setRenk2Id] = useState(null);
-   const [renk2Name, setRenk2Name] = useState('-');
-
+  const [colorDialogOpen, setColorDialogOpen] = useState(false);
+  const [whichColorSelecting, setWhichColorSelecting] = useState(null); // 1 veya 2
+  const [renk1Id, setRenk1Id] = useState(null);
+  const [renk1Name, setRenk1Name] = useState('-');
+  const [renk2Id, setRenk2Id] = useState(null);
+  const [renk2Name, setRenk2Name] = useState('-');
 
   const requirements = useSelector(s => s.getProjeRequirementsFromApiReducer) || { systems: [], extra_requirements: [] };
   const seciliSistemTam = useSelector(s => s.getSystemFullVariantsOfSystemFromApiReducer) || {};
 
   const colorsPage = useSelector(s => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
-   const fetchPage = React.useCallback(
-     (page, q) => dispatch(getGlassColorFromApi(page, q, LIMIT)),
-     [dispatch]
-   );
-
+  const fetchPage = React.useCallback(
+    (page, q) => dispatch(getGlassColorFromApi(page, q, LIMIT)),
+    [dispatch]
+  );
 
   const handleNumberChange = (setter) => (e) => {
     const v = e.target.value;
@@ -71,21 +67,21 @@ const LIMIT = 5;
       try {
         await dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
         await dispatch(getProjeRequirementsFromApi(projectId));
-       // Varsayılan renkleri getir
-       try {
-         const d1 = await dispatch(getDefaultColorOne());
-         if (d1?.id) {
-           setRenk1Id(d1.id);
-           setRenk1Name(d1.name ?? 'Renk 1');
-         }
-       } catch {}
-       try {
-         const d2 = await dispatch(getDefaultColorTwo());
-         if (d2?.id) {
-           setRenk2Id(d2.id);
-           setRenk2Name(d2.name ?? 'Renk 2');
-         }
-       } catch {}
+        // Varsayılan renkleri getir
+        try {
+          const d1 = await dispatch(getDefaultColorOne());
+          if (d1?.id) {
+            setRenk1Id(d1.id);
+            setRenk1Name(d1.name ?? 'Renk 1');
+          }
+        } catch {}
+        try {
+          const d2 = await dispatch(getDefaultColorTwo());
+          if (d2?.id) {
+            setRenk2Id(d2.id);
+            setRenk2Name(d2.name ?? 'Renk 2');
+          }
+        } catch {}
       } finally {
         setIsLoadingInit(false);
       }
@@ -157,8 +153,8 @@ const LIMIT = 5;
           area_m2,
           order_index: index + 1,
           pdf: tpl.pdf,
-         ...(renk1Id ? { glass_color_id_1: renk1Id } : {}),
-         ...(renk2Id ? { glass_color_id_2: renk2Id } : {}),
+          ...(renk1Id ? { glass_color_id_1: renk1Id } : {}),
+          ...(renk2Id ? { glass_color_id_2: renk2Id } : {}),
         };
       }),
       materials: (seciliSistemTam.material_templates || []).map((tpl, i) => {
@@ -214,18 +210,24 @@ const LIMIT = 5;
   }, [seciliSistemTam?.system?.name, seciliSistemTam?.name]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground rounded-2xl border border-border p-5 flex flex-col">
+    <div className="min-h-screen bg-background text-foreground rounded-2xl border border-border p-4 sm:p-5 flex flex-col">
       {isLoadingInit ? (
         <Spinner />
       ) : (
-        <div className="bg-card border border-border rounded-2xl w-full p-4 flex gap-4 mb-5 items-center">
-          <PencilRuler className="w-10 mr-2" />
-          <div className="flex flex-col flex-1 gap-2">
-            <div className="text-lg font-semibold">
-              {displayName || "Sistem Adı - Varyant Adı"}
+        // ✅ ÜST PANEL: mobilde alt alta, md+ satır
+        <div className="bg-card border border-border rounded-2xl w-full p-4 flex flex-col md:flex-row gap-4 mb-5 md:items-center">
+          <div className="flex items-start gap-3">
+            <PencilRuler className="w-9 shrink-0" />
+            <div className="flex flex-col gap-2">
+              <div className="text-lg font-semibold">
+                {displayName || "Sistem Adı - Varyant Adı"}
+              </div>
             </div>
+          </div>
 
-            <div className="flex gap-2">
+          {/* ✅ INPUTLAR + RENK: mobilde kolon, sm+ satır */}
+          <div className="flex flex-col gap-3 flex-1">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="number"
                 inputMode="numeric"
@@ -235,7 +237,7 @@ const LIMIT = 5;
                 onChange={handleNumberChange(setSistemGenislik)}
                 onBlur={() => handleNumberBlur(sistemGenislik, setSistemGenislik)}
                 placeholder="En (mm)"
-                className="input input-bordered w-full max-w-xs"
+                className="input input-bordered w-full sm:max-w-xs"
               />
               <input
                 type="number"
@@ -246,7 +248,7 @@ const LIMIT = 5;
                 onChange={handleNumberChange(setSistemYukseklik)}
                 onBlur={() => handleNumberBlur(sistemYukseklik, setSistemYukseklik)}
                 placeholder="Boy (mm)"
-                className="input input-bordered w-full max-w-xs"
+                className="input input-bordered w-full sm:max-w-xs"
               />
               <input
                 type="number"
@@ -257,57 +259,61 @@ const LIMIT = 5;
                 onChange={handleNumberChange(setSistemAdet)}
                 onBlur={() => handleNumberBlur(sistemAdet, setSistemAdet)}
                 placeholder="Adet"
-                className="input input-bordered w-full max-w-xs"
+                className="input input-bordered w-full sm:max-w-xs"
               />
-                       <div className="flex items-center gap-2 ml-auto">
-           <AppButton
-             variant="kurumsalmavi"
-             size="sm"
-             onClick={() => { setWhichColorSelecting(1); setColorDialogOpen(true); }}
-             title="Renk 1 seç"
-           >
-             Renk 1
-           </AppButton>
-           <span className="text-xs text-muted-foreground">({renk1Name})</span>
-
-           <AppButton
-             variant="kurumsalmavi"
-             size="sm"
-             onClick={() => { setWhichColorSelecting(2); setColorDialogOpen(true); }}
-             title="Renk 2 seç"
-           >
-             Renk 2
-           </AppButton>
-           <span className="text-xs text-muted-foreground">({renk2Name})</span>
-         </div>
             </div>
-            
+
+            {/* ✅ RENK SEÇİM: wrap ile taşma yok */}
+            <div className="flex flex-wrap items-center gap-2">
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                onClick={() => { setWhichColorSelecting(1); setColorDialogOpen(true); }}
+                title="Renk 1 seç"
+              >
+                Renk 1
+              </AppButton>
+              <span className="text-xs text-muted-foreground">({renk1Name})</span>
+
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                onClick={() => { setWhichColorSelecting(2); setColorDialogOpen(true); }}
+                title="Renk 2 seç"
+              >
+                Renk 2
+              </AppButton>
+              <span className="text-xs text-muted-foreground">({renk2Name})</span>
+            </div>
           </div>
 
-          <AppButton
-            variant="kurumsalmavi"
-            className="ml-auto w-40"
-            onClick={() => navigate(`/projeduzenle/${projectId}`)}
-          >
-            Projeye Dön
-          </AppButton>
+          {/* ✅ SAĞ BUTONLAR: mobilde full, sm+ sabit */}
+          <div className="flex flex-col sm:flex-row md:flex-col gap-2 w-full sm:w-auto md:ml-auto">
+            <AppButton
+              variant="kurumsalmavi"
+              className="w-full sm:w-40"
+              onClick={() => navigate(`/projeduzenle/${projectId}`)}
+            >
+              Projeye Dön
+            </AppButton>
 
-          <AppButton
-            variant="kurumsalmavi"
-            className="ml-auto w-40"
-            onClick={() => navigate(`/sistemsec/${projectId}`)}
-          >
-            Sistem Seç
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              className="w-full sm:w-40"
+              onClick={() => navigate(`/sistemsec/${projectId}`)}
+            >
+              Sistem Seç
+            </AppButton>
 
-          <AppButton
-            variant="kurumsalmavi"
-            className="ml-auto w-40"
-            onClick={handleSistemKaydet}
-            disabled={!canSave || isRefreshing}
-          >
-            {isRefreshing ? "Ekleniyor..." : "Sistem Ekle"}
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              className="w-full sm:w-40"
+              onClick={handleSistemKaydet}
+              disabled={!canSave || isRefreshing}
+            >
+              {isRefreshing ? "Ekleniyor..." : "Sistem Ekle"}
+            </AppButton>
+          </div>
         </div>
       )}
 
@@ -316,28 +322,29 @@ const LIMIT = 5;
       ) : (
         <SistemEkleTables onRefresh={refreshRequirements} systems={requirements.systems} />
       )}
-     {/* Cam rengi seçim modali (DialogCamRenkSec ile aynı PagedSelectDialog) */}
-     <PagedSelectDialog
-       title="Cam Rengi Seç"
-       open={colorDialogOpen}
-       onOpenChange={setColorDialogOpen}
-       data={Array.isArray(colorsPage) ? { ...EMPTY_PAGE, items: colorsPage } : colorsPage}
-       fetchPage={fetchPage}
-       columns={[{ key: 'name', label: 'Renk Adı' }]}
-       searchPlaceholder="Renk adına göre ara…"
-       onSelect={(row) => {
-         if (!row?.id) return;
-         if (whichColorSelecting === 1) {
-           setRenk1Id(row.id);
-           setRenk1Name(row.name ?? 'Renk 1');
-         } else if (whichColorSelecting === 2) {
-           setRenk2Id(row.id);
-           setRenk2Name(row.name ?? 'Renk 2');
-         }
-         setColorDialogOpen(false);
-         setWhichColorSelecting(null);
-       }}
-     />
+
+      {/* Cam rengi seçim modali */}
+      <PagedSelectDialog
+        title="Cam Rengi Seç"
+        open={colorDialogOpen}
+        onOpenChange={setColorDialogOpen}
+        data={Array.isArray(colorsPage) ? { ...EMPTY_PAGE, items: colorsPage } : colorsPage}
+        fetchPage={fetchPage}
+        columns={[{ key: 'name', label: 'Renk Adı' }]}
+        searchPlaceholder="Renk adına göre ara…"
+        onSelect={(row) => {
+          if (!row?.id) return;
+          if (whichColorSelecting === 1) {
+            setRenk1Id(row.id);
+            setRenk1Name(row.name ?? 'Renk 1');
+          } else if (whichColorSelecting === 2) {
+            setRenk2Id(row.id);
+            setRenk2Name(row.name ?? 'Renk 2');
+          }
+          setColorDialogOpen(false);
+          setWhichColorSelecting(null);
+        }}
+      />
     </div>
   );
 };

@@ -38,35 +38,29 @@ const EMPTY_PAGE = {
 const Boyalar = () => {
   const dispatch = useDispatch();
 
-  // Reducer'ların obje döndüğünü varsayıyoruz:
   const profileData = useSelector(s => s.getProfileColorsFromApiReducer) || EMPTY_PAGE;
-  const glassData = useSelector(s => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
+  const glassData   = useSelector(s => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
 
-  // Arama
   const [profileSearch, setProfileSearch] = useState('');
-  const [glassSearch, setGlassSearch] = useState('');
+  const [glassSearch,   setGlassSearch]   = useState('');
 
-  // Sayfa
   const [profilePage, setProfilePage] = useState(1);
-  const [glassPage, setGlassPage] = useState(1);
+  const [glassPage,   setGlassPage]   = useState(1);
 
-  // 🆕 Limit (kullanıcıdan): min 1, max 50, varsayılan 10
   const [profileLimit, setProfileLimit] = useState(10);
-  const [glassLimit, setGlassLimit] = useState(10);
+  const [glassLimit,   setGlassLimit]   = useState(10);
 
-  // Loading
   const [loadingProfile, setLoadingProfile] = useState(false);
-  const [loadingGlass, setLoadingGlass] = useState(false);
+  const [loadingGlass,   setLoadingGlass]   = useState(false);
 
-  // Silme modal state
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState(null); // { kind: 'profile'|'glass', data: color }
-  const [deleting, setDeleting] = useState(false);
-  // Varsayılan atama modal state
-  const [defaultOpen, setDefaultOpen] = useState(false);
-  const [defaultTarget, setDefaultTarget] = useState(null); // { id, name, ... }
+  const [deleteOpen, setDeleteOpen]       = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null); // { kind, data }
+  const [deleting, setDeleting]           = useState(false);
+
+  const [defaultOpen, setDefaultOpen]       = useState(false);
+  const [defaultTarget, setDefaultTarget]   = useState(null);
   const [defaultLoading, setDefaultLoading] = useState(false);
-  // Liste fetch — Profil
+
   useEffect(() => {
     setLoadingProfile(true);
     const safeLimit = Math.min(50, Math.max(1, Number(profileLimit) || 10));
@@ -74,7 +68,6 @@ const Boyalar = () => {
       .finally(() => setLoadingProfile(false));
   }, [dispatch, profilePage, profileSearch, profileLimit]);
 
-  // Liste fetch — Cam
   useEffect(() => {
     setLoadingGlass(true);
     const safeLimit = Math.min(50, Math.max(1, Number(glassLimit) || 10));
@@ -82,7 +75,6 @@ const Boyalar = () => {
       .finally(() => setLoadingGlass(false));
   }, [dispatch, glassPage, glassSearch, glassLimit]);
 
-  // Ekle/Düzenle/Sil sonrası mevcut sayfa ve aramayı koruyarak refetch
   const refetchProfiles = useCallback(() => {
     setLoadingProfile(true);
     const safeLimit = Math.min(50, Math.max(1, Number(profileLimit) || 10));
@@ -97,14 +89,12 @@ const Boyalar = () => {
       .finally(() => setLoadingGlass(false));
   }, [dispatch, glassPage, glassSearch, glassLimit]);
 
-  // Profil — Ekle
   const handleAddProfile = useCallback((data) => {
     setLoadingProfile(true);
     dispatch(addColorToApi({ ...data, type: 'profile' }))
       .finally(() => refetchProfiles());
   }, [dispatch, refetchProfiles]);
 
-  // Profil — Düzenle
   const handleEditProfile = useCallback((data) => {
     setLoadingProfile(true);
     dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0, type: 'profile' }))
@@ -112,14 +102,12 @@ const Boyalar = () => {
       .finally(() => setLoadingProfile(false));
   }, [dispatch, refetchProfiles]);
 
-  // Cam — Ekle
   const handleAddGlass = useCallback((data) => {
     setLoadingGlass(true);
     dispatch(addColorToApi({ ...data, type: 'glass' }))
       .finally(() => refetchGlasses());
   }, [dispatch, refetchGlasses]);
 
-  // Cam — Düzenle
   const handleEditGlass = useCallback((data) => {
     setLoadingGlass(true);
     dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0, type: 'glass' }))
@@ -127,7 +115,6 @@ const Boyalar = () => {
       .finally(() => setLoadingGlass(false));
   }, [dispatch, refetchGlasses]);
 
-  // Silme modali
   const askDeleteProfile = (color) => {
     setPendingDelete({ kind: "profile", data: color });
     setDeleteOpen(true);
@@ -140,41 +127,34 @@ const Boyalar = () => {
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
     const { kind, data } = pendingDelete;
-
     try {
       setDeleting(true);
       await dispatch(deleteColorFromApi(data.id));
-      if (kind === "profile") {
-        await refetchProfiles();
-      } else {
-        await refetchGlasses();
-      }
+      if (kind === "profile") await refetchProfiles();
+      else await refetchGlasses();
     } finally {
       setDeleting(false);
       setPendingDelete(null);
-      // Modal kapatma: ConfirmDeleteModal içinden onOpenChange(false) ile
     }
   };
-  // Modalı aç
+
   const askSetDefaultGlass = (color) => {
     setDefaultTarget(color);
     setDefaultOpen(true);
   };
 
-  // Varsayılan 1 atama
   const handleSetDefaultOne = async () => {
     if (!defaultTarget) return;
     try {
       setDefaultLoading(true);
       await dispatch(makeDefaultColorOne(defaultTarget.id));
-      await refetchGlasses(); // listeyi güncelle
+      await refetchGlasses();
       setDefaultOpen(false);
     } finally {
       setDefaultLoading(false);
     }
   };
 
-  // Varsayılan 2 atama
   const handleSetDefaultTwo = async () => {
     if (!defaultTarget) return;
     try {
@@ -187,7 +167,6 @@ const Boyalar = () => {
     }
   };
 
-  // İsim yanındaki BADGE render helper
   const renderDefaultBadge = (color) => {
     if (color?.is_default && color?.is_default_2) {
       return (
@@ -214,17 +193,21 @@ const Boyalar = () => {
   };
 
   const profileTotalPages = profileData.total_pages || 1;
-  const glassTotalPages = glassData.total_pages || 1;
+  const glassTotalPages   = glassData.total_pages || 1;
 
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Boyalar" />
 
       <div className="space-y-8">
-        {/* Profil Boyaları */}
-        <div className="p-5 bg-card border border-border rounded-2xl space-y-6 text-foreground">
-          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
-            <h2 className="text-2xl font-semibold whitespace-nowrap">Profil Boyaları</h2>
+        {/* ==============================
+            PROFİL BOYALARI
+           ============================== */}
+        <div className="p-4 sm:p-5 bg-card border border-border rounded-2xl space-y-5 text-foreground">
+          {/* Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 w-full">
+            <h2 className="text-xl md:text-2xl font-semibold whitespace-nowrap">Profil Boyaları</h2>
+
             <input
               value={profileSearch}
               onChange={(e) => { setProfileSearch(e.target.value); setProfilePage(1); }}
@@ -232,9 +215,8 @@ const Boyalar = () => {
               placeholder="Profil Boyası Ara.."
             />
 
-            {/* 🆕 Kayıt Sayısı (limit) inputu */}
             <div className="flex items-center gap-2">
-              <label className="text-sm opacity-80">Boya Sayısı</label>
+              <label className="text-sm opacity-80 whitespace-nowrap">Boya Sayısı</label>
               <input
                 type="number"
                 min={1}
@@ -251,14 +233,17 @@ const Boyalar = () => {
               />
             </div>
 
-            <DialogProfilBoyaEkle onSave={handleAddProfile} />
+            <div className="w-full md:w-auto md:ml-auto">
+              <DialogProfilBoyaEkle onSave={handleAddProfile} />
+            </div>
           </div>
 
           {loadingProfile ? (
             <Spinner />
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* ------- DESKTOP TABLO ------- */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
                   <thead>
                     <tr className="border-b border-base-500 border-gray-500">
@@ -269,9 +254,8 @@ const Boyalar = () => {
                   <tbody>
                     {profileData.items?.length > 0 ? (
                       profileData.items.map(color => (
-                        <tr key={color.id} className="border-b  border-gray-500">
+                        <tr key={color.id} className="border-b border-gray-500">
                           <td>{color.name}</td>
-
                           <td className="text-center space-x-2">
                             <DialogProfilBoyaDuzenle
                               color={color}
@@ -298,14 +282,48 @@ const Boyalar = () => {
                 </table>
               </div>
 
-              {/* Sayfalama — Teklifler.jsx UX */}
+              {/* ------- MOBİL KART LİSTE ------- */}
+              <div className="md:hidden flex flex-col gap-3">
+                {profileData.items?.length > 0 ? (
+                  profileData.items.map(color => (
+                    <div
+                      key={color.id}
+                      className="border border-border rounded-2xl p-4 bg-card shadow-sm flex flex-col gap-3"
+                    >
+                      <div className="text-base font-semibold">{color.name}</div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <DialogProfilBoyaDuzenle color={color} onSave={handleEditProfile}>
+                          <AppButton variant="sari" size="md" className="w-full">
+                            Düzenle
+                          </AppButton>
+                        </DialogProfilBoyaDuzenle>
+
+                        <AppButton
+                          variant="kirmizi"
+                          size="md"
+                          className="w-full"
+                          onClick={() => askDeleteProfile(color)}
+                        >
+                          Sil
+                        </AppButton>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="border border-border rounded-2xl p-6 text-center text-muted-foreground">
+                    Veri bulunamadı.
+                  </div>
+                )}
+              </div>
+
+              {/* Sayfalama */}
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
                 <AppButton
                   size="sm"
                   variant="kurumsalmavi"
                   onClick={() => setProfilePage(1)}
                   disabled={profileData.page === 1}
-                  title="İlk sayfa"
                 >
                   « İlk
                 </AppButton>
@@ -315,7 +333,6 @@ const Boyalar = () => {
                   variant="kurumsalmavi"
                   onClick={() => setProfilePage(p => Math.max(p - 1, 1))}
                   disabled={!profileData.has_prev}
-                  title="Önceki sayfa"
                 >
                   ‹ Önceki
                 </AppButton>
@@ -351,7 +368,6 @@ const Boyalar = () => {
                   variant="kurumsalmavi"
                   onClick={() => setProfilePage(p => Math.min(profileTotalPages, p + 1))}
                   disabled={!profileData.has_next}
-                  title="Sonraki sayfa"
                 >
                   Sonraki ›
                 </AppButton>
@@ -361,7 +377,6 @@ const Boyalar = () => {
                   variant="kurumsalmavi"
                   onClick={() => setProfilePage(profileTotalPages)}
                   disabled={profileData.page === profileTotalPages || profileTotalPages <= 1}
-                  title="Son sayfa"
                 >
                   Son »
                 </AppButton>
@@ -370,10 +385,14 @@ const Boyalar = () => {
           )}
         </div>
 
-        {/* Cam Boyaları */}
-        <div className="p-5 bg-card border border-border rounded-2xl space-y-6 text-foreground">
-          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
-            <h2 className="text-2xl font-semibold whitespace-nowrap">Cam Boyaları</h2>
+        {/* ==============================
+            CAM BOYALARI
+           ============================== */}
+        <div className="p-4 sm:p-5 bg-card border border-border rounded-2xl space-y-5 text-foreground">
+          {/* Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 w-full">
+            <h2 className="text-xl md:text-2xl font-semibold whitespace-nowrap">Cam Boyaları</h2>
+
             <input
               value={glassSearch}
               onChange={(e) => { setGlassSearch(e.target.value); setGlassPage(1); }}
@@ -381,9 +400,8 @@ const Boyalar = () => {
               placeholder="Cam Boyası Ara.."
             />
 
-            {/* 🆕 Kayıt Sayısı (limit) inputu */}
             <div className="flex items-center gap-2">
-              <label className="text-sm opacity-80">Boya Sayısı</label>
+              <label className="text-sm opacity-80 whitespace-nowrap">Boya Sayısı</label>
               <input
                 type="number"
                 min={1}
@@ -396,18 +414,20 @@ const Boyalar = () => {
                   setGlassPage(1);
                 }}
                 className="input input-bordered input-sm w-24 text-center"
-                title="Sayfa Başına Kayıt (min:1 / max:50)"
               />
             </div>
 
-            <DialogCamBoyaEkle onSave={handleAddGlass} />
+            <div className="w-full md:w-auto md:ml-auto">
+              <DialogCamBoyaEkle onSave={handleAddGlass} />
+            </div>
           </div>
 
           {loadingGlass ? (
             <Spinner />
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* ------- DESKTOP TABLO ------- */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
                   <thead>
                     <tr className="border-b border-base-500 border-gray-500">
@@ -432,7 +452,6 @@ const Boyalar = () => {
                               size="sm"
                               variant="yesil"
                               onClick={() => askSetDefaultGlass(color)}
-                              title="Bu rengi Varsayılan olarak ata"
                             >
                               Varsayılan Ata
                             </AppButton>
@@ -457,14 +476,60 @@ const Boyalar = () => {
                 </table>
               </div>
 
-              {/* Sayfalama — Teklifler.jsx UX */}
+              {/* ------- MOBİL KART LİSTE ------- */}
+              <div className="md:hidden flex flex-col gap-3">
+                {glassData.items?.length > 0 ? (
+                  glassData.items.map(color => (
+                    <div
+                      key={color.id}
+                      className="border border-border rounded-2xl p-4 bg-card shadow-sm flex flex-col gap-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="text-base font-semibold">{color.name}</div>
+                        <div className="shrink-0">{renderDefaultBadge(color)}</div>
+                      </div>
+
+                      <AppButton
+                        variant="yesil"
+                        size="md"
+                        className="w-full"
+                        onClick={() => askSetDefaultGlass(color)}
+                      >
+                        Varsayılan Ata
+                      </AppButton>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <DialogCamBoyaDuzenle color={color} onSave={handleEditGlass}>
+                          <AppButton variant="sari" size="md" className="w-full">
+                            Düzenle
+                          </AppButton>
+                        </DialogCamBoyaDuzenle>
+
+                        <AppButton
+                          variant="kirmizi"
+                          size="md"
+                          className="w-full"
+                          onClick={() => askDeleteGlass(color)}
+                        >
+                          Sil
+                        </AppButton>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="border border-border rounded-2xl p-6 text-center text-muted-foreground">
+                    Veri bulunamadı.
+                  </div>
+                )}
+              </div>
+
+              {/* Sayfalama */}
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
                 <AppButton
                   size="sm"
                   variant="kurumsalmavi"
                   onClick={() => setGlassPage(1)}
                   disabled={glassData.page === 1}
-                  title="İlk sayfa"
                 >
                   « İlk
                 </AppButton>
@@ -474,7 +539,6 @@ const Boyalar = () => {
                   variant="kurumsalmavi"
                   onClick={() => setGlassPage(p => Math.max(p - 1, 1))}
                   disabled={!glassData.has_prev}
-                  title="Önceki sayfa"
                 >
                   ‹ Önceki
                 </AppButton>
@@ -510,7 +574,6 @@ const Boyalar = () => {
                   variant="kurumsalmavi"
                   onClick={() => setGlassPage(p => Math.min(glassTotalPages, p + 1))}
                   disabled={!glassData.has_next}
-                  title="Sonraki sayfa"
                 >
                   Sonraki ›
                 </AppButton>
@@ -520,7 +583,6 @@ const Boyalar = () => {
                   variant="kurumsalmavi"
                   onClick={() => setGlassPage(glassTotalPages)}
                   disabled={glassData.page === glassTotalPages || glassTotalPages <= 1}
-                  title="Son sayfa"
                 >
                   Son »
                 </AppButton>
@@ -530,6 +592,7 @@ const Boyalar = () => {
         </div>
       </div>
 
+      {/* Silme Modali */}
       <ConfirmDeleteModal
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -544,12 +607,14 @@ const Boyalar = () => {
         onConfirm={handleConfirmDelete}
         loading={deleting}
       />
+
       {/* Varsayılan Ata Modal */}
       <Dialog open={defaultOpen} onOpenChange={setDefaultOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[94vw] max-w-md">
           <DialogHeader>
             <DialogTitle>Varsayılan Ata</DialogTitle>
           </DialogHeader>
+
           <div className="mt-2 text-sm opacity-80">
             {defaultTarget ? (
               <p>
@@ -566,19 +631,23 @@ const Boyalar = () => {
               onClick={handleSetDefaultOne}
               loading={defaultLoading}
               disabled={!defaultTarget || defaultLoading}
+              className="w-full sm:w-auto"
             >
               Varsayılan 1 ata
             </AppButton>
+
             <AppButton
               variant="mor"
               onClick={handleSetDefaultTwo}
               loading={defaultLoading}
               disabled={!defaultTarget || defaultLoading}
+              className="w-full sm:w-auto"
             >
               Varsayılan 2 ata
             </AppButton>
+
             <DialogClose asChild>
-              <AppButton variant="gri">Vazgeç</AppButton>
+              <AppButton variant="gri" className="w-full sm:w-auto">Vazgeç</AppButton>
             </DialogClose>
           </div>
         </DialogContent>

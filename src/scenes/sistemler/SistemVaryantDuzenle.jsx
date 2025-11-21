@@ -11,7 +11,6 @@ import {
 import DialogPdfAyar from "./DialogPdfAyar.jsx";
 import Header from '@/components/mycomponents/Header.jsx';
 
-// Seçim modalları
 import DialogProfilSec from "./DialogProfilSec.jsx";
 import DialogCamSec from "./DialogCamSec.jsx";
 import DialogMalzemeSec from "./DialogMalzemeSec.jsx";
@@ -28,12 +27,10 @@ const SistemVaryantDuzenle = () => {
   const seciliVaryant = useSelector(s => s.getSystemFullVariantsOfSystemFromApiReducer) || {};
   const [openVariantPhotoDlg, setOpenVariantPhotoDlg] = useState(false);
 
-  // PDF dialog state’leri: hangi satırdan açıldıysa type/rowKey tutuyoruz, draft veriyi gönderiyoruz
   const [openPdfDlg, setOpenPdfDlg] = useState(false);
   const [pdfTarget, setPdfTarget] = useState({ type: null, rowKey: null });
   const [pdfDraft, setPdfDraft] = useState(null);
 
-  // Sistem seçimi + sistem listesi
   const [selectedSystem, setSelectedSystem] = useState('');
   const [systems, setSystems] = useState([]);
   const [systemsLoading, setSystemsLoading] = useState(false);
@@ -42,9 +39,8 @@ const SistemVaryantDuzenle = () => {
   const [profiles, setProfiles] = useState([]);
   const [glasses, setGlasses] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [remotes, setRemotes] = useState([]); // ✅ Kumandalar
+  const [remotes, setRemotes] = useState([]);
 
-  // --- Seçim dialogları open + düzenlenen satır id'si ---
   const [openProfileDlg, setOpenProfileDlg] = useState(false);
   const [editingProfileRowKey, setEditingProfileRowKey] = useState(null);
 
@@ -54,7 +50,7 @@ const SistemVaryantDuzenle = () => {
   const [openMatDlg, setOpenMatDlg] = useState(false);
   const [editingMatRowKey, setEditingMatRowKey] = useState(null);
 
-  const [openRemoteDlg, setOpenRemoteDlg] = useState(false); // ✅
+  const [openRemoteDlg, setOpenRemoteDlg] = useState(false);
   const [editingRemoteRowKey, setEditingRemoteRowKey] = useState(null);
 
   const createRowKey = () =>
@@ -62,12 +58,10 @@ const SistemVaryantDuzenle = () => {
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-  // İlk yükleme: varyantı getir
   useEffect(() => {
     dispatch(getSystemFullVariantsOfSystemFromApi(variantId));
   }, [dispatch, variantId]);
 
-  // İlk yükleme: sistem listesini getir (tümü)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -86,7 +80,6 @@ const SistemVaryantDuzenle = () => {
     return () => { mounted = false; };
   }, [dispatch]);
 
-  // Varyant reducer değişince UI state doldur
   useEffect(() => {
     if (seciliVaryant?.id === variantId) {
       setSelectedSystem(seciliVaryant.system?.id ?? '');
@@ -109,7 +102,7 @@ const SistemVaryantDuzenle = () => {
           siparisCiktisi: t.pdf?.siparisCiktisi ?? true,
           boyaCiktisi: t.pdf?.boyaCiktisi ?? true,
           profilAksesuarCiktisi: t.pdf?.profilAksesuarCiktisi ?? true,
-          camCiktisi: true, // 🔒 Profiller: her zaman TRUE (UI’da da force edilecek)
+          camCiktisi: true,
         }
       })));
 
@@ -176,7 +169,6 @@ const SistemVaryantDuzenle = () => {
     }
   }, [seciliVaryant, variantId]);
 
-  // Sistem değiştirici
   const handleSystemChange = async (e) => {
     const newSystemId = e.target.value;
     if (!newSystemId || newSystemId === selectedSystem) return;
@@ -190,7 +182,6 @@ const SistemVaryantDuzenle = () => {
     }
   };
 
-  // Satır ekleme/çıkarma
   const addProfileRow = () => setProfiles(ps => [...ps, {
     id: '',
     rowKey: createRowKey(),
@@ -202,7 +193,7 @@ const SistemVaryantDuzenle = () => {
       siparisCiktisi: true,
       boyaCiktisi: true,
       profilAksesuarCiktisi: true,
-      camCiktisi: true, // 🔒 Profiller: her zaman TRUE
+      camCiktisi: true,
     }
   }]);
   const removeProfileRow = rowKey => setProfiles(ps => ps.filter(r => r.rowKey !== rowKey));
@@ -243,7 +234,6 @@ const SistemVaryantDuzenle = () => {
   }]);
   const removeMaterialRow = rowKey => setMaterials(ms => ms.filter(r => r.rowKey !== rowKey));
 
-  // ✅ Kumanda satırları
   const addRemoteRow = () => setRemotes(rs => [...rs, {
     id: Date.now(), remote_id: '', rowKey: createRowKey(), kumanda_isim: '',
     pdf: {
@@ -257,7 +247,6 @@ const SistemVaryantDuzenle = () => {
   }]);
   const removeRemoteRow = rowKey => setRemotes(rs => rs.filter(r => r.rowKey !== rowKey));
 
-  // Yukarı/Aşağı taşı (ortak)
   const moveItem = (arr, setArr, rowKey, dir) => {
     setArr(old => {
       const idx = old.findIndex(r => r.rowKey === rowKey);
@@ -278,13 +267,11 @@ const SistemVaryantDuzenle = () => {
   const moveRemoteUp = rowKey => moveItem(remotes, setRemotes, rowKey, 'up');
   const moveRemoteDown = rowKey => moveItem(remotes, setRemotes, rowKey, 'down');
 
-  // --- Seçim dialoglarını aç ---
   const openProfileDialog = (rowKey) => { setEditingProfileRowKey(rowKey); setOpenProfileDlg(true); };
   const openCamDialog = (rowKey) => { setEditingCamRowKey(rowKey); setOpenCamDlg(true); };
   const openMatDialog = (rowKey) => { setEditingMatRowKey(rowKey); setOpenMatDlg(true); };
   const openRemoteDialog = (rowKey) => { setEditingRemoteRowKey(rowKey); setOpenRemoteDlg(true); };
 
-  // --- Kaydet (PUT payload) ---
   const handleSave = () => {
     const payload = {
       name: variantName,
@@ -294,7 +281,6 @@ const SistemVaryantDuzenle = () => {
         formula_cut_count: r.formula_cut_count,
         order_index: idx,
         is_painted: r.is_painted,
-        // 🔒 Profiller: camCiktisi DAİMA true gönderilir (yüksek emniyet – dialog ve state’e ek olarak payload’ta da kilit)
         pdf: { ...r.pdf, camCiktisi: true },
       })),
       glass_templates: glasses.map((r, idx) => ({
@@ -330,13 +316,14 @@ const SistemVaryantDuzenle = () => {
     <div className="grid grid-rows-[60px_1fr] min-h-screen bg-background text-foreground">
       <Header title="Sistem Varyant Düzenle" />
 
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-8">
-        {/* Sistem ve Varyant İsmi */}
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="font-semibold">Sistem:</label>
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 space-y-8">
+
+        {/* ===== ÜST BAR (grid toolbar) ===== */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          <div className="flex items-center gap-2 md:col-span-4">
+            <label className="font-semibold whitespace-nowrap">Sistem:</label>
             <select
-              className="select select-bordered"
+              className="select select-bordered w-full"
               value={selectedSystem}
               onChange={handleSystemChange}
               disabled={systemsLoading || systems.length === 0}
@@ -352,32 +339,36 @@ const SistemVaryantDuzenle = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="font-semibold">Varyant İsmi:</label>
+          <div className="flex items-center gap-2 md:col-span-4">
+            <label className="font-semibold whitespace-nowrap">Varyant İsmi:</label>
             <input
               type="text"
-              className="input input-bordered w-full max-w-xs"
+              className="input input-bordered w-full"
               value={variantName}
               onChange={e => setVariantName(e.target.value)}
             />
           </div>
 
-          <AppButton
-            variant="gri"
-            className="ml-5"
-            onClick={() => setOpenVariantPhotoDlg(true)}
-          >
-            Fotoğraf
-          </AppButton>
+          <div className="md:col-span-2 flex">
+            <AppButton
+              variant="gri"
+              className="w-full md:w-auto"
+              onClick={() => setOpenVariantPhotoDlg(true)}
+            >
+              Fotoğraf
+            </AppButton>
+          </div>
 
-          <AppButton
-            variant="kurumsalmavi"
-            className="ml-auto"
-            onClick={handleSave}
-            disabled={!variantName}
-          >
-            Kaydet
-          </AppButton>
+          <div className="md:col-span-2 flex md:justify-end">
+            <AppButton
+              variant="kurumsalmavi"
+              className="w-full md:w-auto"
+              onClick={handleSave}
+              disabled={!variantName}
+            >
+              Kaydet
+            </AppButton>
+          </div>
         </div>
 
         {/* Profiller */}
@@ -552,7 +543,6 @@ const SistemVaryantDuzenle = () => {
             />,
 
             <div key="actions" className="flex justify-center flex-wrap gap-2">
-              {/* Sayıya Tamamla toggle */}
               <AppButton
                 size="xs"
                 variant={row.chunk_enabled ? 'kurumsalmavi' : 'gri'}
@@ -587,7 +577,7 @@ const SistemVaryantDuzenle = () => {
           ]}
         />
 
-        {/* ✅ Kumandalar */}
+        {/* Kumandalar */}
         <Section
           title="Kumandalar"
           addButtonLabel="Kumanda Ekle"
@@ -617,7 +607,7 @@ const SistemVaryantDuzenle = () => {
           ]}
         />
 
-        {/* --- Seçim Dialogları --- */}
+        {/* Seçim Dialogları */}
         <DialogProfilSec
           open={openProfileDlg}
           onOpenChange={setOpenProfileDlg}
@@ -666,7 +656,6 @@ const SistemVaryantDuzenle = () => {
           }}
         />
 
-        {/* 📄 PDF Ayar Dialog — section prop’u ile hangi section olduğunu bildiriyoruz */}
         <DialogPdfAyar
           open={openPdfDlg}
           onOpenChange={setOpenPdfDlg}
@@ -674,7 +663,6 @@ const SistemVaryantDuzenle = () => {
           section={pdfTarget.type || "profile"}
           onSave={(val) => {
             if (pdfTarget.type === 'profile') {
-              // Profiller: camCiktisi dialog içinde de force; burada da tekrar kilitliyoruz.
               const fixed = { ...val, camCiktisi: true };
               setProfiles(ps => ps.map(r => r.rowKey === pdfTarget.rowKey ? ({ ...r, pdf: { ...r.pdf, ...fixed } }) : r));
             } else if (pdfTarget.type === 'glass') {
@@ -697,37 +685,89 @@ const SistemVaryantDuzenle = () => {
   );
 };
 
-// Reusable Section — addButtonLabel opsiyonel
-const Section = ({ title, columns, rows, addRow, renderRow, addButtonLabel }) => (
-  <div className="space-y-2">
-    <div className="flex justify-between items-center">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <AppButton size="sm" variant="kurumsalmavi" onClick={addRow}>
-        {addButtonLabel ?? `${title.slice(0, -1)} Ekle`}
-      </AppButton>
+/**
+ * Reusable Section — md+ tablo, md- kart
+ */
+const Section = ({ title, columns, rows, addRow, renderRow, addButtonLabel }) => {
+  const renderCells = (row) => renderRow(row);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <AppButton
+          size="sm"
+          variant="kurumsalmavi"
+          onClick={addRow}
+          className="w-full sm:w-auto"
+        >
+          {addButtonLabel ?? `${title.slice(0, -1)} Ekle`}
+        </AppButton>
+      </div>
+
+      {/* md+ tablo */}
+      <div className="hidden md:block overflow-x-auto border border-border rounded-lg">
+        <table className="table w-full">
+          <thead>
+            <tr>{columns.map((c, i) => <th key={i}>{c}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.length > 0
+              ? rows.map(r => (
+                <tr key={r.rowKey} className="hover:bg-muted/40 border-b border-base-300 last:border-b-0">
+                  {renderCells(r).map((cell, i) => <td key={i} className="align-top">{cell}</td>)}
+                </tr>
+              ))
+              : (
+                <tr>
+                  <td colSpan={columns.length} className="text-center text-muted-foreground py-4">
+                    Veri bulunamadı
+                  </td>
+                </tr>
+              )
+            }
+          </tbody>
+        </table>
+      </div>
+
+      {/* md- mobil kart */}
+      <div className="md:hidden">
+        {rows.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {rows.map((r) => {
+              const cells = renderCells(r);
+              return (
+                <div
+                  key={r.rowKey}
+                  className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-2"
+                >
+                  {/* Alanlar */}
+                  <div className="flex flex-col gap-1 text-sm">
+                    {columns.map((label, i) => {
+                      if (label.toLowerCase() === "işlemler") return null;
+                      return (
+                        <div key={i} className="flex justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">{label}</span>
+                          <div className="text-right font-medium">
+                            {cells[i] ?? "—"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-4 text-sm">
+            Veri bulunamadı
+          </div>
+        )}
+      </div>
     </div>
-    <div className="overflow-x-auto border border-border rounded-lg">
-      <table className="table w-full">
-        <thead>
-          <tr>{columns.map((c, i) => <th key={i}>{c}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.length > 0
-            ? rows.map(r => (
-              <tr key={r.rowKey} className="hover:bg-muted/40 border-b border-base-300 last:border-b-0">
-                {renderRow(r).map((cell, i) => <td key={i} className="align-top">{cell}</td>)}
-              </tr>
-            ))
-            : <tr>
-              <td colSpan={columns.length} className="text-center text-muted-foreground py-4">
-                Veri bulunamadı
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
+  );
+};
 
 export default SistemVaryantDuzenle;

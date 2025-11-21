@@ -37,7 +37,8 @@ const DialogSistemEkle = ({ system, onSave }) => {
   }, [system, dispatch]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target; setForm(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target; 
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const localPreview = useMemo(() => {
@@ -72,31 +73,64 @@ const DialogSistemEkle = ({ system, onSave }) => {
         {system ? (
           <AppButton size="sm" variant="sari" shape="none">Düzenle</AppButton>
         ) : (
-          <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">+ Sistem Ekle</AppButton>
+          <AppButton
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            // ✅ Musteriler responsive standardı
+            className="w-full sm:w-40 sm:ml-auto"
+          >
+            + Sistem Ekle
+          </AppButton>
         )}
       </DialogTrigger>
 
       <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
-        <DialogHeader><DialogTitle>{system ? 'Sistem Düzenle' : 'Yeni Sistem Ekle'}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{system ? 'Sistem Düzenle' : 'Yeni Sistem Ekle'}</DialogTitle>
+        </DialogHeader>
 
         <div className="grid gap-3 py-4">
           <label className="text-sm text-muted-foreground">Sistem İsmi</label>
-          <input name="name" value={form.name} onChange={handleChange} placeholder="Sistem İsmi" className="input input-bordered" />
+          <input
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="Sistem İsmi"
+            className="input input-bordered"
+          />
 
           <label className="text-sm text-muted-foreground">Açıklama</label>
-          <textarea name="description" value={form.description} onChange={handleChange} placeholder="Açıklama" className="textarea textarea-bordered" />
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Açıklama"
+            className="textarea textarea-bordered"
+          />
 
           <div className="mt-2">
             <label className="block mb-2 text-sm text-muted-foreground">Sistem Fotoğraf</label>
 
             <div className="w-full aspect-video bg-muted/20 rounded flex items-center justify-center overflow-hidden border border-border">
               {(localPreview || existingUrl) ? (
-                <img src={localPreview || existingUrl} alt="Önizleme" className="w-full h-full object-contain" />
-              ) : (<span className="text-muted-foreground text-sm">Görsel yok</span>)}
+                <img
+                  src={localPreview || existingUrl}
+                  alt="Önizleme"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-muted-foreground text-sm">Görsel yok</span>
+              )}
             </div>
 
-            <div className="flex items-center gap-2 mt-3">
-              <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} className="file-input file-input-bordered file-input-sm" />
+            {/* ✅ mobilde alt alta dizilsin */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                className="file-input file-input-bordered file-input-sm w-full sm:w-auto"
+              />
 
               <AppButton
                 size="sm"
@@ -130,7 +164,9 @@ const DialogSistemEkle = ({ system, onSave }) => {
         </div>
 
         <DialogClose asChild>
-          <AppButton variant="kurumsalmavi" onClick={handleSave}>{system ? 'Güncelle' : 'Kaydet'}</AppButton>
+          <AppButton variant="kurumsalmavi" onClick={handleSave}>
+            {system ? 'Güncelle' : 'Kaydet'}
+          </AppButton>
         </DialogClose>
       </DialogContent>
     </Dialog>

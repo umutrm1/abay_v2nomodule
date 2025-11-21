@@ -49,13 +49,12 @@ const Profiller = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🆕 Limit
   const [limit, setLimit] = useState(10);
 
-  // Silme modal
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
   const [loadingImgIds, setLoadingImgIds] = useState(new Set());
   const [uploadingIds, setUploadingIds] = useState(new Set());
   const fileInputRefs = useRef({});
@@ -75,7 +74,7 @@ const Profiller = () => {
     setCurrentPage(1);
   };
 
-  // 🆕 Limit değişimi
+  // Limit değişimi
   const onLimitChange = (e) => {
     const raw = parseInt(e.target.value, 10);
     const clamped = isNaN(raw) ? 10 : Math.min(50, Math.max(1, raw));
@@ -89,8 +88,8 @@ const Profiller = () => {
       const entry = imageCache[p.id];
       const hasImg = (typeof entry === 'string') || !!entry?.imageData;
       const failed = !!entry?.error;
-      const isLoading = loadingImgIds.has(p.id);
-      if (!hasImg && !failed && !isLoading && !requestedRef.current.has(p.id)) {
+      const isLoadingImg = loadingImgIds.has(p.id);
+      if (!hasImg && !failed && !isLoadingImg && !requestedRef.current.has(p.id)) {
         requestedRef.current.add(p.id);
         setLoadingImgIds(prev => new Set(prev).add(p.id));
         Promise.resolve(dispatch(getProfilImageFromApi(p.id)))
@@ -126,7 +125,6 @@ const Profiller = () => {
         profil_isim: profil.profil_isim,
         birim_agirlik: profil.birim_agirlik,
         boy_uzunluk: profil.boy_uzunluk,
-        profil_kesit_fotograf: 'string',
         unit_price: 0
       }));
       const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
@@ -183,42 +181,52 @@ const Profiller = () => {
   };
 
   const totalPages = data.total_pages || 1;
+  const items = data.items ?? [];
 
   return (
-    <div className="grid grid-rows-[60px_1fr] min-h-screen">
+    <div className="grid grid-rows-[60px_1fr]">
       <Header title="Profiller" />
 
-      <div className="bg-card border borderorder rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
-        {/* Arama + Limit + Ekle */}
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
-          <input
-            type="text"
-            placeholder="Profil kodu veya adı ile ara..."
-            value={searchTerm}
-            onChange={onSearchChange}
-            className="input input-bordered w-full md:max-w-sm"
-          />
-
-          {/* 🆕 Kayıt Sayısı (limit) */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm opacity-80">Profil Sayısı</label>
+      <div className="bg-card w-full border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-y-4 text-foreground">
+        {/* Arama & Ekle & Kayıt Sayısı */}
+        <div className="flex flex-col md:flex-row md:items-center gap-3 w-full">
+          {/* Arama inputu */}
+          <div className="w-full md:max-w-sm">
             <input
-              type="number"
-              min={1}
-              max={50}
-              value={limit}
-              onChange={onLimitChange}
-              className="input input-bordered input-sm w-24 text-center"
-              title="Sayfa Başına Kayıt (min:1 / max:50)"
+              type="text"
+              placeholder="Profil kodu veya adı ile ara..."
+              value={searchTerm}
+              onChange={onSearchChange}
+              className="input input-bordered w-full text-sm"
             />
           </div>
 
-          <DialogProfilEkle onSave={handleAddProfil} />
+          {/* Limit + Ekle */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto md:ml-4">
+            <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+              <label className="text-xs sm:text-sm opacity-80 whitespace-nowrap">
+                Profil Sayısı
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={limit}
+                onChange={onLimitChange}
+                className="input input-bordered input-sm w-24 text-center"
+                title="Sayfa Başına Kayıt (min:1 / max:50)"
+              />
+            </div>
+
+            <div className="w-full sm:w-auto sm:ml-auto">
+              <DialogProfilEkle onSave={handleAddProfil} />
+            </div>
+          </div>
         </div>
 
-        {/* Tablo */}
-        <div className="overflow-x-auto">
-          <table className="table w-full border  border-gray-500 rounded-lg">
+        {/* 🔹 Desktop / tablet: Tablo görünümü (md ve üzeri) */}
+        <div className="hidden md:block flex-grow overflow-x-auto">
+          <table className="table w-full border border-gray-500 rounded-lg">
             <thead>
               <tr className="border border-gray-500">
                 <th>Profil Kodu</th>
@@ -236,13 +244,14 @@ const Profiller = () => {
                   <td colSpan={6}><Spinner /></td>
                 </tr>
               </tbody>
-            ) : (
+            ) : items.length > 0 ? (
               <tbody>
-                {(data.items ?? []).length > 0 ? data.items.map(profil => {
+                {items.map(profil => {
                   const entry = imageCache[profil.id];
                   const imgSrc = typeof entry === 'string' ? entry : entry?.imageData;
                   const failed = !!entry?.error;
                   const isLoadingImg = loadingImgIds.has(profil.id);
+
                   return (
                     <tr key={profil.id} className="border border-gray-500">
                       <td>{profil.profil_kodu}</td>
@@ -314,89 +323,204 @@ const Profiller = () => {
                       </td>
                     </tr>
                   );
-                }) : (
-                  <tr>
-                    <td colSpan={6} className="border border-gray-500 text-center text-muted-foreground py-4">
-                      Veri bulunamadı
-                    </td>
-                  </tr>
-                )}
+                })}
+              </tbody>
+            ) : (
+              <tbody>
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="border border-gray-500 text-center text-muted-foreground py-10"
+                  >
+                    Gösterilecek profil bulunamadı.
+                  </td>
+                </tr>
               </tbody>
             )}
           </table>
         </div>
 
+        {/* 🔹 Mobil: Kart görünümü (md altı) */}
+        <div className="md:hidden">
+          {isLoading ? (
+            <Spinner />
+          ) : items.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {items.map(profil => {
+                const entry = imageCache[profil.id];
+                const imgSrc = typeof entry === 'string' ? entry : entry?.imageData;
+                const failed = !!entry?.error;
+                const isLoadingImg = loadingImgIds.has(profil.id);
+                const isUploading = uploadingIds.has(profil.id);
+
+                return (
+                  <div
+                    key={profil.id}
+                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                  >
+                    {/* Üst satır */}
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <div className="font-semibold text-sm">
+                          {profil.profil_kodu || "-"} — {profil.profil_isim || "-"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Birim Ağırlık: {profil.birim_agirlik ?? "—"} | Boy: {profil.boy_uzunluk ?? "—"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Fotoğraf alanı */}
+                    <div className="flex items-center gap-3">
+                      {imgSrc ? (
+                        <img
+                          src={imgSrc}
+                          alt={`${profil.profil_isim} kesit`}
+                          className="h-12 w-20 object-contain border border-gray-500 rounded"
+                          loading="lazy"
+                        />
+                      ) : failed ? (
+                        <div className="text-xs opacity-60">Fotoğraf yok</div>
+                      ) : isLoadingImg ? (
+                        <CellSpinner />
+                      ) : (
+                        <div className="text-xs opacity-60">Fotoğraf yok</div>
+                      )}
+
+                      <div className="flex gap-2 ml-auto">
+                        <AppButton
+                          onClick={async () => {
+                            try {
+                              await dispatch(deleteProfilImageFromApi(profil.id));
+                            } catch (err) {
+                              console.error("Fotoğraf silme hatası", err);
+                            }
+                          }}
+                          variant="gri"
+                          size="sm"
+                          shape="none"
+                          title="Profil kesit fotoğrafını sil"
+                        >
+                          Sil
+                        </AppButton>
+
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={el => { fileInputRefs.current[profil.id] = el; }}
+                          onChange={(e) => handleFileChange(profil.id, e)}
+                        />
+                        <AppButton
+                          onClick={() => handleClickUpload(profil.id)}
+                          variant="koyumavi"
+                          size="sm"
+                          shape="none"
+                          disabled={isUploading}
+                          title="Profil kesit fotoğrafı yükle"
+                        >
+                          {isUploading ? "Yükleniyor..." : "Yükle"}
+                        </AppButton>
+                      </div>
+                    </div>
+
+                    {/* Alt satır: aksiyonlar */}
+                    <div className="flex justify-end gap-2">
+                      <DialogProfilDuzenle profil={profil} onSave={handleEditProfil} />
+                      <AppButton
+                        onClick={() => askDelete(profil)}
+                        variant="kirmizi"
+                        size="sm"
+                        shape="none"
+                        title="Profili sil"
+                      >
+                        Sil
+                      </AppButton>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8 text-sm">
+              Gösterilecek profil bulunamadı.
+            </div>
+          )}
+        </div>
+
         {/* Sayfalama */}
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(1)}
-            disabled={data.page === 1}
-            title="İlk sayfa"
-          >
-            « İlk
-          </AppButton>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center sm:justify-between items-center gap-2 sm:gap-3 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setCurrentPage(1)}
+              disabled={data.page === 1}
+              title="İlk sayfa"
+            >
+              « İlk
+            </AppButton>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            disabled={!data.has_prev}
-            title="Önceki sayfa"
-          >
-            ‹ Önceki
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+              disabled={!data.has_prev}
+              title="Önceki sayfa"
+            >
+              ‹ Önceki
+            </AppButton>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = parseInt(e.currentTarget.elements.pageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                setCurrentPage(val);
-              }
-            }}
-            className="flex items-center gap-1"
-          >
-            <input
-              type="number"
-              name="pageNum"
-              min={1}
-              max={totalPages}
-              value={currentPage}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (isNaN(val)) return setCurrentPage(1);
-                setCurrentPage(Math.min(Math.max(1, val), totalPages));
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = parseInt(e.currentTarget.elements.pageNum.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                  setCurrentPage(val);
+                }
               }}
-              className="input input-bordered input-sm w-16 text-center"
-            />
-            <span className="text-sm">/ {totalPages}</span>
-          </form>
+              className="flex items-center gap-1"
+            >
+              <input
+                type="number"
+                name="pageNum"
+                min={1}
+                max={totalPages}
+                value={currentPage}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (isNaN(val)) return setCurrentPage(1);
+                  setCurrentPage(Math.min(Math.max(1, val), totalPages));
+                }}
+                className="input input-bordered input-sm w-16 text-center"
+              />
+              <span className="text-sm">/ {totalPages}</span>
+            </form>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={!data.has_next}
-            title="Sonraki sayfa"
-          >
-            Sonraki ›
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={!data.has_next}
+              title="Sonraki sayfa"
+            >
+              Sonraki ›
+            </AppButton>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={data.page === totalPages || totalPages <= 1}
-            title="Son sayfa"
-          >
-            Son »
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={data.page === totalPages || totalPages <= 1}
+              title="Son sayfa"
+            >
+              Son »
+            </AppButton>
+          </div>
         </div>
       </div>
 
@@ -406,7 +530,9 @@ const Profiller = () => {
         onOpenChange={setDeleteOpen}
         title="Silmek istediğinize emin misiniz?"
         description={
-          pendingDelete ? `'${pendingDelete.profil_isim}' silinecek. Bu işlem geri alınamaz.` : ""
+          pendingDelete
+            ? `'${pendingDelete.profil_isim}' silinecek. Bu işlem geri alınamaz.`
+            : ""
         }
         confirmText="Evet, sil"
         cancelText="Vazgeç"

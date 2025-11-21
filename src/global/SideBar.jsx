@@ -22,23 +22,40 @@ function SidebarShema({ children }) {
   const { expanded, setExpanded } = useContext(SidebarContext);
 
   return (
-    <nav
-      className={`fixed h-full flex flex-col transition-all
-                  ${expanded ? "w-64" : "w-20"}
-                  bg-card border-r border-border`}
-    >
-      <div className="p-4 pb-2 flex justify-between items-center">
-        <button
-          onClick={() => setExpanded((curr) => !curr)}
-          className={`p-1.5 cursor-pointer rounded-lg transition-all
-                      bg-secondary hover:opacity-90 ${expanded ? "ml-48" : ""}`}
-        >
-          {expanded ? <ChevronFirst /> : <ChevronLast />}
-        </button>
-      </div>
+    <>
+      {/* 🔹 Mobilde sidebar açıldığında arka planı karartan overlay */}
+      {expanded && (
+        <div
+          className="fixed inset-0 z-30 bg-background/60 backdrop-blur-sm md:hidden"
+          onClick={() => setExpanded(false)}
+        />
+      )}
 
-      <ul className="flex-1 px-3 mt-10">{children}</ul>
-    </nav>
+      <nav
+        className={`
+          fixed inset-y-0 left-0 z-40 flex flex-col transition-all
+          bg-card border-r border-border
+          ${expanded ? "w-64" : "w-20"}
+          md:translate-x-0
+          ${expanded ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
+        {/* 🔹 Desktop için üstteki toggle butonu (md ve üzeri görünsün) */}
+        <div className="p-4 pb-2 hidden md:flex justify-between items-center">
+          <button
+            onClick={() => setExpanded((curr) => !curr)}
+            className={`
+              p-1.5 cursor-pointer rounded-lg transition-all
+              bg-secondary hover:opacity-90 ${expanded ? "ml-48" : ""}
+            `}
+          >
+            {expanded ? <ChevronFirst /> : <ChevronLast />}
+          </button>
+        </div>
+
+        <ul className="flex-1 px-3 mt-10">{children}</ul>
+      </nav>
+    </>
   );
 }
 
@@ -52,9 +69,11 @@ function SidebarItem({ icon, text, active, alert, onClick }) {
       className={`
         relative flex items-center h-12 py-2 px-3 my-1
         font-medium rounded-md cursor-pointer transition-colors group
-        ${active
-          ? "bg-secondary text-foreground"
-          : "text-muted-foreground hover:bg-secondary"}
+        ${
+          active
+            ? "bg-secondary text-foreground"
+            : "text-muted-foreground hover:bg-secondary"
+        }
       `}
     >
       {/* ikonlar temada da rahat görünsün diye opak */}
@@ -95,10 +114,23 @@ function SidebarItem({ icon, text, active, alert, onClick }) {
 
 const SideBar = () => {
   const navigate = useNavigate();
-  const isAdmin = useSelector(s => (s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null));
-  const bootstrapped = useSelector(s => !!s.auth?.bootstrapped);
+  // const isAdmin = useSelector(
+  //   (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
+  // );
+    const isAdmin = useSelector(
+    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
+  );
+  const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
+
+  const { expanded, setExpanded } = useContext(SidebarContext);
+
   // Admin değilse sadece bu 4 sayfa görünsün
-  const allowedForNonAdmin = new Set(["musteriler","projeler","teklifler","ayarlar"]);
+  const allowedForNonAdmin = new Set([
+    "musteriler",
+    "projeler",
+    "teklifler",
+    "ayarlar",
+  ]);
 
   const items = [
     { key: "bayiler",        icon: <Store className="w-10" />,        text: "Bayiler" },
@@ -115,34 +147,62 @@ const SideBar = () => {
   ];
 
   let visibleItems = [];
-  if ((!bootstrapped)) {
+  if (!bootstrapped) {
     // Yükleniyor iskeleti: 6 sahte satır
     visibleItems = Array.from({ length: 6 }, (_, i) => ({
       key: `skeleton-${i}`,
       icon: <div className="w-8 h-8 rounded bg-muted-foreground/20" />,
-      text: "Yükleniyor..."
+      text: "Yükleniyor...",
     }));
   } else {
     visibleItems = isAdmin
       ? items
-      : items.filter(it => allowedForNonAdmin.has(it.key));
+      : items.filter((it) => allowedForNonAdmin.has(it.key));
   }
 
-
   return (
-    <SidebarShema>
-      {visibleItems.map(it => (
-        <SidebarItem
-          key={it.key}
-          onClick={() => {
-            // skeleton satırları tıklanamaz
-            if (!it.key.startsWith?.("skeleton-")) navigate(it.key);
-          }}
-          icon={it.icon}
-          text={it.text}
-        />
-      ))}
-    </SidebarShema>
+    <>
+      {/* 🔹 Mobil için sol üstte sabit floating toggle butonu */}
+      <button
+        type="button"
+        onClick={() => setExpanded((prev) => !prev)}
+        className="
+          fixed top-3 left-3 z-50 md:hidden
+          p-2 rounded-md bg-secondary border border-border
+          shadow-md
+        "
+      >
+        {expanded ? (
+          <ChevronFirst className="w-5 h-5" />
+        ) : (
+          <ChevronLast className="w-5 h-5" />
+        )}
+      </button>
+
+      <SidebarShema>
+        {visibleItems.map((it) => (
+          <SidebarItem
+            key={it.key}
+            onClick={() => {
+              // skeleton satırları tıklanamaz
+              if (!it.key.startsWith?.("skeleton-")) {
+                navigate(it.key);
+
+                // 🔹 Sadece MOBİLDE tıklandıktan sonra sidebar'ı kapat
+                if (
+                  typeof window !== "undefined" &&
+                  window.innerWidth < 768 // Tailwind "md" breakpointi
+                ) {
+                  setExpanded(false);
+                }
+              }
+            }}
+            icon={it.icon}
+            text={it.text}
+          />
+        ))}
+      </SidebarShema>
+    </>
   );
 };
 

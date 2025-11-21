@@ -24,7 +24,9 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
   const existingUrl = vimg?.imageUrl;
 
   useEffect(() => {
-    if (open && variantId) { dispatch(getSystemVariantImageFromApi(variantId)).catch(() => {}); }
+    if (open && variantId) {
+      dispatch(getSystemVariantImageFromApi(variantId)).catch(() => {});
+    }
     if (!open) setPhotoFile(null);
   }, [open, variantId, dispatch]);
 
@@ -33,7 +35,9 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
     try { return URL.createObjectURL(photoFile); } catch { return null; }
   }, [photoFile]);
 
-  useEffect(() => () => { if (localPreview) URL.revokeObjectURL(localPreview); }, [localPreview]);
+  useEffect(() => () => {
+    if (localPreview) URL.revokeObjectURL(localPreview);
+  }, [localPreview]);
 
   const handleUpload = async () => {
     if (!variantId || !photoFile) return;
@@ -57,28 +61,58 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
-        <DialogHeader><DialogTitle>Varyant Fotoğraf</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Varyant Fotoğraf</DialogTitle>
+        </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div className="w-full aspect-video bg-muted/20 rounded flex items-center justify-center overflow-hidden border border-border">
             {localPreview || existingUrl ? (
-              <img src={localPreview || existingUrl} alt="Önizleme" className="w-full h-full object-contain" />
-            ) : (<span className="text-muted-foreground text-sm">Görsel yok</span>)}
+              <img
+                src={localPreview || existingUrl}
+                alt="Önizleme"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <span className="text-muted-foreground text-sm">Görsel yok</span>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} className="file-input file-input-bordered file-input-sm" />
+          {/* ✅ mobilde alt alta */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+              className="file-input file-input-bordered file-input-sm w-full sm:w-auto"
+            />
 
-            <AppButton size="sm" variant="kurumsalmavi" shape="none" onClick={handleUpload} disabled={!photoFile || uploading} title={!photoFile ? "Önce dosya seçin" : ""}>
+            <AppButton
+              size="sm"
+              variant="kurumsalmavi"
+              shape="none"
+              onClick={handleUpload}
+              disabled={!photoFile || uploading}
+              title={!photoFile ? "Önce dosya seçin" : ""}
+            >
               {uploading ? "Yükleniyor..." : "Yükle"}
             </AppButton>
 
-            <AppButton size="sm" variant="kirmizi" shape="none" onClick={handleDelete} disabled={deleting || !existingUrl} title={!existingUrl ? "Silinecek görsel yok" : ""}>
+            <AppButton
+              size="sm"
+              variant="kirmizi"
+              shape="none"
+              onClick={handleDelete}
+              disabled={deleting || !existingUrl}
+              title={!existingUrl ? "Silinecek görsel yok" : ""}
+            >
               {deleting ? "Siliniyor..." : "Sil"}
             </AppButton>
           </div>
 
-          <p className="text-xs text-muted-foreground">* Dosya seçip <b>Yükle</b>’ye bastığınızda görsel hemen güncellenir.</p>
+          <p className="text-xs text-muted-foreground">
+            * Dosya seçip <b>Yükle</b>’ye bastığınızda görsel hemen güncellenir.
+          </p>
         </div>
 
         <DialogClose asChild>

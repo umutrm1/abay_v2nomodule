@@ -1,3 +1,4 @@
+// src/scenes/projeler/DialogProjeEkle.jsx
 import React, { useState, useCallback } from 'react';
 import {
   Dialog,
@@ -47,7 +48,11 @@ const DialogProjeEkle = ({ onSave }) => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <AppButton
-variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+          variant="kurumsalmavi"
+          size="mdtxtlg"
+          // ✅ Musteriler tarzı responsive:
+          // mobilde full genişlik, sm+ da eski sabit genişlik
+          className="w-full sm:w-40 sm:ml-auto"
         >
           + Proje Ekle
         </AppButton>

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogBayiEkle = ({ onSave }) => {
+const DialogBayiEkle = ({ onSave, children }) => {
   const [yeniBayi, setYeniBayi] = useState({
     name: '',
     email: '',
@@ -38,24 +38,32 @@ const DialogBayiEkle = ({ onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <AppButton variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40">
-          + Bayi Ekle
-        </AppButton>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-full md:w-40 md:ml-auto"
+          >
+            + Bayi Ekle
+          </AppButton>
+        )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-200">
+      <DialogContent className="w-[94vw] max-w-[42rem]">
         <DialogHeader>
           <DialogTitle>Yeni Bayi Ekle</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-3 sm:gap-4 py-4">
           <label className="font-semibold">İsim</label>
           <input
             name="name"
             value={yeniBayi.name}
             onChange={handleChange}
             placeholder="İsim"
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">E-posta</label>
@@ -64,7 +72,7 @@ const DialogBayiEkle = ({ onSave }) => {
             value={yeniBayi.email}
             onChange={handleChange}
             placeholder="E-posta"
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Telefon</label>
@@ -73,7 +81,7 @@ const DialogBayiEkle = ({ onSave }) => {
             value={yeniBayi.phone}
             onChange={handleChange}
             placeholder="Telefon"
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Sahip</label>
@@ -82,7 +90,7 @@ const DialogBayiEkle = ({ onSave }) => {
             value={yeniBayi.owner_name}
             onChange={handleChange}
             placeholder="Sahip Adı"
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Şehir</label>
@@ -91,12 +99,18 @@ const DialogBayiEkle = ({ onSave }) => {
             value={yeniBayi.city}
             onChange={handleChange}
             placeholder="Şehir"
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
         </div>
 
         <DialogClose asChild>
-          <AppButton variant="koyumavi" size="md" shape="none" onClick={handleSaveClick}>
+          <AppButton
+            variant="koyumavi"
+            size="md"
+            shape="none"
+            onClick={handleSaveClick}
+            className="w-full sm:w-auto"
+          >
             Kaydet
           </AppButton>
         </DialogClose>

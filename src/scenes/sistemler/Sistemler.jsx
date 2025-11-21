@@ -1,5 +1,3 @@
-// src/scenes/sistemler/Sistemler.jsx
-// butonlar AppButton, yeni publish/active aksiyonları, “Aktif Olmayanları Göster” tikleri birbirinden bağımsız hale getirildi
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +9,7 @@ import {
   getSystemVariantsFromApi,
   deleteSystemVariantOnApi,
   AddOrUpdateSystemImageFromApi,
-getSystemVariantsOfSystemFromApi,
-  // yeni eklenen aksiyonlar:
+  getSystemVariantsOfSystemFromApi,
   publishSystem,
   editSystemVariantOnApi,
   unpublishSystem,
@@ -43,7 +40,7 @@ const Sistemler = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const systems  = useSelector(s => s.getSistemlerFromApiReducer)      || EMPTY_PAGE;
+  const systems  = useSelector(s => s.getSistemlerFromApiReducer)       || EMPTY_PAGE;
   const variants = useSelector(s => s.getSystemVariantsFromApiReducer) || EMPTY_PAGE;
 
   const [sysSearch, setSysSearch] = useState('');
@@ -65,10 +62,7 @@ const Sistemler = () => {
   const [pendingVariant, setPendingVariant] = useState(null);
   const [deletingVar, setDeletingVar] = useState(false);
 
-  // --- AYRI toggle'lar ---
-  // Sistemler tablosu için
   const [showInactiveSys, setShowInactiveSys] = useState(false);
-  // Varyantlar tablosu için
   const [showInactiveVar, setShowInactiveVar] = useState(false);
 
   useEffect(() => {
@@ -146,7 +140,6 @@ const Sistemler = () => {
     }
   };
 
-  // --- Publish / Unpublish Handlers ---
   const togglePublishSystem = async (sys) => {
     if (!sys?.id) return;
     if (sys.is_published) await dispatch(unpublishSystem(sys.id));
@@ -161,7 +154,6 @@ const Sistemler = () => {
     await refreshVariants();
   };
 
-  // --- Activate / Deactivate Handlers ---
   const toggleActiveSystem = async (sys) => {
     if (!sys?.id) return;
     if (sys.is_active) await dispatch(deactivateSystem(sys.id));
@@ -176,44 +168,42 @@ const Sistemler = () => {
     await refreshVariants();
   };
 
-  // --- Gösterim filtreleri (ayrı state'ler ile) ---
   const filteredSystemItems = (systems.items ?? []).filter(item => showInactiveSys ? true : item.is_active);
   const filteredVariantItems = (variants.items ?? []).filter(item => showInactiveVar ? true : item.is_active);
 
   const totalSysPages = systems.total_pages || 1;
   const totalVarPages = variants.total_pages || 1;
- const [siralaOpen, setSiralaOpen] = useState(false);
- const [activeSystemForSort, setActiveSystemForSort] = useState(null);
 
- const openSortModal = async (sys) => {
-   if (!sys?.id) return;
-   setActiveSystemForSort(sys);
-   setSiralaOpen(true);
-   // İsteğe bağlı: modal açılmadan prefetch (modal da zaten çekecek; hızlı his için bırakıyorum)
-   try { 
-     await dispatch(getSystemVariantsOfSystemFromApi(sys.id, 1, "", "all")); 
-   } catch (_) {}
- };
+  const [siralaOpen, setSiralaOpen] = useState(false);
+  const [activeSystemForSort, setActiveSystemForSort] = useState(null);
 
-
+  const openSortModal = async (sys) => {
+    if (!sys?.id) return;
+    setActiveSystemForSort(sys);
+    setSiralaOpen(true);
+    try {
+      await dispatch(getSystemVariantsOfSystemFromApi(sys.id, 1, "", "all"));
+    } catch (_) {}
+  };
 
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen bg-background text-foreground">
       <Header title="Sistemler" />
 
-      <div className="bg-card border borderorder rounded-2xl p-5 flex flex-col gap-y-6">
-        {/* SISTEMLER ÜST BAR */}
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
+      <div className="bg-card border borderorder rounded-2xl p-4 sm:p-5 flex flex-col gap-y-6">
+
+        {/* ===== SISTEMLER ÜST BAR (Musteriler grid toolbar) ===== */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           <input
             type="text"
             placeholder="Sistem adına göre ara..."
             value={sysSearch}
             onChange={onSysSearch}
-            className="input input-bordered w-full md:max-w-sm"
+            className="input input-bordered w-full md:col-span-4"
           />
 
-          <div className="flex items-center gap-2">
-            <label className="text-sm opacity-80">Sistem Sayısı</label>
+          <div className="flex items-center gap-2 md:col-span-2">
+            <label className="text-sm opacity-80 whitespace-nowrap">Sistem Sayısı</label>
             <input
               type="number"
               min={1}
@@ -225,8 +215,7 @@ const Sistemler = () => {
             />
           </div>
 
-          {/* Aktif Olmayanları Göster — Sistem barı (BAĞIMSIZ) */}
-          <label className="flex items-center gap-2 ml-auto select-none cursor-pointer">
+          <label className="flex items-center gap-2 md:col-span-3 select-none cursor-pointer">
             <input
               type="checkbox"
               className="checkbox checkbox-sm"
@@ -235,23 +224,30 @@ const Sistemler = () => {
             />
             <span className="text-sm">Aktif Olmayanları Göster</span>
           </label>
-         <AppButton
-           variant="lacivert"
-           size="sm"
-           shape="none"
-           onClick={() => setSysSortOpen(true)}
-           title="Sistemlerin genel sıralamasını düzenle"
-         >
-           Sistem Sırala
-         </AppButton>
-          <DialogSistemEkle onSave={handleAddSystem} />
+
+          <div className="md:col-span-2 flex md:justify-end">
+            <AppButton
+              variant="lacivert"
+              size="sm"
+              shape="none"
+              onClick={() => setSysSortOpen(true)}
+              title="Sistemlerin genel sıralamasını düzenle"
+              className="w-full md:w-auto"
+            >
+              Sistem Sırala
+            </AppButton>
+          </div>
+
+          <div className="md:col-span-1 flex md:justify-end">
+            <DialogSistemEkle onSave={handleAddSystem} />
+          </div>
         </div>
 
-        {/* SISTEMLER TABLO */}
-        <div className="overflow-x-auto">
-          <table className="table w-full border  border-gray-500 rounded-lg">
+        {/* ===== SISTEMLER TABLO (md+) ===== */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="table w-full border border-gray-500 rounded-lg">
             <thead>
-              <tr className="border border-gray-500 ">
+              <tr className="border border-gray-500">
                 <th>Sistem İsmi</th>
                 <th>Açıklama</th>
                 <th className="text-center">Durumlar</th>
@@ -270,7 +266,7 @@ const Sistemler = () => {
                 {filteredSystemItems.length > 0 ? (
                   filteredSystemItems.map(sys => (
                     <tr key={sys.id} className="border borderase-300 border-gray-500">
-                      <td>{sys.name}</td>
+                      <td className="font-semibold">{sys.name}</td>
                       <td>{sys.description}</td>
                       <td className="text-center">
                         <div className="flex items-center justify-center gap-2 text-xs">
@@ -282,48 +278,38 @@ const Sistemler = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="text-center space-x-2">
-                        {/* Düzenle */}
-                        <DialogSistemEkle system={sys} onSave={handleEditSystem} />
+                      <td className="text-center">
+                        <div className="flex flex-wrap justify-center gap-2">
+                          <DialogSistemEkle system={sys} onSave={handleEditSystem} />
 
-                        {/* Sil */}
-                        {/* <AppButton
-                          size="sm"
-                          variant="kirmizi"
-                          shape="none"
-                          onClick={() => askDeleteSystem(sys)}
-                        >
-                          Sil
-                        </AppButton> */}
+                          <AppButton
+                            size="sm"
+                            variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
+                            shape="none"
+                            onClick={() => togglePublishSystem(sys)}
+                          >
+                            {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                          </AppButton>
 
-                        {/* Yayınla / Yayından Kaldır */}
-                        <AppButton
-                          size="sm"
-                          variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
-                          shape="none"
-                          onClick={() => togglePublishSystem(sys)}
-                        >
-                          {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
-                        </AppButton>
+                          <AppButton
+                            size="sm"
+                            variant={sys.is_active ? 'turuncu' : 'yesil'}
+                            shape="none"
+                            onClick={() => toggleActiveSystem(sys)}
+                          >
+                            {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                          </AppButton>
 
-                        {/* Aktifleştir / Pasifleştir */}
-                        <AppButton
-                          size="sm"
-                          variant={sys.is_active ? 'turuncu' : 'yesil'}
-                          shape="none"
-                          onClick={() => toggleActiveSystem(sys)}
-                        >
-                          {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                        </AppButton>
-                     <AppButton
-                       size="sm"
-                       variant="lacivert"
-                       shape="none"
-                       onClick={() => openSortModal(sys)}
-                       title="Bu sistemin varyantlarını gör ve sırala"
-                     >
-                       Gör ve Sırala
-                     </AppButton>
+                          <AppButton
+                            size="sm"
+                            variant="lacivert"
+                            shape="none"
+                            onClick={() => openSortModal(sys)}
+                            title="Bu sistemin varyantlarını gör ve sırala"
+                          >
+                            Gör ve Sırala
+                          </AppButton>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -339,7 +325,76 @@ const Sistemler = () => {
           </table>
         </div>
 
-        {/* SISTEMLER SAYFALAMA */}
+        {/* ===== SISTEMLER MOBİL KART (md-) ===== */}
+        <div className="md:hidden">
+          {sysLoading ? (
+            <Spinner />
+          ) : filteredSystemItems.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {filteredSystemItems.map(sys => (
+                <div
+                  key={sys.id}
+                  className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">{sys.name}</div>
+                      <div className="text-xs text-muted-foreground break-words">
+                        {sys.description || "—"}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1 text-[11px] items-end">
+                      <span className={`px-2 py-0.5 rounded-md ${sys.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                        {sys.is_active ? 'Aktif' : 'Pasif'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-md ${sys.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                        {sys.is_published ? 'Yayında' : 'Taslak'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <DialogSistemEkle system={sys} onSave={handleEditSystem} />
+
+                    <AppButton
+                      size="sm"
+                      variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
+                      shape="none"
+                      onClick={() => togglePublishSystem(sys)}
+                    >
+                      {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                    </AppButton>
+
+                    <AppButton
+                      size="sm"
+                      variant={sys.is_active ? 'turuncu' : 'yesil'}
+                      shape="none"
+                      onClick={() => toggleActiveSystem(sys)}
+                    >
+                      {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                    </AppButton>
+
+                    <AppButton
+                      size="sm"
+                      variant="lacivert"
+                      shape="none"
+                      onClick={() => openSortModal(sys)}
+                    >
+                      Gör ve Sırala
+                    </AppButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-6 text-sm">
+              Veri bulunamadı
+            </div>
+          )}
+        </div>
+
+        {/* ===== SISTEMLER SAYFALAMA ===== */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
           <AppButton size="sm" variant="kurumsalmavi" shape="none" onClick={() => setSysPage(1)} disabled={systems.page === 1}>« İlk</AppButton>
           <AppButton size="sm" variant="kurumsalmavi" shape="none" onClick={() => setSysPage(p => Math.max(p - 1, 1))} disabled={!systems.has_prev}>‹ Önceki</AppButton>
@@ -369,21 +424,22 @@ const Sistemler = () => {
           <AppButton size="sm" variant="kurumsalmavi" shape="none" onClick={() => setSysPage(totalSysPages)} disabled={systems.page === totalSysPages || totalSysPages <= 1}>Son »</AppButton>
         </div>
 
-        {/* VARYANTLAR */}
+        {/* ===== VARYANTLAR ===== */}
         <div className="mt-8">
-          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full mb-4">
-            <h2 className="text-xl font-semibold">Sistem Varyantları</h2>
+          {/* ÜST BAR */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center mb-4">
+            <h2 className="text-xl font-semibold md:col-span-3">Sistem Varyantları</h2>
 
             <input
               type="text"
               placeholder="Varyant adına göre ara..."
               value={varSearch}
               onChange={onVarSearch}
-              className="input input-bordered w-full md:max-w-sm"
+              className="input input-bordered w-full md:col-span-3"
             />
 
-            <div className="flex items-center gap-2">
-              <label className="text-sm opacity-80">Varyant Sayısı</label>
+            <div className="flex items-center gap-2 md:col-span-2">
+              <label className="text-sm opacity-80 whitespace-nowrap">Varyant Sayısı</label>
               <input
                 type="number"
                 min={1}
@@ -395,8 +451,7 @@ const Sistemler = () => {
               />
             </div>
 
-            {/* Aktif Olmayanları Göster — Varyant barı (BAĞIMSIZ) */}
-            <label className="flex items-center gap-2 ml-auto select-none cursor-pointer">
+            <label className="flex items-center gap-2 md:col-span-2 select-none cursor-pointer">
               <input
                 type="checkbox"
                 className="checkbox checkbox-sm"
@@ -406,13 +461,16 @@ const Sistemler = () => {
               <span className="text-sm">Aktif Olmayanları Göster</span>
             </label>
 
-            <DialogVaryantOlustur systems={(systems.items ?? [])} onCreated={refreshVariants} />
+            <div className="md:col-span-2 flex md:justify-end">
+              <DialogVaryantOlustur systems={(systems.items ?? [])} onCreated={refreshVariants} />
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* TABLO md+ */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="table w-full border border-gray-500 rounded-lg">
               <thead>
-                <tr className="border border-gray-500 ">
+                <tr className="border border-gray-500">
                   <th>Varyant İsmi</th>
                   <th className="text-center">Durumlar</th>
                   <th className="text-center">İşlemler</th>
@@ -441,36 +499,30 @@ const Sistemler = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="text-center space-x-2">
-                          {/* Düzenle */}
-                          <AppButton size="sm" variant="sari" shape="none" onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}>
-                            Düzenle
-                          </AppButton>
+                        <td className="text-center">
+                          <div className="flex flex-wrap justify-center gap-2">
+                            <AppButton size="sm" variant="sari" shape="none" onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}>
+                              Düzenle
+                            </AppButton>
 
-                          {/* Sil */}
-                          {/* <AppButton size="sm" variant="kirmizi" shape="none" onClick={() => askDeleteVariant(variant)}>
-                            Sil
-                          </AppButton> */}
+                            <AppButton
+                              size="sm"
+                              variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
+                              shape="none"
+                              onClick={() => togglePublishVariant(variant)}
+                            >
+                              {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                            </AppButton>
 
-                          {/* Yayınla / Yayından Kaldır */}
-                          <AppButton
-                            size="sm"
-                            variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
-                            shape="none"
-                            onClick={() => togglePublishVariant(variant)}
-                          >
-                            {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
-                          </AppButton>
-
-                          {/* Aktifleştir / Pasifleştir */}
-                          <AppButton
-                            size="sm"
-                            variant={variant.is_active ? 'turuncu' : 'yesil'}
-                            shape="none"
-                            onClick={() => toggleActiveVariant(variant)}
-                          >
-                            {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                          </AppButton>
+                            <AppButton
+                              size="sm"
+                              variant={variant.is_active ? 'turuncu' : 'yesil'}
+                              shape="none"
+                              onClick={() => toggleActiveVariant(variant)}
+                            >
+                              {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                            </AppButton>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -484,6 +536,67 @@ const Sistemler = () => {
                 </tbody>
               )}
             </table>
+          </div>
+
+          {/* MOBİL KART md- */}
+          <div className="md:hidden">
+            {varLoading ? (
+              <Spinner />
+            ) : filteredVariantItems.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {filteredVariantItems.map(variant => (
+                  <div
+                    key={variant.id}
+                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm truncate">
+                          {variant.name} | {variant.system_name}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 text-[11px] items-end">
+                        <span className={`px-2 py-0.5 rounded-md ${variant.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                          {variant.is_active ? 'Aktif' : 'Pasif'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md ${variant.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                          {variant.is_published ? 'Yayında' : 'Taslak'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <AppButton size="sm" variant="sari" shape="none" onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}>
+                        Düzenle
+                      </AppButton>
+
+                      <AppButton
+                        size="sm"
+                        variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
+                        shape="none"
+                        onClick={() => togglePublishVariant(variant)}
+                      >
+                        {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                      </AppButton>
+
+                      <AppButton
+                        size="sm"
+                        variant={variant.is_active ? 'turuncu' : 'yesil'}
+                        shape="none"
+                        onClick={() => toggleActiveVariant(variant)}
+                      >
+                        {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                      </AppButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-6 text-sm">
+                Veri bulunamadı
+              </div>
+            )}
           </div>
 
           {/* VARYANT SAYFALAMA */}
@@ -518,21 +631,17 @@ const Sistemler = () => {
         </div>
       </div>
 
-     {/* SİSTEM SIRALAMA MODALI */}
-     <SistemSirala
-       open={sysSortOpen}
-       onOpenChange={(v) => setSysSortOpen(v)}
-     />
-      {/* VARYANT SIRALAMA MODALI */}
+      {/* SIRALAMA MODALLARI */}
+      <SistemSirala open={sysSortOpen} onOpenChange={(v) => setSysSortOpen(v)} />
 
-     <SistemVaryantGorSirala
-       open={siralaOpen}
-       onOpenChange={(v) => { 
-         setSiralaOpen(v); 
-         if (!v) setActiveSystemForSort(null);
-       }}
-       system={activeSystemForSort}
-     />
+      <SistemVaryantGorSirala
+        open={siralaOpen}
+        onOpenChange={(v) => { 
+          setSiralaOpen(v); 
+          if (!v) setActiveSystemForSort(null);
+        }}
+        system={activeSystemForSort}
+      />
 
       {/* SİLME ONAY MODALLARI */}
       <ConfirmDeleteModal
@@ -556,7 +665,6 @@ const Sistemler = () => {
         onConfirm={confirmDeleteVariant}
         loading={deletingVar}
       />
-
     </div>
   );
 };

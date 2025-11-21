@@ -24,40 +24,88 @@ const DialogMusteriDuzenle = ({ musteri, onSave, children }) => {
     setGuncelMusteri(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSave = () => {
+    onSave({ ...guncelMusteri, id: musteri.id });
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         {children ? (
           children
         ) : (
-          <AppButton variant="sari" size="sm" shape="none" title="Müşteriyi düzenle">
+          <AppButton
+            variant="sari"
+            size="sm"
+            shape="none"
+            title="Müşteriyi düzenle"
+          >
             Düzenle
           </AppButton>
         )}
       </DialogTrigger>
-      <DialogContent className={"max-w-200"}>
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Müşteri Düzenle: {musteri.name}</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">
+            Müşteri Düzenle: {musteri.name}
+          </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <label className="font-semibold">Şirket İsmi</label>
-          <input name="company_name" value={guncelMusteri.company_name} onChange={handleChange} className="input input-bordered" />
+        <div className="grid gap-3 py-4 text-sm">
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-xs sm:text-sm">
+              Şirket İsmi
+            </label>
+            <input
+              name="company_name"
+              value={guncelMusteri.company_name}
+              onChange={handleChange}
+              className="input input-bordered w-full"
+            />
+          </div>
 
-          <label className="font-semibold">İsim</label>
-          <input name="name" value={guncelMusteri.name} onChange={handleChange} className="input input-bordered" />
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-xs sm:text-sm">
+              İsim
+            </label>
+            <input
+              name="name"
+              value={guncelMusteri.name}
+              onChange={handleChange}
+              className="input input-bordered w-full"
+            />
+          </div>
 
-          <label className="font-semibold">Telefon</label>
-          <input name="phone" value={guncelMusteri.phone} onChange={handleChange} className="input input-bordered" />
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-xs sm:text-sm">
+              Telefon
+            </label>
+            <input
+              name="phone"
+              value={guncelMusteri.phone}
+              onChange={handleChange}
+              className="input input-bordered w-full"
+            />
+          </div>
 
-          <label className="font-semibold">Şehir</label>
-          <input name="city" value={guncelMusteri.city} onChange={handleChange} className="input input-bordered" />
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold text-xs sm:text-sm">
+              Şehir
+            </label>
+            <input
+              name="city"
+              value={guncelMusteri.city}
+              onChange={handleChange}
+              className="input input-bordered w-full"
+            />
+          </div>
         </div>
         <DialogClose asChild>
           <AppButton
-            onClick={() => onSave({ ...guncelMusteri, id: musteri.id })}
+            onClick={handleSave}
             variant="kurumsalmavi"
             size="md"
             shape="none"
+            className="w-full sm:w-auto"
             title="Güncelle ve kapat"
           >
             Güncelle

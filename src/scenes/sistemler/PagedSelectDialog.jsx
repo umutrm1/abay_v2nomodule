@@ -64,6 +64,8 @@ const PagedSelectDialog = ({
     if (!v) { setSearchTerm(""); setPage(1); setLoading(false); }
   };
 
+  const items = data.items ?? [];
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl bg-card text-foreground border border-border rounded-2xl">
@@ -80,7 +82,8 @@ const PagedSelectDialog = ({
             className="input input-bordered w-full"
           />
 
-          <div className="overflow-x-auto">
+          {/* ===== Desktop tablo (md+) ===== */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="table w-full">
               <thead>
                 <tr>
@@ -97,8 +100,8 @@ const PagedSelectDialog = ({
                 </tbody>
               ) : (
                 <tbody>
-                  {(data.items ?? []).length > 0 ? (
-                    data.items.map((item) => (
+                  {items.length > 0 ? (
+                    items.map((item) => (
                       <tr key={item.id} className="hover:bg-muted/40">
                         {columns.map((c) => (<td key={c.key}>{item[c.key]}</td>))}
                         <td className="text-right">
@@ -127,6 +130,49 @@ const PagedSelectDialog = ({
             </table>
           </div>
 
+          {/* ===== Mobil kart (md-) ===== */}
+          <div className="md:hidden">
+            {loading ? (
+              <Spinner />
+            ) : items.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-2"
+                  >
+                    <div className="flex flex-col gap-1 text-sm">
+                      {columns.map((c) => (
+                        <div key={c.key} className="flex justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">{c.label}</span>
+                          <span className="font-medium text-right">{item[c.key] ?? "—"}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end">
+                      <DialogClose asChild>
+                        <AppButton
+                          size="sm"
+                          variant="kurumsalmavi"
+                          shape="none"
+                          onClick={() => onSelect(item)}
+                        >
+                          Seç
+                        </AppButton>
+                      </DialogClose>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-6 text-sm">
+                Veri bulunamadı
+              </div>
+            )}
+          </div>
+
+          {/* Sayfalama */}
           <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
             <AppButton size="sm" variant="gri" shape="none" onClick={goFirst} disabled={(page || 1) === 1}>« İlk</AppButton>
             <AppButton size="sm" variant="gri" shape="none" onClick={goPrev}  disabled={!data.has_prev || page <= 1}>‹ Önceki</AppButton>

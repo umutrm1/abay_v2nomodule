@@ -166,13 +166,13 @@ const ProjeDuzenle = () => {
     const show = (s) => (s && s !== 'string' ? s : 'durum belirtilmedi');
 
     return (
-      <div className="flex font-semibold items-center gap-2">
-        <span>{label}:</span>
-        <div className="dropdown">
+      <div className="flex font-semibold items-center gap-2 w-full sm:w-auto">
+        <span className="whitespace-nowrap">{label}:</span>
+        <div className="dropdown w-full sm:w-auto">
           <button
             tabIndex={0}
             className="select select-bordered min-w-60 w-full cursor-pointer hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 active:border-primary transition"
-            title="Üretim durumuna göre filtrele"
+            title="Durum seç"
           >
             {show(value)}
           </button>
@@ -183,7 +183,10 @@ const ProjeDuzenle = () => {
             {options.map((opt) => {
               const isActive = value === opt;
               return (
-                <li key={opt} className={`${isActive ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-neutral-800'}`}>
+                <li
+                  key={opt}
+                  className={`${isActive ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200 dark:hover:bg-neutral-800'}`}
+                >
                   <button
                     disabled={isActive}
                     onClick={() => !isActive && onChange(opt)}
@@ -203,20 +206,22 @@ const ProjeDuzenle = () => {
   if (loading) return <Spinner />;
 
   return (
-    <div className="grid grid-rows-[60px_auto_1fr] h-full">
+    <div className="grid grid-rows-[auto_1fr] min-h-screen">
       {/* Üst Başlık ve Butonlar */}
-      <div className="flex items-center justify-between px-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between px-3 sm:px-5 gap-2 mb-2">
         <Header title={`${projectCode} – ${projectName}`} />
-        <div className="flex space-x-2 items-start">
+
+        {/* ✅ mobilde wrap + gerekirse alt satıra düşsün */}
+        <div className="flex flex-wrap gap-2 items-start md:justify-end">
           {/* Profil Aksesuar Listesi */}
-          <div className="dropdown">
+          <div className="dropdown w-full sm:w-auto">
             <AppButton
               tabIndex={0}
               role="button"
               variant="kurumsalmavi"
               size="sm"
               shape="none"
-              className="!min-h-0"
+              className="!min-h-0 w-full sm:w-auto"
               title="Profil Aksesuar Listesi"
             >
               Profil Aksesuar Listesi
@@ -238,6 +243,7 @@ const ProjeDuzenle = () => {
             variant="kurumsalmavi"
             size="sm"
             shape="none"
+            className="w-full sm:w-auto"
             onClick={async () => {
               const brandCfgold = await dispatch(getPdfBrandByKey());
               const brandCfg = brandCfgold.config_json;
@@ -258,6 +264,7 @@ const ProjeDuzenle = () => {
             variant="kurumsalmavi"
             size="sm"
             shape="none"
+            className="w-full sm:w-auto"
             onClick={async () => {
               const brandCfgold = await dispatch(getPdfBrandByKey());
               const brandCfg = brandCfgold.config_json;
@@ -279,6 +286,7 @@ const ProjeDuzenle = () => {
             variant="kurumsalmavi"
             size="sm"
             shape="none"
+            className="w-full sm:w-auto"
             onClick={async () => {
               const brandCfgold = await dispatch(getPdfBrandByKey());
               const brandCfg = brandCfgold.config_json;
@@ -296,14 +304,14 @@ const ProjeDuzenle = () => {
           </AppButton>
 
           {/* Optimizasyon */}
-          <div className="dropdown">
+          <div className="dropdown w-full sm:w-auto">
             <AppButton
               tabIndex={0}
               role="button"
               variant="kurumsalmavi"
               size="sm"
               shape="none"
-              className="!min-h-0"
+              className="!min-h-0 w-full sm:w-auto"
               title="Optimizasyon PDF"
             >
               Optimizasyon
@@ -356,6 +364,7 @@ const ProjeDuzenle = () => {
             variant="kurumsalmavi"
             size="sm"
             shape="none"
+            className="w-full sm:w-auto"
             onClick={handleSave}
             title="Değişiklikleri kaydet"
           >
@@ -365,10 +374,10 @@ const ProjeDuzenle = () => {
       </div>
 
       {/* Ana içerik */}
-      <div className="bg-card text-foreground w-full border border-border rounded-2xl p-5 h-full flex flex-col">
+      <div className="bg-card text-foreground w-full border border-border rounded-2xl p-3 sm:p-5 h-full flex flex-col">
         {/* Özet durum */}
-        {!proje.is_teklif && (
-          <div className="border mb-5 border-border rounded-2xl h-auto items-center text-foreground px-4 py-3 flex justify-between flex-wrap gap-x-6 gap-y-3">
+        {!proje?.is_teklif && (
+          <div className="border mb-5 border-border rounded-2xl h-auto items-center text-foreground px-4 py-3 flex flex-col md:flex-row md:justify-between flex-wrap gap-x-6 gap-y-3">
             <StatusDropdown
               label="Boya Durum"
               value={paintStatus}
@@ -391,10 +400,10 @@ const ProjeDuzenle = () => {
         )}
 
         {/* Proje Bilgileri */}
-        <div className="border border-border justify-center rounded-2xl h-20 flex">
-          <div className="w-1/3 font-semibold flex items-center p-4">
+        <div className="border border-border justify-center rounded-2xl h-auto md:h-20 flex flex-col md:flex-row">
+          <div className="w-full md:w-1/3 font-semibold flex items-center p-4">
             Proje No:
-            <div className="flex items-stretch ml-2">
+            <div className="flex items-stretch ml-2 w-full">
               <input
                 type="text"
                 value={projectCode}
@@ -404,7 +413,7 @@ const ProjeDuzenle = () => {
             </div>
           </div>
 
-          <div className="w-1/3 justify-center font-semibold flex items-center p-4">
+          <div className="w-full md:w-1/3 justify-center font-semibold flex items-center p-4">
             Proje Adı:
             <input
               type="text"
@@ -414,7 +423,7 @@ const ProjeDuzenle = () => {
             />
           </div>
 
-          <div className="w-1/3 justify-center font-semibold flex items-center p-4">
+          <div className="w-full md:w-1/3 justify-center font-semibold flex items-center p-4">
             Proje Tarihi:
             <input
               type="text"
@@ -425,10 +434,10 @@ const ProjeDuzenle = () => {
           </div>
         </div>
 
-        <div className="border border-border mt-5 rounded-2xl flex h-20">
-          <div className="w-1/2 font-semibold flex justify-center items-center p-4">
+        <div className="border border-border mt-5 rounded-2xl flex flex-col md:flex-row h-auto md:h-20">
+          <div className="w-full md:w-1/2 font-semibold flex justify-center items-center p-4">
             Profil Press Fiyatı:
-            <div className="flex items-stretch ml-2">
+            <div className="flex items-stretch ml-2 w-full">
               <input
                 type="number"
                 step="0.01"
@@ -441,7 +450,7 @@ const ProjeDuzenle = () => {
             </div>
           </div>
 
-          <div className="w-1/2 font-semibold flex justify-center items-center p-4">
+          <div className="w-full md:w-1/2 font-semibold flex justify-center items-center p-4">
             Profil Boyalı Fiyatı:
             <input
               type="number"
@@ -456,49 +465,56 @@ const ProjeDuzenle = () => {
         </div>
 
         {/* Renk & Müşteri */}
-        <div className="border border-border mt-5 rounded-2xl flex h-20">
-          <div className="w-2/3 flex items-center p-2 space-x-6">
-                      
-                      <div className="w-1/2 flex items-center p-2 space-x-6">
-
-            <Paintbrush className="w-10" />
-            <div className="font-semibold mb-1">Cam Rengi</div>
-
-                <AppButton
-                  variant="kurumsalmavi"
-                  size="sm"
-                  className="ml-auto"
-                  onClick={() => setOpenCamRenk(true)}
-                  title="Cam rengi seç"
-                >
-                  Seç
-                </AppButton>
+        <div className="border border-border mt-5 rounded-2xl flex flex-col md:flex-row h-auto md:h-20">
+          {/* Sol blok (Cam + Profil rengi) */}
+          <div className="w-full md:w-2/3 flex flex-col md:flex-row gap-3 p-2">
+            {/* Cam rengi */}
+            <div className="w-full md:w-1/2 flex items-center gap-3 p-2">
+              <Paintbrush className="w-8 sm:w-10 shrink-0" />
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="font-semibold mb-1">Cam Rengi</div>
+                <div className="truncate text-sm">
+                  {selectedGlassName || requirements?.glass_color?.name || 'Henüz Seçilmedi'}
+                </div>
+              </div>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                className="ml-auto"
+                onClick={() => setOpenCamRenk(true)}
+                title="Cam rengi seç"
+              >
+                Seç
+              </AppButton>
             </div>
 
-            <div className="w-1/2 items-center flex p-2 space-x-6">
-              <Pencilruler className="w-10" />
-              <div className="font-semibold mb-1">Profil Rengi</div>
-                <div className="truncate">
+            {/* Profil rengi */}
+            <div className="w-full md:w-1/2 flex items-center gap-3 p-2">
+              <Pencilruler className="w-8 sm:w-10 shrink-0" />
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="font-semibold mb-1">Profil Rengi</div>
+                <div className="truncate text-sm">
                   {selectedProfileName || requirements?.profile_color?.name || 'Henüz Seçilmedi'}
                 </div>
-                    <AppButton
-                      variant="kurumsalmavi"
-                      className='ml-auto'
-                      size="sm"
-                      onClick={() => setOpenProfilRenk(true)}
-                      title="Profil rengi seç"
-                    >
-                      Seç
-                    </AppButton>
-
+              </div>
+              <AppButton
+                variant="kurumsalmavi"
+                className="ml-auto"
+                size="sm"
+                onClick={() => setOpenProfilRenk(true)}
+                title="Profil rengi seç"
+              >
+                Seç
+              </AppButton>
             </div>
           </div>
 
-          <div className="w-1/3 flex items-center p-2">
-            <User className="w-10 ml-2 mr-2" />
-            <div className="ml-2 flex-1">
+          {/* Sağ blok (Müşteri) */}
+          <div className="w-full md:w-1/3 flex items-center gap-3 p-2">
+            <User className="w-8 sm:w-10 shrink-0 ml-1 md:ml-2" />
+            <div className="flex-1 min-w-0">
               <div className="font-semibold">Müşteri</div>
-              <div className="truncate">
+              <div className="truncate text-sm">
                 {selectedCustomer
                   ? `${selectedCustomer.company_name} (${selectedCustomer.name})`
                   : (requirements?.customer
@@ -510,7 +526,7 @@ const ProjeDuzenle = () => {
               variant="kurumsalmavi"
               size="sm"
               shape="none"
-              className="mr-10"
+              className="ml-auto md:mr-10"
               onClick={() => setOpenMusteri(true)}
               title="Müşteri seç"
             >
@@ -532,20 +548,20 @@ const ProjeDuzenle = () => {
         />
 
         {/* Alt Butonlar */}
-        <div className="flex justify-end mt-4 space-x-4">
+        <div className="flex flex-col sm:flex-row justify-end mt-4 gap-2 sm:gap-4">
           <AppButton
             variant="kurumsalmavi"
             size="mdtxtlg"
-            className="w-40"
+            className="w-full sm:w-40"
             onClick={() => navigate(`/ekstramalzemeekle/${id}`)}
             title="Ekstra malzeme ekle"
           >
             Malzeme Ekle
           </AppButton>
           <AppButton
-          size="mdtxtlg"
+            size="mdtxtlg"
             variant="kurumsalmavi"
-            className="w-40"
+            className="w-full sm:w-40"
             onClick={() => navigate(`/sistemsec/${id}`)}
             title="Sistem ekle"
           >

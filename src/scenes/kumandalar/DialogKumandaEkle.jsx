@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,33 +9,46 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogKumandaEkle = ({ onSave, children }) => {
-  const [form, setForm] = useState({
-    kumanda_isim: '',
-    kapasite: 0,
-    price: 0
-  });
+const initialForm = {
+  kumanda_isim: '',
+  kapasite: 0,
+  price: 0
+};
 
-  const handleChange = e => {
+const DialogKumandaEkle = ({ onSave, children }) => {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(initialForm);
+
+  const resetForm = useCallback(() => setForm(initialForm), []);
+
+  const handleOpenChange = (next) => {
+    setOpen(next);
+    if (!next) resetForm();
+  };
+
+  const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseInt(value) : value
+      [name]: type === 'number' ? Number(value || 0) : value
     }));
   };
 
-  const handleSave = () => {
-    onSave(form);
+  const handleSave = async () => {
+    await onSave?.(form);
+    setOpen(false); // kapanınca reset
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children ? (
           children
         ) : (
           <AppButton
-variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-full sm:w-auto sm:ml-auto"
             title="Yeni kumanda ekle"
           >
             + Kumanda Ekle
@@ -64,6 +77,7 @@ variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
             value={form.kapasite}
             onChange={handleChange}
             className="input input-bordered"
+            min={0}
           />
 
           <label>Fiyat</label>
@@ -73,14 +87,18 @@ variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
             value={form.price}
             onChange={handleChange}
             className="input input-bordered"
+            min={0}
           />
         </div>
 
-        <DialogClose asChild>
+        <div className="mt-2 flex justify-end gap-2">
+          <DialogClose asChild>
+            <AppButton variant="gri">Vazgeç</AppButton>
+          </DialogClose>
           <AppButton onClick={handleSave} variant="kurumsalmavi" size="md" shape="none" title="Kaydet ve kapat">
             Kaydet
           </AppButton>
-        </DialogClose>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,37 +9,49 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
+const initialForm = {
+  kumanda_isim: '',
+  kapasite: 0,
+  price: 0
+};
+
 const DialogKumandaDuzenle = ({ kumanda, onSave, children }) => {
-  const [form, setForm] = useState({
-    kumanda_isim: '',
-    kapasite: 0,
-    price: 0
-  });
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(initialForm);
+
+  const resetForm = useCallback(() => setForm(initialForm), []);
 
   useEffect(() => {
     if (kumanda) {
       setForm({
         kumanda_isim: kumanda.kumanda_isim || '',
-        kapasite: kumanda.kapasite || 0,
-        price: kumanda.price || 0
+        kapasite: Number(kumanda.kapasite) || 0,
+        price: Number(kumanda.price) || 0
       });
     }
   }, [kumanda]);
 
-  const handleChange = e => {
+  const handleOpenChange = (next) => {
+    setOpen(next);
+    if (!next) resetForm(); // modal kapanınca temizle
+  };
+
+  const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseInt(value) : value
+      [name]: type === 'number' ? Number(value || 0) : value
     }));
   };
 
   const handleSave = () => {
+    if (!kumanda?.id) return;
     onSave({ ...form, id: kumanda.id });
+    setOpen(false); // kapanınca resetForm çalışır
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children ? (
           children
@@ -52,7 +64,9 @@ const DialogKumandaDuzenle = ({ kumanda, onSave, children }) => {
 
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Kumanda Düzenle: {kumanda.kumanda_isim}</DialogTitle>
+          <DialogTitle>
+            Kumanda Düzenle{kumanda?.kumanda_isim ? `: ${kumanda.kumanda_isim}` : ""}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
@@ -71,6 +85,7 @@ const DialogKumandaDuzenle = ({ kumanda, onSave, children }) => {
             value={form.kapasite}
             onChange={handleChange}
             className="input input-bordered"
+            min={0}
           />
 
           <label>Fiyat</label>
@@ -80,11 +95,18 @@ const DialogKumandaDuzenle = ({ kumanda, onSave, children }) => {
             value={form.price}
             onChange={handleChange}
             className="input input-bordered"
+            min={0}
           />
         </div>
 
         <DialogClose asChild>
-          <AppButton onClick={handleSave} variant="kurumsalmavi" size="md" shape="none" title="Güncelle ve kapat">
+          <AppButton
+            onClick={handleSave}
+            variant="kurumsalmavi"
+            size="md"
+            shape="none"
+            title="Güncelle ve kapat"
+          >
             Güncelle
           </AppButton>
         </DialogClose>

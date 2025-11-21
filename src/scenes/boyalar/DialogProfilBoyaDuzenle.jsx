@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from '@/components/ui/AppButton.jsx';
 
-const DialogProfilBoyaDuzenle = ({ color, onSave }) => {
+const DialogProfilBoyaDuzenle = ({ color, onSave, children }) => {
   const [form, setForm] = useState({ name: '', unit_cost: 0 });
 
   useEffect(() => {
@@ -26,26 +26,26 @@ const DialogProfilBoyaDuzenle = ({ color, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <AppButton variant="sari">Düzenle</AppButton>
+        {children ? children : <AppButton variant="sari">Düzenle</AppButton>}
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
-          <DialogTitle>Profili Düzenle</DialogTitle>
+          <DialogTitle>Profil Boyası Düzenle</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <label>Boya İsmi</label>
+        <div className="grid gap-3 py-4">
+          <label className="font-semibold">Boya İsmi</label>
           <input
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
         </div>
 
         <DialogClose asChild>
-          <AppButton variant="kurumsalmavi" onClick={handleSave}>
+          <AppButton variant="kurumsalmavi" onClick={handleSave} className="w-full sm:w-auto">
             Güncelle
           </AppButton>
         </DialogClose>

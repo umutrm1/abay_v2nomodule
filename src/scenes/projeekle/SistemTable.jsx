@@ -231,66 +231,149 @@ const SistemTable = ({ systems = [], onRefresh }) => {
   };
 
   return (
-    <div className="overflow-auto mt-5 border border-border rounded-2xl">
-      <table className="table w-full">
-        <thead>
-          <tr>
-            <th className="whitespace-nowrap">Sistem İsmi</th>
-            <th className="whitespace-nowrap text-right">En (mm)</th>
-            <th className="whitespace-nowrap text-right">Boy (mm)</th>
-            <th className="whitespace-nowrap text-right">Adet</th>
-            <th className="text-right">İşlemler</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.length > 0 ? (
-            sorted.map((sys, i) => {
-              const key = sys.project_system_id ?? sys.system_variant_id ?? sys.id ?? `sys-${i}`;
-              const isRowDeleting = deleting && deletingId === sys.project_system_id;
-              const isRowSaving =
-                savingEdit && selectedSys?.project_system_id === sys.project_system_id;
-
-              return (
-                <tr key={key} className="hover:bg-muted/40">
-                  <td>{fullName(sys)}</td>
-                  <td className="text-right">{showNum(sys.width_mm)}</td>
-                  <td className="text-right">{showNum(sys.height_mm)}</td>
-                  <td className="text-right">{showNum(sys.quantity)}</td>
-                  <td className="text-right space-x-2">
-                    <AppButton
-                      variant="sari"
-                      size="sm"
-                      shape="none"
-                      onClick={() => handleEdit(sys)}
-                      title="Sistemi düzenle"
-                      disabled={deleting || savingEdit}
-                    >
-                      {isRowSaving ? 'Kaydediliyor…' : 'Düzenle'}
-                    </AppButton>
-
-                    <AppButton
-                      variant="kirmizi"
-                      size="sm"
-                      shape="none"
-                      onClick={() => requestDelete(sys)}
-                      title="Sistemi sil"
-                      disabled={deleting || savingEdit}
-                    >
-                      {isRowDeleting ? 'Siliniyor…' : 'Sil'}
-                    </AppButton>
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
+    <div className="mt-5 border border-border rounded-2xl overflow-hidden">
+      {/* ===================================================== */}
+      {/* ✅ Desktop/Tablet tablo — ESKİSİ GİBİ (md ve üstü) */}
+      {/* ===================================================== */}
+      <div className="hidden md:block overflow-auto">
+        <table className="table w-full">
+          <thead>
             <tr>
-              <td colSpan={5} className="text-center text-gray-500 py-6">
-                Sistem bulunamadı
-              </td>
+              <th className="whitespace-nowrap">Sistem İsmi</th>
+              <th className="whitespace-nowrap text-right">En (mm)</th>
+              <th className="whitespace-nowrap text-right">Boy (mm)</th>
+              <th className="whitespace-nowrap text-right">Adet</th>
+              <th className="text-right">İşlemler</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.length > 0 ? (
+              sorted.map((sys, i) => {
+                const key = sys.project_system_id ?? sys.system_variant_id ?? sys.id ?? `sys-${i}`;
+                const isRowDeleting = deleting && deletingId === sys.project_system_id;
+                const isRowSaving =
+                  savingEdit && selectedSys?.project_system_id === sys.project_system_id;
+
+                return (
+                  <tr key={key} className="hover:bg-muted/40">
+                    <td>{fullName(sys)}</td>
+                    <td className="text-right">{showNum(sys.width_mm)}</td>
+                    <td className="text-right">{showNum(sys.height_mm)}</td>
+                    <td className="text-right">{showNum(sys.quantity)}</td>
+                    <td className="text-right space-x-2">
+                      <AppButton
+                        variant="sari"
+                        size="sm"
+                        shape="none"
+                        onClick={() => handleEdit(sys)}
+                        title="Sistemi düzenle"
+                        disabled={deleting || savingEdit}
+                      >
+                        {isRowSaving ? 'Kaydediliyor…' : 'Düzenle'}
+                      </AppButton>
+
+                      <AppButton
+                        variant="kirmizi"
+                        size="sm"
+                        shape="none"
+                        onClick={() => requestDelete(sys)}
+                        title="Sistemi sil"
+                        disabled={deleting || savingEdit}
+                      >
+                        {isRowDeleting ? 'Siliniyor…' : 'Sil'}
+                      </AppButton>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-center text-gray-500 py-6">
+                  Sistem bulunamadı
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ===================================================== */}
+      {/* ✅ Mobil kart görünümü (md altı) */}
+      {/* ===================================================== */}
+      <div className="md:hidden p-3 flex flex-col gap-3 overflow-auto">
+        {sorted.length > 0 ? (
+          sorted.map((sys, i) => {
+            const key = sys.project_system_id ?? sys.system_variant_id ?? sys.id ?? `sys-${i}`;
+            const isRowDeleting = deleting && deletingId === sys.project_system_id;
+            const isRowSaving =
+              savingEdit && selectedSys?.project_system_id === sys.project_system_id;
+
+            return (
+              <div
+                key={key}
+                className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+              >
+                {/* Sistem adı */}
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground">Sistem İsmi</div>
+                  <div className="font-semibold text-sm truncate">{fullName(sys)}</div>
+                </div>
+
+                {/* Sayısal bilgiler */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-xs text-muted-foreground">En (mm)</span>
+                    <span className="font-medium">
+                      {showNum(sys.width_mm)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-xs text-muted-foreground">Boy (mm)</span>
+                    <span className="font-medium">
+                      {showNum(sys.height_mm)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2 col-span-2">
+                    <span className="text-xs text-muted-foreground">Adet</span>
+                    <span className="font-medium">
+                      {showNum(sys.quantity)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Butonlar */}
+                <div className="flex justify-end gap-2">
+                  <AppButton
+                    variant="sari"
+                    size="sm"
+                    shape="none"
+                    onClick={() => handleEdit(sys)}
+                    title="Sistemi düzenle"
+                    disabled={deleting || savingEdit}
+                  >
+                    {isRowSaving ? 'Kaydediliyor…' : 'Düzenle'}
+                  </AppButton>
+
+                  <AppButton
+                    variant="kirmizi"
+                    size="sm"
+                    shape="none"
+                    onClick={() => requestDelete(sys)}
+                    title="Sistemi sil"
+                    disabled={deleting || savingEdit}
+                  >
+                    {isRowDeleting ? 'Siliniyor…' : 'Sil'}
+                  </AppButton>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center text-muted-foreground py-6 text-sm">
+            Sistem bulunamadı
+          </div>
+        )}
+      </div>
 
       {/* Düzenleme diyaloğu */}
       <DialogSistemDuzenleOnProject

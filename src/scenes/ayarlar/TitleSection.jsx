@@ -68,24 +68,25 @@ export default function TitleSection() {
 
   return (
     <section className="border border-border rounded-2xl p-4">
-      <header className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">PDF Başlık Alanları</h2>
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <h2 className="text-base sm:text-lg font-semibold">PDF Başlık Alanları</h2>
         <AppButton
           onClick={saveTitle}
           disabled={titleLoading || !titleDoc}
           loading={titleSaving}
           size="md"
           variant="kurumsalmavi"
+          className="w-full sm:w-auto"
         >
           Kaydet
         </AppButton>
       </header>
 
       <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">PDF Türü</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">PDF Türü</span>
           <select
-            className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
+            className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground w-full sm:w-auto"
             value={selectedTitleKey}
             onChange={(e) => setSelectedTitleKey(e.target.value)}
           >

@@ -8,7 +8,6 @@ import { getProformaRule, updateProformaRule } from "@/redux/actions/actionsPdf"
 export default function RuleSection() {
   const dispatch = useDispatch();
 
-  // reset_sequence eklendi, default false
   const [rule, setRule] = useState({
     prefix: "PRJ",
     separator: "-",
@@ -21,13 +20,11 @@ export default function RuleSection() {
     (async () => {
       try {
         const data = await dispatch(getProformaRule());
-        // Yeni getProformaRule yanıtından sadece ihtiyacımız olan alanları al
         setRule((prev) => ({
           ...prev,
           prefix: typeof data?.prefix === "string" ? data.prefix : prev.prefix,
           separator: typeof data?.separator === "string" ? data.separator : prev.separator,
           start_number: typeof data?.start_number === "number" ? data.start_number : prev.start_number,
-          // API'de gelmeyen kontrol alanı: varsayılanı koru
           reset_sequence: true,
         }));
       } catch (e) {
@@ -39,15 +36,12 @@ export default function RuleSection() {
   const saveRule = async () => {
     try {
       setRuleSaving(true);
-
-      // Yeni updateProformaRule payload şemasına birebir uygun gönderim
       const payload = {
         prefix: (rule.prefix || "").toUpperCase().replace(/[^A-Z]/g, ""),
         separator: rule.separator ?? "",
         start_number: Number.isFinite(rule.start_number) ? rule.start_number : 0,
         reset_sequence: true,
       };
-      console.log(payload)
       await dispatch(updateProformaRule(payload));
     } catch (e) {
       console.error(e);
@@ -58,9 +52,16 @@ export default function RuleSection() {
 
   return (
     <section className="border border-border rounded-2xl p-4">
-      <header className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Proforma No Kuralı</h2>
-        <AppButton onClick={saveRule} disabled={ruleSaving} loading={ruleSaving} size="md" variant="kurumsalmavi">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <h2 className="text-base sm:text-lg font-semibold">Proforma No Kuralı</h2>
+        <AppButton
+          onClick={saveRule}
+          disabled={ruleSaving}
+          loading={ruleSaving}
+          size="md"
+          variant="kurumsalmavi"
+          className="w-full sm:w-auto"
+        >
           Kaydet
         </AppButton>
       </header>
@@ -107,7 +108,6 @@ export default function RuleSection() {
             }}
           />
         </div>
-
       </div>
 
       <div className="mt-3 text-sm text-foreground">

@@ -40,9 +40,16 @@ const CAM_DURUMLAR    = ['Cam Durumu','Cam Çekildi', 'Cam Geldi', 'Cam Çekilec
 const URETIM_DURUMLAR = ['Üretim Durumu','Üretimde', 'Sevk Edildi'];
 
 /** Yardımcı: "Durum Belirtilmedi" => "" (URL'e eklenmesin) */
-const toParam = (label) => (label && label !== 'Boya Durumu'&& label !== 'Cam Durumu' && label !== 'Üretim Durumu'  ? label : "");
+const toParam = (label) => (
+  label &&
+  label !== 'Boya Durumu' &&
+  label !== 'Cam Durumu' &&
+  label !== 'Üretim Durumu'
+    ? label
+    : ""
+);
 
-/** 🔵 Durum → text rengi eşlemesi */
+/** 🔵 Durum → badge eşlemesi */
 const BOYA_BADGE = {
   'Boyanacak':     'bg-red-800 text-white ring-1 ring-white/10 ',
   'Boyada':        'bg-amber-700 text-white ring-1 ring-white/10',
@@ -64,25 +71,19 @@ const renderBadge = (value, map) => {
   if (!value) return <span className="opacity-50">—</span>;
   const cls = map[value];
 
-  // eşleşmeyen değer gelirse gri, okunabilir bir chip göster
   const base =
     "inline-flex items-center rounded-lg px-2 py-1 text-sm font-medium whitespace-nowrap";
 
-  if (!cls) {
-    return (
-      <span className={``}>
-        {value}
-      </span>
-    );
-  }
+  if (!cls) return <span>{value}</span>;
   return <span className={`${base} ${cls}`}>{value}</span>;
 };
+
 /** 🔹 approval_date → sadece tarih (TR yereli) */
 const formatOnlyDate = (val) => {
   if (!val) return "—";
   try {
     if (typeof val === "string") {
-      const m = val.match(/^(\d{4})-(\d{2})-(\d{2})/); // 2025-10-28 veya 2025-10-28T...
+      const m = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (m) {
         const [, y, mo, d] = m;
         return `${d}/${mo}/${y}`;
@@ -113,6 +114,7 @@ const Projeler = () => {
   const [searchName, setSearchName] = useState('');
   const debouncedCode = useDebounced(searchCode, 300);
   const debouncedName = useDebounced(searchName, 300);
+
   const [sortProjeler, setSortProjeler] = useState(false);
   const [sortProjelerDir, setSortProjelerDir] = useState(null);
   const [page, setPage] = useState(1);
@@ -162,7 +164,11 @@ const Projeler = () => {
       )
     ).finally(() => setListLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, page, debouncedName, debouncedCode, paint_status, glass_status, production_status, selectedCustomer?.id, limit,sortProjeler]);
+  }, [
+    dispatch, page, debouncedName, debouncedCode,
+    paint_status, glass_status, production_status,
+    selectedCustomer?.id, limit, sortProjeler
+  ]);
 
   const onSearchName = (e) => { setSearchName(e.target.value); setPage(1); };
   const onSearchCode = (e) => { setSearchCode(e.target.value); setPage(1); };
@@ -182,8 +188,7 @@ const Projeler = () => {
     setIsOverlayLoading(true);
     const payload = {
       project_name: newProje.project_name,
-      created_by: newProje.created_by ?? "23691d1d-7545-46b1-bcc3-141a96a7ad3b",
-      is_teklif:false
+      is_teklif: false
     };
 
     try {
@@ -204,7 +209,11 @@ const Projeler = () => {
     } finally {
       setIsOverlayLoading(false);
     }
-  }, [dispatch, navigate, page, debouncedName, debouncedCode, paint_status, glass_status, production_status, selectedCustomer?.id, limit]);
+  }, [
+    dispatch, navigate, page, debouncedName, debouncedCode,
+    paint_status, glass_status, production_status,
+    selectedCustomer?.id, limit
+  ]);
 
   const askDelete = (proje) => {
     setPendingDelete(proje);
@@ -276,11 +285,14 @@ const Projeler = () => {
     }
   };
 
+  const items = data.items ?? [];
   const totalPages = data.total_pages || 1;
   const COL_COUNT = 8;
 
   return (
+    // ✅ Musteriler formatı: sabit header + içerik
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
+      {/* Overlay loading aynı kalsın */}
       {isOverlayLoading && (
         <div className="fixed inset-0 bg-foreground/10 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-muted-foreground/30 border-t-primary"></div>
@@ -289,75 +301,93 @@ const Projeler = () => {
 
       <Header title="Projeler" />
 
-      <div className="bg-card border borderorder rounded-2xl p-5 flex flex-col gap-y-4 text-foreground ">
-        {/* Arama + Filtreler + Ekle */}
+      <div className="bg-card w-full border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-y-4 text-foreground">
+        {/* =========================
+            ✅ ÜST TOOLBAR (Musteriler gibi)
+            - Mobil: alt alta
+            - md+: yan yana / sıkı düzen
+        ========================= */}
         <div className="flex flex-col gap-3 w-full">
-          {/* SOLDAN SAĞA: PROJE KODU → PROJE ADI → MÜŞTERİ → PROJE SAYISI → EKLE */}
-          <div className="flex flex-col md:flex-row items-center gap-3 md:gap-0 w-full justify-evenly">
-            <input
-              type="text"
-              placeholder="Proje koduna göre ara..."
-              value={searchCode}
-              onChange={onSearchCode}
-              className="input input-bordered w-full md:max-w-sm"
-            />
-            <input
-              type="text"
-              placeholder="Proje adına göre ara..."
-              value={searchName}
-              onChange={onSearchName}
-              className="input input-bordered w-full md:max-w-sm ml-10"
-            />
-
-            {/* Müşteriye Göre butonu + seçili müşteri rozeti */}
-            <div className="flex items-center gap-2 ml-10">
-              <AppButton
-                type="button"
-                variant="gri"
-              className="md:!h-10"
-
-                size="sm"
-                shape="none"
-                onClick={() => setCustomerDialogOpen(true)}
-                title="Müşteriye göre filtrele"
-              >
-                Müşteriye Göre Ara
-              </AppButton>
-
-              {selectedCustomer?.id && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full border borderorder text-sm">
-                  <span className="truncate max-w-[12rem]">
-                    {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
-                  </span>
-                  <button
-                  className='cursor-pointer'
-                    onClick={() => { setSelectedCustomer(null); setPage(1); }}
-                    title="Müşteri filtresini temizle"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Proje Sayısı (limit) */}
-            <div className="flex items-center gap-2 ml-10">
-              <label className="text-sm opacity-80">Proje Sayısı</label>
+          {/* Arama + müşteri + limit + ekle */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 w-full">
+            {/* Proje Kodu arama */}
+            <div className="w-full md:max-w-xs">
               <input
-                type="number"
-                min={1}
-                max={200}
-                value={limit}
-                onChange={onLimitChange}
-                className="input input-bordered input-sm w-24 text-center"
-                title="Sayfa Başına Proje Sayısı (min:1/max:200)"
+                type="text"
+                placeholder="Proje koduna göre ara..."
+                value={searchCode}
+                onChange={onSearchCode}
+                className="input input-bordered w-full text-sm"
               />
             </div>
 
-            <DialogProjeEkle onSave={handleAddProje} />
+            {/* Proje Adı arama */}
+            <div className="w-full md:max-w-xs">
+              <input
+                type="text"
+                placeholder="Proje adına göre ara..."
+                value={searchName}
+                onChange={onSearchName}
+                className="input input-bordered w-full text-sm"
+              />
+            </div>
+
+            {/* Sağ blok: müşteri filtre + limit + ekle */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto md:ml-2">
+              {/* Müşteri seç */}
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <AppButton
+                  type="button"
+                  variant="gri"
+                  size="sm"
+                  shape="none"
+                  onClick={() => setCustomerDialogOpen(true)}
+                  title="Müşteriye göre filtrele"
+                  className="w-full sm:w-auto"
+                >
+                  Müşteriye Göre Ara
+                </AppButton>
+
+                {selectedCustomer?.id && (
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-xs sm:text-sm max-w-full">
+                    <span className="truncate max-w-[12rem]">
+                      {selectedCustomer.company_name || selectedCustomer.name || 'Seçili müşteri'}
+                    </span>
+                    <button
+                      className="cursor-pointer"
+                      onClick={() => { setSelectedCustomer(null); setPage(1); }}
+                      title="Müşteri filtresini temizle"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Limit */}
+              <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+                <label className="text-xs sm:text-sm opacity-80 whitespace-nowrap">
+                  Proje Sayısı
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={limit}
+                  onChange={onLimitChange}
+                  className="input input-bordered input-sm w-24 text-center"
+                  title="Sayfa Başına Proje Sayısı (min:1 / max:200)"
+                />
+              </div>
+
+              {/* Ekle */}
+              <div className="w-full sm:w-auto sm:ml-auto">
+                <DialogProjeEkle onSave={handleAddProje} />
+              </div>
+            </div>
           </div>
 
-          {/* Durum dropdown filtreleri */}
+          {/* Durum dropdown filtreleri (Musteriler sonrası ikinci satır gibi) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <select
               value={paintLabel}
@@ -394,11 +424,13 @@ const Projeler = () => {
           </div>
         </div>
 
-        {/* Tablo */}
-        <div className="overflow-x-auto">
-          <table className="table w-full border borderase-500 rounded-lg">
+        {/* =========================
+            ✅ Desktop/Tablet TABLO (md+)
+        ========================= */}
+        <div className="hidden md:block flex-grow overflow-x-auto">
+          <table className="table w-full border border-gray-500 rounded-lg">
             <thead>
-              <tr className="border borderase-500 border-gray-500">
+              <tr className="border border-gray-500">
                 <th>
                   <button
                     type="button"
@@ -434,14 +466,14 @@ const Projeler = () => {
 
             {listLoading ? (
               <tbody>
-                <tr className="border borderase-400 border-gray-500">
+                <tr className="border border-gray-500">
                   <td colSpan={COL_COUNT}><Spinner /></td>
                 </tr>
               </tbody>
-            ) : (data.items ?? []).length > 0 ? (
+            ) : items.length > 0 ? (
               <tbody>
-                {data.items.map(proje => (
-                  <tr key={proje.id} className="border borderase-300 border-gray-500">
+                {items.map(proje => (
+                  <tr key={proje.id} className="border border-gray-500">
                     <td>{formatOnlyDate(proje?.approval_date ?? proje?.requirements?.approval_date)}</td>
                     <td>{proje.project_kodu}</td>
                     <td>{proje.customer_name || '—'}</td>
@@ -449,44 +481,46 @@ const Projeler = () => {
                     <td>{renderBadge(proje.paint_status, BOYA_BADGE)}</td>
                     <td>{renderBadge(proje.glass_status, CAM_BADGE)}</td>
                     <td>{renderBadge(proje.production_status, URETIM_BADGE)}</td>
-                    <td className="text-center space-x-2">
-                      <AppButton
-                        onClick={() => askMove(proje)}
-                        variant="kurumsalmavi"
-                        size="sm"
-                        shape="none"
-                        title="Projeyi tekliflere taşı"
-                      >
-                        Tekliflere Taşı
-                      </AppButton>
+                    <td className="text-center">
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                        <AppButton
+                          onClick={() => askMove(proje)}
+                          variant="kurumsalmavi"
+                          size="sm"
+                          shape="none"
+                          title="Projeyi tekliflere taşı"
+                        >
+                          Tekliflere Taşı
+                        </AppButton>
 
-                      <AppButton
-                        onClick={() => navigate(`/projeduzenle/${proje.id}`)}
-                        variant="sari"
-                        size="sm"
-                        shape="none"
-                        title="Projeyi düzenle"
-                      >
-                        Düzenle
-                      </AppButton>
+                        <AppButton
+                          onClick={() => navigate(`/projeduzenle/${proje.id}`)}
+                          variant="sari"
+                          size="sm"
+                          shape="none"
+                          title="Projeyi düzenle"
+                        >
+                          Düzenle
+                        </AppButton>
 
-                      <AppButton
-                        onClick={() => askDelete(proje)}
-                        variant="kirmizi"
-                        size="sm"
-                        shape="none"
-                        title="Projeyi sil"
-                      >
-                        Sil
-                      </AppButton>
+                        <AppButton
+                          onClick={() => askDelete(proje)}
+                          variant="kirmizi"
+                          size="sm"
+                          shape="none"
+                          title="Projeyi sil"
+                        >
+                          Sil
+                        </AppButton>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             ) : (
               <tbody>
-                <tr className="border borderase-500">
-                  <td colSpan={COL_COUNT} className="text-center text-muted-foreground py-10">
+                <tr>
+                  <td colSpan={COL_COUNT} className="border border-gray-500 text-center text-muted-foreground py-10">
                     Gösterilecek proje bulunamadı.
                   </td>
                 </tr>
@@ -495,75 +529,166 @@ const Projeler = () => {
           </table>
         </div>
 
-        {/* Sayfalama */}
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setPage(1)}
-            disabled={data.page === 1}
-            title="İlk sayfa"
-          >
-            « İlk
-          </AppButton>
+        {/* =========================
+            ✅ MOBİL KART GÖRÜNÜMÜ (md-)
+        ========================= */}
+        <div className="md:hidden">
+          {listLoading ? (
+            <Spinner />
+          ) : items.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {items.map(proje => (
+                <div
+                  key={proje.id}
+                  className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                >
+                  {/* Üst satır: proje adı + müşteri + tarih */}
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">
+                        {proje.project_name || "—"}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {proje.customer_name || "Müşteri yok"} • {proje.project_kodu || "Kod yok"}
+                      </div>
+                    </div>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setPage(p => Math.max(p - 1, 1))}
-            disabled={!data.has_prev}
-            title="Önceki sayfa"
-          >
-            ‹ Önceki
-          </AppButton>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/70 text-[11px] whitespace-nowrap">
+                      {formatOnlyDate(proje?.approval_date ?? proje?.requirements?.approval_date)}
+                    </span>
+                  </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = parseInt(e.target.elements.pageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= (data.total_pages || 1)) setPage(val);
-            }}
-            className="flex items-center gap-1"
-          >
-            <input
-              type="number"
-              name="pageNum"
-              min={1}
-              max={data.total_pages || 1}
-              value={page}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (isNaN(val)) return setPage(1);
-                setPage(Math.min(Math.max(1, val), (data.total_pages || 1)));
+                  {/* Durumlar */}
+                  <div className="flex flex-col gap-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Boya</span>
+                      {renderBadge(proje.paint_status, BOYA_BADGE)}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Cam</span>
+                      {renderBadge(proje.glass_status, CAM_BADGE)}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Üretim</span>
+                      {renderBadge(proje.production_status, URETIM_BADGE)}
+                    </div>
+                  </div>
+
+                  {/* Aksiyonlar */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <AppButton
+                      onClick={() => askMove(proje)}
+                      variant="kurumsalmavi"
+                      size="sm"
+                      shape="none"
+                      title="Projeyi tekliflere taşı"
+                    >
+                      Tekliflere Taşı
+                    </AppButton>
+
+                    <AppButton
+                      onClick={() => navigate(`/projeduzenle/${proje.id}`)}
+                      variant="sari"
+                      size="sm"
+                      shape="none"
+                      title="Projeyi düzenle"
+                    >
+                      Düzenle
+                    </AppButton>
+
+                    <AppButton
+                      onClick={() => askDelete(proje)}
+                      variant="kirmizi"
+                      size="sm"
+                      shape="none"
+                      title="Projeyi sil"
+                    >
+                      Sil
+                    </AppButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8 text-sm">
+              Gösterilecek proje bulunamadı.
+            </div>
+          )}
+        </div>
+
+        {/* =========================
+            ✅ Sayfalama (Musteriler formatı)
+        ========================= */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center sm:justify-between items-center gap-2 sm:gap-3 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setPage(1)}
+              disabled={data.page === 1}
+              title="İlk sayfa"
+            >
+              « İlk
+            </AppButton>
+
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              disabled={!data.has_prev}
+              title="Önceki sayfa"
+            >
+              ‹ Önceki
+            </AppButton>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = parseInt(e.target.elements.pageNum.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) setPage(val);
               }}
-              className="input input-bordered input-sm w-16 text-center"
-            />
-            <span className="text-sm">/ {data.total_pages || 1}</span>
-          </form>
+              className="flex items-center gap-1"
+            >
+              <input
+                type="number"
+                name="pageNum"
+                min={1}
+                max={totalPages}
+                value={page}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (isNaN(val)) return setPage(1);
+                  setPage(Math.min(Math.max(1, val), totalPages));
+                }}
+                className="input input-bordered input-sm w-16 text-center"
+              />
+              <span className="text-sm">/ {totalPages}</span>
+            </form>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setPage(p => Math.min((data.total_pages || 1), p + 1))}
-            disabled={!data.has_next}
-            title="Sonraki sayfa"
-          >
-            Sonraki ›
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={!data.has_next}
+              title="Sonraki sayfa"
+            >
+              Sonraki ›
+            </AppButton>
 
-          <AppButton
-            variant="kurumsalmavii"
-            size="sm"
-            shape="none"
-            onClick={() => setPage(data.total_pages || 1)}
-            disabled={data.page === (data.total_pages || 1) || (data.total_pages || 1) <= 1}
-            title="Son sayfa"
-          >
-            Son »
-          </AppButton>
+            <AppButton
+              variant="kurumsalmavi"
+              size="sm"
+              shape="none"
+              onClick={() => setPage(totalPages)}
+              disabled={data.page === totalPages || totalPages <= 1}
+              title="Son sayfa"
+            >
+              Son »
+            </AppButton>
+          </div>
         </div>
       </div>
 

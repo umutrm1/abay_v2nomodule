@@ -1,3 +1,4 @@
+// src/scenes/camlar/DialogCamEkle.jsx
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   Dialog,
@@ -18,9 +19,8 @@ function insertAt(base, index, token) {
   return base.slice(0, i) + token + base.slice(i);
 }
 
-// Boşluklar da dahil edilerek uzunluk sayımı
 function countWithSpaces(str) {
-  return (str ?? '').length; // boşluklar DAHİL
+  return (str ?? '').length;
 }
 
 const ArrowStepper = ({ label, value, setValue, min = 0, max = 0, disabled = false }) => {
@@ -67,16 +67,15 @@ const PreviewLine = ({ title, value }) => (
 );
 
 const DialogCamEkle = ({ onSave, children }) => {
-  // 🔧 Form state
   const [form, setForm] = useState({
     cam_isim: '',
-    thickness_mm: 1,      // 1: Tek Cam, 2: Çift Cam
+    thickness_mm: 1,
     belirtec_1: 0,
     belirtec_2: 0
   });
 
-const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+5);
-  // cam_isim değişince indeksleri clamp et
+  const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim]) + 5);
+
   useEffect(() => {
     setForm(prev => ({
       ...prev,
@@ -85,14 +84,12 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
     }));
   }, [nameLen]);
 
-  // Tek cam ise belirtec_2'yi 0 tut
   useEffect(() => {
     if (Number(form.thickness_mm) !== 2 && Number(form.belirtec_2) !== 0) {
       setForm(prev => ({ ...prev, belirtec_2: 0 }));
     }
   }, [form.thickness_mm]);
 
-  // Ortak input handler
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     setForm(prev => ({
@@ -101,13 +98,11 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
     }));
   };
 
-  // ArrowStepper setterleri
   const setBel1 = (updater) =>
     setForm(prev => ({ ...prev, belirtec_1: typeof updater === 'function' ? updater(prev.belirtec_1) : updater }));
   const setBel2 = (updater) =>
     setForm(prev => ({ ...prev, belirtec_2: typeof updater === 'function' ? updater(prev.belirtec_2) : updater }));
 
-  // 🔍 Önizlemeler
   const previewBoya1 = useMemo(() => {
     const base = form.cam_isim || '';
     return insertAt(base, form.belirtec_1, 'boya1');
@@ -119,7 +114,6 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
     return insertAt(with1, form.belirtec_2, 'boya2');
   }, [form.cam_isim, form.belirtec_1, form.belirtec_2]);
 
-  // Kaydet
   const handleSave = () => {
     const isDouble = Number(form.thickness_mm) === 2;
     onSave({
@@ -128,8 +122,6 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
       belirtec_1: clamp(Number(form.belirtec_1) || 0, 0, nameLen),
       belirtec_2: isDouble ? clamp(Number(form.belirtec_2) || 0, 0, nameLen) : 0
     });
-    // İstersen reset:
-    // setForm({ cam_isim: '', thickness_mm: 1, belirtec_1: 0, belirtec_2: 0 });
   };
 
   const isDouble = Number(form.thickness_mm) === 2;
@@ -137,21 +129,18 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        {children ? (
-          children
-        ) : (
+        {children ? children : (
           <AppButton
             variant="kurumsalmavi"
             size="mdtxtlg"
-            className="ml-auto w-40"
-            title="Yeni cam kaydı ekle"
+            className="w-full md:w-40 md:ml-auto"
           >
             + Cam Ekle
           </AppButton>
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
           <DialogTitle>Yeni Cam Ekle</DialogTitle>
         </DialogHeader>
@@ -163,7 +152,7 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
             name="cam_isim"
             value={form.cam_isim}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label htmlFor="thickness_mm">Cam Türü</label>
@@ -174,7 +163,7 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
             onChange={(e) =>
               setForm(prev => ({ ...prev, thickness_mm: Number(e.target.value) }))
             }
-            className="select select-bordered"
+            className="select select-bordered w-full"
           >
             <option value="1">Tek Cam</option>
             <option value="2">Çift Cam</option>
@@ -196,7 +185,6 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
                 max={nameLen}
                 disabled={false}
               />
-              {/* 1. önizleme (sadece boya1) */}
               <PreviewLine title="Önizleme (boya1 uygulanmış)" value={previewBoya1} />
 
               <ArrowStepper
@@ -207,7 +195,6 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
                 max={nameLen}
                 disabled={!isDouble}
               />
-              {/* 2. önizleme (boya1 + boya2) */}
               <PreviewLine
                 title={`Önizleme (boya1${isDouble ? ' + boya2' : ''} uygulanmış)`}
                 value={isDouble ? previewBoya12 : previewBoya1}
@@ -228,7 +215,7 @@ const nameLen = (useMemo(() => countWithSpaces(form.cam_isim), [form.cam_isim])+
             variant="kurumsalmavi"
             size="md"
             shape="none"
-            title="Kaydet ve kapat"
+            className="w-full sm:w-auto"
           >
             Kaydet
           </AppButton>

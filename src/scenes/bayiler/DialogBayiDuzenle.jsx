@@ -10,14 +10,14 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogBayiDuzenle = ({ bayi, onSave }) => {
+const DialogBayiDuzenle = ({ bayi, onSave, children }) => {
   const [guncelBayi, setGuncelBayi] = useState({
     name: '',
     email: '',
     phone: '',
     owner_name: '',
     city: '',
-    status: '' // 'active' | 'suspended' vb. (server ne döndürüyorsa)
+    status: ''
   });
 
   useEffect(() => {
@@ -43,23 +43,27 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <AppButton  variant="sari" size="sm">
-          Düzenle
-        </AppButton>
+        {children ? (
+          children
+        ) : (
+          <AppButton variant="sari" size="sm">
+            Düzenle
+          </AppButton>
+        )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-200">
+      <DialogContent className="w-[94vw] max-w-[42rem]">
         <DialogHeader>
           <DialogTitle>Bayi Düzenle: {bayi?.name}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-3 sm:gap-4 py-4">
           <label className="font-semibold">İsim</label>
           <input
             name="name"
             value={guncelBayi.name}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">E-posta</label>
@@ -67,7 +71,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
             name="email"
             value={guncelBayi.email}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Telefon</label>
@@ -75,7 +79,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
             name="phone"
             value={guncelBayi.phone}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Sahip</label>
@@ -83,7 +87,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
             name="owner_name"
             value={guncelBayi.owner_name}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Şehir</label>
@@ -91,7 +95,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
             name="city"
             value={guncelBayi.city}
             onChange={handleChange}
-            className="input input-bordered"
+            className="input input-bordered w-full"
           />
 
           <label className="font-semibold">Durum</label>
@@ -99,7 +103,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
             name="status"
             value={guncelBayi.status}
             onChange={handleChange}
-            className="select select-bordered"
+            className="select select-bordered w-full"
           >
             <option value="">Seçiniz</option>
             <option value="active">Aktif</option>
@@ -108,7 +112,7 @@ const DialogBayiDuzenle = ({ bayi, onSave }) => {
         </div>
 
         <DialogClose asChild>
-          <AppButton variant="koyumavi" size="md" onClick={handleGuncelle}>
+          <AppButton variant="koyumavi" size="md" onClick={handleGuncelle} className="w-full sm:w-auto">
             Güncelle
           </AppButton>
         </DialogClose>

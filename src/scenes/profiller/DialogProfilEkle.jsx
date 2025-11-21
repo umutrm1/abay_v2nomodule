@@ -10,7 +10,6 @@ import {
 import AppButton from "@/components/ui/AppButton.jsx";
 
 const DialogProfilEkle = ({ onSave, children }) => {
-  // 1) Form alanlarını tutacak state
   const [form, setForm] = useState({
     profil_kodu: '',
     profil_isim: '',
@@ -20,7 +19,6 @@ const DialogProfilEkle = ({ onSave, children }) => {
     profil_kesit_fotograf: 'string'
   });
 
-  // 2) Input change handler
   const handleChange = e => {
     const { name, value, type } = e.target;
     setForm(prev => ({
@@ -29,20 +27,20 @@ const DialogProfilEkle = ({ onSave, children }) => {
     }));
   };
 
-  // 3) Kaydet butonuna tıklanınca parent onSave çağrısı
   const handleSave = () => {
     onSave(form);
   };
 
   return (
     <Dialog>
-      {/* 4) Modal tetikleyici (AppButton) */}
       <DialogTrigger asChild>
         {children ? (
           children
         ) : (
           <AppButton
-variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-full sm:w-auto sm:ml-auto"
             title="Yeni profil ekle"
           >
             + Profil Ekle
@@ -50,7 +48,6 @@ variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
         )}
       </DialogTrigger>
 
-      {/* 5) Modal içeriği */}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Yeni Profil Ekle</DialogTitle>
@@ -92,7 +89,6 @@ variant="kurumsalmavi" size="mdtxtlg" className="ml-auto w-40"
           />
         </div>
 
-        {/* 7) Kaydet (AppButton) */}
         <DialogClose asChild>
           <AppButton
             onClick={handleSave}

@@ -21,7 +21,7 @@ const RuleLine = ({ ok, text }) => (
 
 /** Yardımcı: şifre gücü barı */
 const StrengthBar = ({ score = 0 }) => {
-  const steps = 5; // 0..5
+  const steps = 5;
   const pct = Math.min(Math.max(score, 0), steps) / steps * 100;
   const color =
     score <= 2 ? "bg-red-500" : score === 3 ? "bg-amber-500" : score === 4 ? "bg-lime-500" : "bg-green-600";
@@ -35,22 +35,18 @@ const StrengthBar = ({ score = 0 }) => {
 export default function PasswordSection() {
   const dispatch = useDispatch();
 
-  // Form state
   const [pwOld, setPwOld] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwNew2, setPwNew2] = useState("");
 
-  // UI state
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showNew2, setShowNew2] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
 
-  // İşlem state
   const [pwSaving, setPwSaving] = useState(false);
-  const [pwMsg, setPwMsg] = useState(null); // { type: "ok" | "err", text: string }
+  const [pwMsg, setPwMsg] = useState(null);
 
-  // Kurallar
   const checks = useMemo(() => ({
     len: pwNew.length >= 8,
     num: /\d/.test(pwNew),
@@ -58,14 +54,12 @@ export default function PasswordSection() {
     up: /[A-Z]/.test(pwNew),
     sym: /[^A-Za-z0-9]/.test(pwNew),
     match: pwNew.length > 0 && pwNew === pwNew2,
-    diff: pwOld && pwNew && pwOld !== pwNew, // yeni şifre eskisiyle aynı olmasın
+    diff: pwOld && pwNew && pwOld !== pwNew,
   }), [pwNew, pwNew2, pwOld]);
 
   const score = useMemo(() => {
-    // diff hariç 5 temel kural + eşleşme (6) — görselde max 5 gösteriyoruz
     const base = [checks.len, checks.num, checks.low, checks.up, checks.sym].filter(Boolean).length;
-    // Eşleşme +1 saymayalım, kullanıcı yazdıkça zaten score artar; diff sadece uyarı amaçlı
-    return base; // 0..5
+    return base;
   }, [checks]);
 
   const allValid = checks.len && checks.num && checks.low && checks.up && checks.sym && checks.match && checks.diff;
@@ -104,7 +98,6 @@ export default function PasswordSection() {
     }
   };
 
-  // CapsLock uyarısı — yeni şifre inputlarında dinlenir
   useEffect(() => {
     const onKey = (e) => setCapsLock(e.getModifierState && e.getModifierState("CapsLock"));
     window.addEventListener("keydown", onKey);
@@ -118,12 +111,14 @@ export default function PasswordSection() {
   return (
     <section className="border border-border rounded-2xl p-4">
       <header className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Şifre Değiştir</h2>
+        <h2 className="text-base sm:text-lg font-semibold">Şifre Değiştir</h2>
       </header>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Sol: Form alanı */}
         <div className="lg:col-span-2 space-y-4">
+          {/* ... form içeriğin aynı ... */}
+          {/* (Burada hiçbir davranışı değiştirmedim) */}
+
           {/* Eski şifre */}
           <div className="flex flex-col gap-1">
             <label className="text-sm text-muted-foreground">Eski Şifre</label>
@@ -143,12 +138,10 @@ export default function PasswordSection() {
                 aria-label={showOld ? "Şifreyi gizle" : "Şifreyi göster"}
               >
                 {showOld ? (
-                  // eye-off
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M9.88 9.88a3 3 0 104.24 4.24M10.36 5.64A9 9 0 0121 12c-1.39 3.9-5.36 7-9.99 7-1.01 0-1.98-.14-2.88-.41" />
                   </svg>
                 ) : (
-                  // eye
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.06 12.32A10.53 10.53 0 0112 4.5c4.76 0 8.77 3.16 10.06 7.5-1.29 4.34-5.3 7.5-10.06 7.5S3.35 16.66 2.06 12.32z" />
                     <circle cx="12" cy="12" r="3" />
@@ -193,7 +186,6 @@ export default function PasswordSection() {
                 )}
               </button>
             </div>
-            {/* Güç barı */}
             <div className="mt-2"><StrengthBar score={score} /></div>
           </div>
 
@@ -229,7 +221,6 @@ export default function PasswordSection() {
             </div>
           </div>
 
-          {/* İşlem butonu + mesaj */}
           <div className="flex flex-col gap-2 pt-2">
             <AppButton
               onClick={handleChangePassword}
@@ -251,13 +242,11 @@ export default function PasswordSection() {
             )}
           </div>
 
-          {/* İpuçları */}
           <div className="rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
             İpucu: Şifrenizde en az 8 karakter, bir büyük/küçük harf, bir rakam ve bir sembol kullanmanız önerilir.
           </div>
         </div>
 
-        {/* Sağ: Kurallar paneli */}
         <aside className="rounded-2xl border border-border bg-muted/20 p-4">
           <h3 className="mb-3 text-sm font-semibold tracking-wide text-foreground">Şifre Gereksinimleri</h3>
           <div className="grid grid-cols-1 gap-2">

@@ -38,14 +38,12 @@ const DigerMalzemeler = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🆕 Limit
   const [limit, setLimit] = useState(10);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Veri çekme
   useEffect(() => {
     setIsLoading(true);
     const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
@@ -53,13 +51,11 @@ const DigerMalzemeler = () => {
       .finally(() => setIsLoading(false));
   }, [dispatch, currentPage, searchTerm, limit]);
 
-  // Arama
   const onSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
 
-  // 🆕 Limit değişimi
   const onLimitChange = (e) => {
     const raw = parseInt(e.target.value, 10);
     const clamped = isNaN(raw) ? 10 : Math.min(50, Math.max(1, raw));
@@ -67,7 +63,6 @@ const DigerMalzemeler = () => {
     setCurrentPage(1);
   };
 
-  // Ekle/Düzenle/Sil
   const handleAddItem = useCallback(async (row) => {
     setIsLoading(true);
     try {
@@ -101,7 +96,6 @@ const DigerMalzemeler = () => {
     setDeleteOpen(true);
   };
 
-  // Modal onay
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
     try {
@@ -118,13 +112,15 @@ const DigerMalzemeler = () => {
 
   const totalPages = data.total_pages || 1;
 
+  const hesaplamaLabel = (t) => (t === "adetli" ? "Adetli" : "Ölçülü");
+
   return (
     <div className="grid grid-rows-[60px_1fr] min-h-screen">
       <Header title="Diğer Malzemeler" />
 
-      <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
-        {/* Arama + Limit + Ekle */}
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-y-4 text-foreground">
+        {/* Toolbar */}
+        <div className="flex flex-col md:flex-row md:items-center gap-3 w-full">
           <input
             type="text"
             placeholder="Malzeme adına göre ara..."
@@ -132,9 +128,9 @@ const DigerMalzemeler = () => {
             onChange={onSearchChange}
             className="input input-bordered w-full md:max-w-sm"
           />
-          {/* 🆕 Kayıt Sayısı (limit) */}
+
           <div className="flex items-center gap-2">
-            <label className="text-sm opacity-80">Diğer Malzeme Sayısı</label>
+            <label className="text-sm opacity-80 whitespace-nowrap">Diğer Malzeme Sayısı</label>
             <input
               type="number"
               min={1}
@@ -146,142 +142,196 @@ const DigerMalzemeler = () => {
             />
           </div>
 
-          <DialogDigerMalzemeEkle onSave={handleAddItem} />
+          <div className="w-full md:w-auto md:ml-auto">
+            <DialogDigerMalzemeEkle onSave={handleAddItem} />
+          </div>
         </div>
 
-        {/* Tablo */}
-        <div className="overflow-x-auto">
-          <table className="table w-full border border-gray-500 rounded-lg">
-            <thead>
-              <tr className="border-b border-gray-500">
-                <th>İsim</th>
-                <th>Birim</th>
-                <th>Birim Ağırlık</th>
-                <th>Birim Fiyat</th>
-                <th>Hesaplama Türü</th>
-                <th className="text-center">İşlemler</th>
-              </tr>
-            </thead>
+        {isLoading ? (
+          <Spinner />
+        ) : (
+          <>
+            {/* ---------- DESKTOP TABLO ---------- */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="table w-full border border-gray-500 rounded-lg">
+                <thead>
+                  <tr className="border-b border-gray-500">
+                    <th>İsim</th>
+                    <th>Birim</th>
+                    <th>Birim Ağırlık</th>
+                    <th>Birim Fiyat</th>
+                    <th>Hesaplama Türü</th>
+                    <th className="text-center">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items?.length > 0 ? (
+                    data.items.map(item => (
+                      <tr key={item.id} className="border-b border-gray-500">
+                        <td>{item.diger_malzeme_isim}</td>
+                        <td>{item.birim}</td>
+                        <td>{item.birim_agirlik}</td>
+                        <td>{item.unit_price}</td>
+                        <td>{item.hesaplama_turu}</td>
+                        <td className="text-center space-x-2">
+                          <DialogDigerMalzemeDuzenle item={item} onSave={handleEditItem} />
+                          <AppButton
+                            variant="kirmizi"
+                            size="sm"
+                            shape="none"
+                            onClick={() => askDelete(item)}
+                            title="Sil"
+                          >
+                            Sil
+                          </AppButton>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="border-b border-gray-500 text-center text-muted-foreground py-6">
+                        Veri bulunamadı
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-            {isLoading ? (
-              <tbody>
-                <tr className="border-b border-gray-500 ">
-                  <td colSpan={6}>
-                    <Spinner />
-                  </td>
-                </tr>
-              </tbody>
-            ) : (data.items?.length > 0 ? (
-              <tbody>
-                {data.items.map(item => (
-                  <tr key={item.id} className="border-b border-gray-500">
-                    <td>{item.diger_malzeme_isim}</td>
-                    <td>{item.birim}</td>
-                    <td>{item.birim_agirlik}</td>
-                    <td>{item.unit_price}</td>
-                    <td>{item.hesaplama_turu}</td>
-                    <td className="text-center space-x-2">
-                      {/* Düzenle: sari, sm, dikdörtgen */}
-                      <DialogDigerMalzemeDuzenle item={item} onSave={handleEditItem} />
+            {/* ---------- MOBİL KART LİSTE ---------- */}
+            <div className="md:hidden flex flex-col gap-3">
+              {data.items?.length > 0 ? (
+                data.items.map(item => (
+                  <div
+                    key={item.id}
+                    className="border border-border rounded-2xl p-4 bg-card shadow-sm flex flex-col gap-3"
+                  >
+                    {/* Başlık */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-base font-semibold break-words">
+                        {item.diger_malzeme_isim}
+                      </div>
+                      <span className="badge badge-outline whitespace-nowrap">
+                        {hesaplamaLabel(item.hesaplama_turu)}
+                      </span>
+                    </div>
 
-                      {/* Sil: kirmizi, sm, dikdörtgen */}
+                    {/* Detaylar */}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="rounded-lg border border-border p-2 bg-muted/20">
+                        <div className="text-xs text-muted-foreground">Birim</div>
+                        <div className="font-medium break-words">{item.birim || "—"}</div>
+                      </div>
+                      <div className="rounded-lg border border-border p-2 bg-muted/20">
+                        <div className="text-xs text-muted-foreground">Birim Ağırlık</div>
+                        <div className="font-medium">{item.birim_agirlik ?? 0}</div>
+                      </div>
+                      <div className="rounded-lg border border-border p-2 bg-muted/20 col-span-2">
+                        <div className="text-xs text-muted-foreground">Birim Fiyat</div>
+                        <div className="font-medium">{item.unit_price ?? 0}</div>
+                      </div>
+                    </div>
+
+                    {/* Aksiyonlar */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <DialogDigerMalzemeDuzenle item={item} onSave={handleEditItem}>
+                        <AppButton variant="sari" size="md" className="w-full">
+                          Düzenle
+                        </AppButton>
+                      </DialogDigerMalzemeDuzenle>
+
                       <AppButton
                         variant="kirmizi"
-                        size="sm"
-                        shape="none"
+                        size="md"
+                        className="w-full"
                         onClick={() => askDelete(item)}
-                        title="Sil"
                       >
                         Sil
                       </AppButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            ) : (
-              <tbody>
-                <tr>
-                  <td colSpan={6} className="border-b border-base-500 text-center text-muted-foreground py-4">
-                    Veri bulunamadı
-                  </td>
-                </tr>
-              </tbody>
-            ))}
-          </table>
-        </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="border border-border rounded-2xl p-6 text-center text-muted-foreground">
+                  Veri bulunamadı
+                </div>
+              )}
+            </div>
 
-        {/* Sayfalama */}
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(1)}
-            disabled={data.page === 1}
-            title="İlk sayfa"
-          >
-            « İlk
-          </AppButton>
+            {/* Sayfalama */}
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={() => setCurrentPage(1)}
+                disabled={data.page === 1}
+                title="İlk sayfa"
+              >
+                « İlk
+              </AppButton>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            disabled={!data.has_prev}
-            title="Önceki sayfa"
-          >
-            ‹ Önceki
-          </AppButton>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={!data.has_prev}
+                title="Önceki sayfa"
+              >
+                ‹ Önceki
+              </AppButton>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = parseInt(e.target.elements.pageNum.value, 10);
-              if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                setCurrentPage(val);
-              }
-            }}
-            className="flex items-center gap-1"
-          >
-            <input
-              type="number"
-              name="pageNum"
-              min={1}
-              max={totalPages}
-              value={currentPage}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (isNaN(val)) return setCurrentPage(1);
-                setCurrentPage(Math.min(Math.max(1, val), totalPages));
-              }}
-              className="input input-bordered input-sm w-16 text-center"
-            />
-            <span className="text-sm">/ {totalPages}</span>
-          </form>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const val = parseInt(e.target.elements.pageNum.value, 10);
+                  if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                    setCurrentPage(val);
+                  }
+                }}
+                className="flex items-center gap-1"
+              >
+                <input
+                  type="number"
+                  name="pageNum"
+                  min={1}
+                  max={totalPages}
+                  value={currentPage}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (isNaN(val)) return setCurrentPage(1);
+                    setCurrentPage(Math.min(Math.max(1, val), totalPages));
+                  }}
+                  className="input input-bordered input-sm w-16 text-center"
+                />
+                <span className="text-sm">/ {totalPages}</span>
+              </form>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={!data.has_next}
-            title="Sonraki sayfa"
-          >
-            Sonraki ›
-          </AppButton>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={!data.has_next}
+                title="Sonraki sayfa"
+              >
+                Sonraki ›
+              </AppButton>
 
-          <AppButton
-            variant="kurumsalmavi"
-            size="sm"
-            shape="none"
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={data.page === totalPages || totalPages <= 1}
-            title="Son sayfa"
-          >
-            Son »
-          </AppButton>
-        </div>
+              <AppButton
+                variant="kurumsalmavi"
+                size="sm"
+                shape="none"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={data.page === totalPages || totalPages <= 1}
+                title="Son sayfa"
+              >
+                Son »
+              </AppButton>
+            </div>
+          </>
+        )}
       </div>
 
       <ConfirmDeleteModal

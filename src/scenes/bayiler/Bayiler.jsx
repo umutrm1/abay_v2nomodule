@@ -14,6 +14,7 @@ import DialogBayiDuzenle from './DialogBayiDuzenle.jsx';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.jsx';
 import AppButton from '@/components/ui/AppButton.jsx';
 import DialogResendInvite from "./DialogResendInvite.jsx";
+
 /** Spinner — Teklifler.jsx ile aynı görsel yapı */
 const Spinner = () => (
   <div className="flex justify-center items-center py-10">
@@ -45,25 +46,26 @@ const Bayiler = () => {
 
   // Limit
   const [limit, setLimit] = useState(10);
+
+  // Resend modal
   const [resendOpen, setResendOpen] = useState(false);
   const [resendToken, setResendToken] = useState("");
+
   // Silme modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
   // Tekrar Davet Gönder — buton handler'ı
   const handleResendInvite = useCallback(async (bayi) => {
     try {
       const res = await dispatch(reSendInviteOnApi(bayi.id));
-      // beklenen örnek response:
-      // { "message": "Davet yeniden gönderildi", "debug_token": "...." }
       const token = res?.debug_token || "";
       setResendToken(token);
       setResendOpen(true);
-    } catch (e) {
-      // toastError zaten action içinde var; burada ekstra işlem yapmaya gerek yok.
-    }
+    } catch (e) {}
   }, [dispatch]);
+
   // Listeyi çek — sayfa/arama/limit değişince
   useEffect(() => {
     setListLoading(true);
@@ -133,9 +135,9 @@ const Bayiler = () => {
     <div className="grid grid-rows-[60px_1fr]">
       <Header title="Bayiler" />
 
-      <div className="bg-card w-full border border-border rounded-2xl p-5 flex flex-col gap-y-4 text-foreground">
+      <div className="bg-card w-full border border-border rounded-2xl p-4 sm:p-5 flex flex-col gap-y-4 text-foreground">
         {/* Arama & Ekle & Kayıt Sayısı (limit) */}
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-3 w-full">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-3 w-full">
           <input
             type="text"
             placeholder="Bayi ismine/maile göre ara..."
@@ -145,8 +147,8 @@ const Bayiler = () => {
           />
 
           {/* Kayıt Sayısı */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm opacity-80">Bayi Sayısı</label>
+          <div className="flex items-center gap-2 md:ml-0">
+            <label className="text-sm opacity-80 whitespace-nowrap">Bayi Sayısı</label>
             <input
               type="number"
               min={1}
@@ -158,12 +160,16 @@ const Bayiler = () => {
             />
           </div>
 
-          {/* Büyük aksiyon: mavi & dikdörtgen */}
-          <DialogBayiEkle onSave={handleAdd} />
+          {/* Mobilde full-width aksiyon */}
+          <div className="w-full md:w-auto md:ml-auto">
+            <DialogBayiEkle onSave={handleAdd} />
+          </div>
         </div>
 
-        {/* Tablo */}
-        <div className="flex-grow overflow-x-auto">
+        {/* =========================
+            DESKTOP TABLO (md ve üstü): AYNEN KALDI
+           ========================= */}
+        <div className="hidden md:flex flex-grow overflow-x-auto">
           <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
             <thead>
               <tr className="border-b border-base-500 border-gray-500">
@@ -186,7 +192,7 @@ const Bayiler = () => {
             ) : (data.items ?? []).length > 0 ? (
               <tbody>
                 {data.items.map(b => (
-                  <tr key={b.id} className="border-b  border-gray-500">
+                  <tr key={b.id} className="border-b border-gray-500">
                     <td className="font-bold">{b.name}</td>
                     <td>{b.email}</td>
                     <td>{b.phone}</td>
@@ -194,11 +200,10 @@ const Bayiler = () => {
                     <td>{b.city}</td>
                     <td>
                       <span className={`text ${b.status === 'active' ? 'text-success' : 'text-ghost'}`}>
-                        {b.status === `active` ? "Aktif" : "Davet Edildi" || '—'}
+                        {b.status === "active" ? "Aktif" : "Davet Edildi"}
                       </span>
                     </td>
                     <td className="text-center space-x-2">
-                      {/* Yeşil: Tekrar Davet Gönder */}
                       <AppButton
                         onClick={() => handleResendInvite(b)}
                         disabled={b.status === "active"}
@@ -209,10 +214,8 @@ const Bayiler = () => {
                         Tekrar Davet Gönder
                       </AppButton>
 
-                      {/* Sarı ve dikdörtgen: Düzenle (asChild → AppButton tetikleyici) */}
-                      <DialogBayiDuzenle bayi={b} onSave={handleEdit} asChild />
+                      <DialogBayiDuzenle bayi={b} onSave={handleEdit} />
 
-                      {/* Kırmızı: Sil */}
                       <AppButton
                         onClick={() => askDelete(b)}
                         variant="kirmizi"
@@ -238,8 +241,104 @@ const Bayiler = () => {
           </table>
         </div>
 
-        {/* Sayfalama — dikdörtgen outline */}
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-4">
+        {/* =========================
+            MOBİL KART LİSTESİ (md altı)
+           ========================= */}
+        <div className="md:hidden flex flex-col gap-3">
+          {listLoading ? (
+            <div className="border border-border rounded-2xl bg-card">
+              <Spinner />
+            </div>
+          ) : (data.items ?? []).length > 0 ? (
+            data.items.map(b => {
+              const isActive = b.status === "active";
+              return (
+                <div
+                  key={b.id}
+                  className="
+                    border border-border rounded-2xl p-4
+                    bg-card shadow-sm
+                    flex flex-col gap-3
+                  "
+                >
+                  {/* Başlık + durum */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold truncate">{b.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{b.email}</div>
+                    </div>
+
+                    <span
+                      className={[
+                        "px-2 py-1 text-xs rounded-full border whitespace-nowrap",
+                        isActive
+                          ? "border-emerald-500/50 text-emerald-600 bg-emerald-500/10"
+                          : "border-amber-500/40 text-amber-600 bg-amber-500/10"
+                      ].join(" ")}
+                    >
+                      {isActive ? "Aktif" : "Davet Edildi"}
+                    </span>
+                  </div>
+
+                  {/* Bilgi satırları */}
+                  <div className="grid grid-cols-1 gap-2 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">Telefon</span>
+                      <span className="font-medium">{b.phone || "—"}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">Sahip</span>
+                      <span className="font-medium">{b.owner_name || "—"}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">Şehir</span>
+                      <span className="font-medium">{b.city || "—"}</span>
+                    </div>
+                  </div>
+
+                  {/* Aksiyonlar */}
+                  <div className="grid grid-cols-1 gap-2 pt-1">
+                    <AppButton
+                      onClick={() => handleResendInvite(b)}
+                      disabled={isActive}
+                      variant="koyumavi"
+                      size="md"
+                      className="w-full"
+                      title={isActive ? "Aktif bayiye davet gönderilemez" : "Davet mailini tekrar gönder"}
+                    >
+                      Tekrar Davet Gönder
+                    </AppButton>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <DialogBayiDuzenle bayi={b} onSave={handleEdit}>
+                        <AppButton variant="sari" size="md" className="w-full">
+                          Düzenle
+                        </AppButton>
+                      </DialogBayiDuzenle>
+
+                      <AppButton
+                        onClick={() => askDelete(b)}
+                        variant="kirmizi"
+                        size="md"
+                        className="w-full"
+                        title="Bayiyi sil"
+                      >
+                        Sil
+                      </AppButton>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="border border-border rounded-2xl p-6 text-center text-muted-foreground">
+              Gösterilecek bayi bulunamadı.
+            </div>
+          )}
+        </div>
+
+        {/* Sayfalama — mobilde de güzel dursun diye full-width buton davranışı ekledim */}
+        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-2 sm:mt-4">
           <AppButton
             variant="kurumsalmavi"
             size="sm"
@@ -320,6 +419,8 @@ const Bayiler = () => {
         onConfirm={confirmDelete}
         loading={deleting}
       />
+
+      {/* Davet Linki Dialog */}
       <DialogResendInvite
         open={resendOpen}
         onOpenChange={setResendOpen}
