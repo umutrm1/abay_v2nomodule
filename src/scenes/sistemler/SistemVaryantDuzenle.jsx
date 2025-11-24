@@ -16,6 +16,8 @@ import DialogCamSec from "./DialogCamSec.jsx";
 import DialogMalzemeSec from "./DialogMalzemeSec.jsx";
 import DialogKumandaSec from "./DialogKumandaSec.jsx";
 import DialogSystemVariantFoto from "./DialogSystemVariantFoto.jsx";
+// ✅ YENİ: Pdf Fotoğraf dialogu
+import DialogSystemVariantPdfFoto from "./DialogSystemVariantPdfFoto.jsx";
 
 import AppButton from "@/components/ui/AppButton.jsx";
 
@@ -26,6 +28,8 @@ const SistemVaryantDuzenle = () => {
 
   const seciliVaryant = useSelector(s => s.getSystemFullVariantsOfSystemFromApiReducer) || {};
   const [openVariantPhotoDlg, setOpenVariantPhotoDlg] = useState(false);
+  // ✅ YENİ: Pdf fotoğraf dialog state
+  const [openVariantPdfPhotoDlg, setOpenVariantPdfPhotoDlg] = useState(false);
 
   const [openPdfDlg, setOpenPdfDlg] = useState(false);
   const [pdfTarget, setPdfTarget] = useState({ type: null, rowKey: null });
@@ -349,14 +353,25 @@ const SistemVaryantDuzenle = () => {
             />
           </div>
 
+          {/* ✅ Fotoğraf + Pdf Fotoğraf yan yana */}
           <div className="md:col-span-2 flex">
-            <AppButton
-              variant="gri"
-              className="w-full md:w-auto"
-              onClick={() => setOpenVariantPhotoDlg(true)}
-            >
-              Fotoğraf
-            </AppButton>
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <AppButton
+                variant="gri"
+                className="w-full md:w-auto"
+                onClick={() => setOpenVariantPhotoDlg(true)}
+              >
+                Fotoğraf
+              </AppButton>
+
+              <AppButton
+                variant="gri"
+                className="w-full md:w-auto"
+                onClick={() => setOpenVariantPdfPhotoDlg(true)}
+              >
+                Pdf Fotoğraf
+              </AppButton>
+            </div>
           </div>
 
           <div className="md:col-span-2 flex md:justify-end">
@@ -678,6 +693,13 @@ const SistemVaryantDuzenle = () => {
         <DialogSystemVariantFoto
           open={openVariantPhotoDlg}
           onOpenChange={setOpenVariantPhotoDlg}
+          variantId={variantId}
+        />
+
+        {/* ✅ YENİ Dialog */}
+        <DialogSystemVariantPdfFoto
+          open={openVariantPdfPhotoDlg}
+          onOpenChange={setOpenVariantPdfPhotoDlg}
           variantId={variantId}
         />
       </div>

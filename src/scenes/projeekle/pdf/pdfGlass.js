@@ -3,6 +3,9 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { mapGlass } from "./mappers/glass.mapper.js";
 import { getBrandImage } from "@/redux/actions/actionsPdf.js";
+// ⬇️ senin projende nerede ise ordan import et
+import { getSystemVariantPdfPhoto } from "@/redux/actions/actionsPdf.js";
+
 /* ===================== ortak yardımcılar ===================== */
 function arrayBufferToBase64(buf) {
   return new Promise((resolve, reject) => {
@@ -109,6 +112,127 @@ function insertAt(base, index, token) {
   const s = String(base ?? "");
   const i = clamp(index, 0, s.length); // boşluklar .length içinde doğal olarak sayılır
   return s.slice(0, i) + String(token ?? "") + s.slice(i);
+}
+
+/* ===================== PNG helper'ları ===================== */
+
+// dataUrl'den doğal width/height oku (aspect için)
+async function getImageSize(dataUrl) {
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.width, h: img.height });
+    img.onerror = (e) => reject(e);
+    img.src = dataUrl;
+  });
+}
+
+// getSystemVariantPdfPhoto güvenli çalıştır (thunk dönerse dispatch ile)
+async function fetchVariantPngSafe(systemVariantId, ctx) {
+  try {
+    let res = getSystemVariantPdfPhoto(systemVariantId);
+
+    // thunk ise çalıştır
+    if (typeof res === "function") {
+      const dispatch =
+        ctx?.dispatch ||
+        ctx?.store?.dispatch ||
+        (() => {}); // no-op
+
+      res = await res(dispatch);
+    }
+
+    // bazı implementasyonlarda {dataUrl: "..."} gelebilir
+    if (res && typeof res === "object" && res.dataUrl) return res.dataUrl;
+    if (typeof res === "string") return res;
+
+    return null;
+  } catch (e) {
+    console.warn("getSystemVariantPdfPhoto hata:", systemVariantId, e);
+    return null;
+  }
+}
+
+// PNG'leri sayfa altında sabit en ile çiz
+async function drawSystemVariantPngs(doc, requirements, ctx, startAfterY = 0) {
+  const systems = requirements?.systems || [];
+  const uniqIds = [];
+  const seen = new Set();
+
+  for (const s of systems) {
+    const id = s?.system_variant_id;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    uniqIds.push(id);
+  }
+  if (!uniqIds.length) return;
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+
+  const leftMargin = 40;
+  const rightMargin = 40;
+  const bottomMargin = 10;
+
+  // =========================
+  // 1) SABİT GENİŞLİK (CM → PT)
+  // =========================
+  const cmToPt = (cm) => cm * 28.3464567;
+
+  // Kırmızı kutu gibi SABİT EN: 4 cm
+  let FIXED_W = cmToPt(7);
+
+  // Sayfada kullanılabilir alanı aşmasın (taşma olursa kırpmasın diye)
+  const maxAllowedW = pageW - leftMargin - rightMargin;
+  if (FIXED_W > maxAllowedW) FIXED_W = maxAllowedW;
+
+  const GAP = 10; // pngler arası boşluk (pt)
+
+  // 2) en alttan yukarı doğru yerleştireceğiz
+  let cursorBottomY = pageH - bottomMargin;
+
+  for (const variantId of uniqIds) {
+    const dataUrl = await fetchVariantPngSafe(variantId, ctx);
+    if (!dataUrl) continue;
+
+    let size;
+    try {
+      size = await getImageSize(dataUrl); // doğal px ölçüleri
+    } catch (e) {
+      console.warn("PNG okunamadı:", variantId, e);
+      continue;
+    }
+
+    // =========================
+    // 3) ORANI KORUYARAK ÖLÇ
+    // =========================
+    const ratio = (size.w && size.h) ? (size.w / size.h) : 1;
+    const drawW = FIXED_W;
+    const drawH = drawW / ratio;
+
+    // =========================
+    // 4) TABLOYLA ÇAKIŞMA KONTROLÜ
+    // =========================
+    const topLimit = Math.max(startAfterY + 10, 20);
+
+    // Burada şu mantık var:
+    // - Eğer mevcut sayfada PNG sığmıyorsa yeni sayfaya geç
+    // - Yeni sayfada da yine en alttan başla
+    if (cursorBottomY - drawH < topLimit) {
+      doc.addPage();
+      cursorBottomY = pageH - bottomMargin;
+    }
+
+    // =========================
+    // 5) ALT-ORTA HİZALAMA
+    // =========================
+    const x = (pageW - drawW) / 2;       // ortala
+    const y = cursorBottomY - drawH;     // en alt referanslı yukarı çiz
+
+    doc.addImage(dataUrl, "PNG", x, y, drawW, drawH);
+
+    // bir sonraki PNG yukarıdan devam etsin
+    cursorBottomY = y - GAP;
+  }
 }
 
 
@@ -346,27 +470,24 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
   };
 
   const rowsRaw = mapGlass(filteredRequirements);
-  // m2 her durumda float ve yuvarlamasız olsun: upstream'de yuvarlama varsa burada sıfırlıyoruz
+
   const rows = rowsRaw.map(r => {
     const w = Number(pick(r, "width_mm")) || 0;
     const h = Number(pick(r, "height_mm")) || 0;
     const c = Number(pick(r, "count")) || 0;
 
-    // mm * mm * adet => mm² * adet. m²'ye çevirmek için 1e6'ya böl.
     const m2Float = (w * h * c) / 1e6;
 
-    // ---- İSİM OLUŞTURMA KURALI (INSERT ile) ----
     const camIsim   = String(pick(r, "cam_isim") ?? "");
     const thick     = Number(pick(r, "thickness_mm")) || 0;
-    const boya1     = String(pick(r, "color1_name") ?? ""); // önceki c1
-    const boya2     = String(pick(r, "color2_name") ?? ""); // önceki c2
+    const boya1     = String(pick(r, "color1_name") ?? "");
+    const boya2     = String(pick(r, "color2_name") ?? "");
     const idx1      = Number(pick(r, "belirtec_1_value")) || 0;
     const idx2      = Number(pick(r, "belirtec_2_value")) + String(boya1).length || 0;
-    // sıra: önce boya1'i ekle, ardından (gerekliyse) boya2'yi ekle
+
     let camFull = camIsim;
     if (boya1) camFull = insertAt(camFull, idx1, boya1);
     if (thick === 2 && boya2) camFull = insertAt(camFull, idx2, boya2);
- 
 
     return { ...r, m2: m2Float, cam_full_name: camFull };
   });
@@ -383,8 +504,8 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
       theme: "grid",
       styles: {
         font: fontName,
-        fontSize: 9,                 // <- 9
-        fontStyle: "bold",           // <- kalın
+        fontSize: 9,
+        fontStyle: "bold",
         minCellHeight: 22,
         lineWidth: 0.8,
         lineColor: [0, 0, 0],
@@ -392,12 +513,12 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
       },
       headStyles: {
         font: fontName,
-        fontStyle: "bold",           // <- kalın başlık
-        fontSize: 9,                 // <- 9
+        fontStyle: "bold",
+        fontSize: 9,
         fillColor: [120, 160, 210]
       },
       bodyStyles: {
-        fontStyle: "bold",           // <- gövde de kalın
+        fontStyle: "bold",
         textColor: [0, 0, 0]
       },
       tableLineColor: [0, 0, 0],
@@ -406,10 +527,9 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
       margin: { left: 39.5, right: 39.5 }
     });
 
-    // sadece tablo varsa “Toplam Metrekare” kutusunu çiz
     const at = doc.lastAutoTable;
     const tableBottomY = at?.finalY || cursorY;
-    const m2ColIndex = 4; // son sütun
+    const m2ColIndex = 4;
     const firstHead = at?.table?.head?.[0];
     let m2ColX = null, m2ColW = null;
     if (firstHead?.cells) {
@@ -419,12 +539,12 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     if (m2ColX == null || m2ColW == null) {
       const pageW = doc.internal.pageSize.getWidth();
       m2ColW = 110;
-      m2ColX = pageW - 40 - m2ColW; // rightMargin = 40
+      m2ColX = pageW - 40 - m2ColW;
     }
 
     const totalM2 = sumField(rows, "m2");
     const label = `Toplam Metrekare: ${formatCell(totalM2, "number(2)")}`;
-    const fontSize = 9; // <- 9
+    const fontSize = 9;
     const lineFactor2 = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
     const padX = 4, padY = 4;
     const lines = doc.splitTextToSize(label, Math.max(10, m2ColW - 2 * padX));
@@ -440,6 +560,10 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     const textY = tableBottomY + padY + fontSize;
     doc.text(lines, textX, textY, { align: "center" });
   }
+
+  // 3) System variant PNG'leri en altta çiz (tablo bittikten sonra çakışmasın diye Y veriyoruz)
+  const afterTableY = doc.lastAutoTable?.finalY || cursorY;
+  await drawSystemVariantPngs(doc, requirements, ctx, afterTableY);
 
   openPdf(doc);
 }

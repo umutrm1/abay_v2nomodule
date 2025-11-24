@@ -476,7 +476,7 @@ const Projeler = () => {
                   <tr key={proje.id} className="border border-gray-500">
                     <td>{formatOnlyDate(proje?.approval_date ?? proje?.requirements?.approval_date)}</td>
                     <td>{proje.project_kodu}</td>
-                    <td>{proje.customer_name || '—'}</td>
+                    <td>{proje.company_name || '—'}</td>
                     <td>{proje.project_name}</td>
                     <td>{renderBadge(proje.paint_status, BOYA_BADGE)}</td>
                     <td>{renderBadge(proje.glass_status, CAM_BADGE)}</td>
@@ -549,7 +549,7 @@ const Projeler = () => {
                         {proje.project_name || "—"}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {proje.customer_name || "Müşteri yok"} • {proje.project_kodu || "Kod yok"}
+                        {proje.company_name || "Müşteri yok"} • {proje.project_kodu || "Kod yok"}
                       </div>
                     </div>
 

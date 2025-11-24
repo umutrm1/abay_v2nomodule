@@ -351,7 +351,7 @@ const Teklifler = () => {
                   <tr key={proje.id} className="border border-gray-500">
                     <td>{formatOnlyDate(proje?.created_at ?? proje?.requirements?.created_at)}</td>
                     <td>{proje.project_kodu}</td>
-                    <td>{proje.customer_name || '—'}</td>
+                    <td>{proje.company_name || '—'}</td>
                     <td>{proje.project_name}</td>
                     <td className="text-center">
                       <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -419,7 +419,7 @@ const Teklifler = () => {
                         {proje.project_name || "—"}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {proje.customer_name || "Müşteri yok"} • {proje.project_kodu || "Kod yok"}
+                        {proje.company_name || "Müşteri yok"} • {proje.project_kodu || "Kod yok"}
                       </div>
                     </div>
 

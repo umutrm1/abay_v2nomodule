@@ -365,3 +365,156 @@ export function deleteBrandImage() {
     }
   };
 }
+
+
+/**
+ * SYSTEM VARIANT PDF PHOTO YÜKLE/GÜNCELLE
+ * (PUT /system-variants/:id/pdf-photo)
+ * - Payload: FormData { file: FileObject }
+ * - Content-Type multipart/form-data → fetch otomatik ayarlar, manuel ekleme YAPMA.
+ */
+export function putSystemVariantPdfPhoto(systemVariantId, file) {
+  return async (dispatch) => {
+    try {
+      if (!systemVariantId) {
+        throw new Error("systemVariantId zorunlu");
+      }
+      if (!file) {
+        throw new Error("file zorunlu");
+      }
+
+      const formData = new FormData();
+      // backend field adı: "file"
+      formData.append("file", file, file.name);
+
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${systemVariantId}/pdf-photo`,
+        {
+          method: "PUT",
+          headers: {
+            accept: "application/json",
+            // ÖNEMLİ: Content-Type koyma!
+            // FormData kullanınca boundary ile birlikte otomatik set edilir.
+          },
+          body: formData,
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        toastError();
+        throw new Error(
+          `PDF photo yüklenemedi: ${res.status} ${text}`
+        );
+      }
+
+      const data = await res.json().catch(() => ({}));
+      toastSuccess();
+      return data;
+    } catch (error) {
+      toastError();
+      throw error;
+    }
+  };
+}
+
+
+/**
+ * SYSTEM VARIANT PDF PHOTO GETİR
+ * (GET /system-variants/:id/pdf-photo)
+ * - Response image/jpeg gibi binary dönüyor.
+ * - Biz bunu base64 dataUrl'e çevirip return ediyoruz.
+ */
+export function getSystemVariantPdfPhoto(systemVariantId) {
+  return async (dispatch) => {
+    try {
+      if (!systemVariantId) {
+        throw new Error("systemVariantId zorunlu");
+      }
+
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${systemVariantId}/pdf-photo`,
+        {
+          method: "GET",
+          // curl accept application/json dese de sunucu image döndürüyor.
+          // O yüzden image/* daha doğru.
+          headers: { accept: "image/*" },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(
+          `PDF photo alınamadı: ${res.status} ${text}`
+        );
+      }
+
+      // içerik tipini header’dan al → jpeg/png ne gelirse dataUrl doğru olsun
+      const contentType =
+        res.headers.get("content-type") || "image/jpeg";
+
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+
+      // Uint8Array → binary string
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+
+      // binary → base64
+      const base64 = btoa(binary);
+
+      // data url
+      const dataUrl = `data:${contentType};base64,${base64}`;
+
+      return dataUrl;
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+
+/**
+ * SYSTEM VARIANT PDF PHOTO SİL
+ * (DELETE /system-variants/:id/pdf-photo)
+ */
+export function deleteSystemVariantPdfPhoto(systemVariantId) {
+  return async (dispatch) => {
+    try {
+      if (!systemVariantId) {
+        throw new Error("systemVariantId zorunlu");
+      }
+
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/system-variants/${systemVariantId}/pdf-photo`,
+        {
+          method: "DELETE",
+          headers: {
+            accept: "application/json",
+          },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        toastError();
+        throw new Error(
+          `PDF photo silinemedi: ${res.status} ${text}`
+        );
+      }
+
+      // DELETE çoğu zaman boş body döner → güvenli parse
+      const data = await res.json().catch(() => ({}));
+      toastSuccess();
+      return data;
+    } catch (error) {
+      toastError();
+      throw error;
+    }
+  };
+}

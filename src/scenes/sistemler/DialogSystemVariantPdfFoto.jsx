@@ -1,12 +1,15 @@
-// src/scenes/sistemler/DialogSystemVariantFoto.jsx
+// src/scenes/sistemler/DialogSystemVariantPdfFoto.jsx
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+
+// ✅ actionsPdf.js içinden yeni fonksiyonlar
 import {
-  postSystemVariantImageToApi,
-  getSystemVariantImageFromApi,
-  deleteSystemVariantImageFromApi,
-} from "@/redux/actions/actions_sistemler.js";
+  putSystemVariantPdfPhoto,
+  getSystemVariantPdfPhoto,
+  deleteSystemVariantPdfPhoto,
+} from "@/redux/actions/actionsPdf.js";
+
 import {
   Dialog,
   DialogContent,
@@ -16,22 +19,45 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
+const DialogSystemVariantPdfFoto = ({ open, onOpenChange, variantId }) => {
   const dispatch = useDispatch();
   const [photoFile, setPhotoFile] = useState(null);
+  const [existingUrl, setExistingUrl] = useState(null);
+
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(false);
 
-  const vimg = useSelector((s) => s.getSystemVariantImageFromApiReducer?.[variantId]);
-  const existingUrl = vimg?.imageUrl;
-
+  // Dialog açılınca mevcut pdf fotoğrafı çek
   useEffect(() => {
-    if (open && variantId) {
-      dispatch(getSystemVariantImageFromApi(variantId)).catch(() => {});
+    let mounted = true;
+
+    const fetchExisting = async () => {
+      if (!open || !variantId) return;
+      try {
+        setLoadingExisting(true);
+        const url = await dispatch(getSystemVariantPdfPhoto(variantId));
+        if (!mounted) return;
+        setExistingUrl(url || null);
+      } catch (err) {
+        // 404 vb. durumda görsel yok kabul
+        if (mounted) setExistingUrl(null);
+      } finally {
+        if (mounted) setLoadingExisting(false);
+      }
+    };
+
+    fetchExisting();
+
+    if (!open) {
+      setPhotoFile(null);
+      setExistingUrl(null);
     }
-    if (!open) setPhotoFile(null);
+
+    return () => { mounted = false; };
   }, [open, variantId, dispatch]);
 
+  // local preview
   const localPreview = useMemo(() => {
     if (!photoFile) return null;
     try { return URL.createObjectURL(photoFile); } catch { return null; }
@@ -45,33 +71,43 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
     if (!variantId || !photoFile) return;
     try {
       setUploading(true);
-      await dispatch(postSystemVariantImageToApi(variantId, photoFile));
-      await dispatch(getSystemVariantImageFromApi(variantId));
+      await dispatch(putSystemVariantPdfPhoto(variantId, photoFile));
+      const url = await dispatch(getSystemVariantPdfPhoto(variantId));
+      setExistingUrl(url || null);
       setPhotoFile(null);
-    } finally { setUploading(false); }
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!variantId) return;
     try {
       setDeleting(true);
-      await dispatch(deleteSystemVariantImageFromApi(variantId));
+      await dispatch(deleteSystemVariantPdfPhoto(variantId));
+      setExistingUrl(null);
       setPhotoFile(null);
-    } finally { setDeleting(false); }
+    } finally {
+      setDeleting(false);
+    }
   };
+
+  const showUrl = localPreview || existingUrl;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-card text-foreground border border-border rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Varyant Fotoğraf</DialogTitle>
+          <DialogTitle>Varyant Pdf Fotoğraf</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div className="w-full aspect-video bg-muted/20 rounded flex items-center justify-center overflow-hidden border border-border">
-            {localPreview || existingUrl ? (
+            {loadingExisting ? (
+              <span className="text-muted-foreground text-sm">Yükleniyor...</span>
+            ) : showUrl ? (
               <img
-                src={localPreview || existingUrl}
+                src={showUrl}
                 alt="Önizleme"
                 className="w-full h-full object-contain"
               />
@@ -125,4 +161,4 @@ const DialogSystemVariantFoto = ({ open, onOpenChange, variantId }) => {
   );
 };
 
-export default DialogSystemVariantFoto;
+export default DialogSystemVariantPdfFoto;
