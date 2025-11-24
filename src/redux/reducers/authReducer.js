@@ -4,16 +4,18 @@ import {
   LOAD_USER, LOAD_USER_FAIL, LOGOUT
 } from '@/redux/actions/actionTypes.js'
 
-// ✅ is_admin null gelirse role’a göre otomatik hesapla
-function resolveIsAdmin(nextIsAdmin, nextRole, prevIsAdmin) {
-  // 1) açıkça boolean geldiyse onu kullan
-  if (nextIsAdmin === true || nextIsAdmin === false) return nextIsAdmin;
+// ✅ KURAL: is_admin null/undefined ise role === "admin" → true, değilse false
+function normalizeIsAdmin(rawIsAdmin, role, prevIsAdmin) {
+  // 1) boolean geldiyse net onu kullan
+  if (rawIsAdmin === true || rawIsAdmin === false) return rawIsAdmin;
 
-  // 2) null/undefined geldiyse role'a bak
-  if (nextRole) return nextRole === "admin";
+  // 2) null/undefined ise role’a göre hesapla
+  if (typeof role === "string") return role === "admin";
 
-  // 3) role da yoksa, önceki state'e geri dön (ama null ise false’a düşür)
-  return prevIsAdmin === true || prevIsAdmin === false ? prevIsAdmin : false;
+  // 3) role da yoksa, önceki değeri koru; o da yoksa false
+  if (prevIsAdmin === true || prevIsAdmin === false) return prevIsAdmin;
+
+  return false;
 }
 
 const initialState = {
@@ -21,7 +23,7 @@ const initialState = {
   loading: false,
   user: null,
   error: null,
-  is_admin: null,   // başlangıçta null olabilir ama kısa süre sonra resolve edilecek
+  is_admin: null,
   role: null,
   bootstrapped: false
 }
@@ -36,17 +38,24 @@ export default function auth(state = initialState, action) {
         action && typeof action.payload === 'object' && action.payload !== null;
 
       const nextToken = isObj ? action.payload.token : action.payload;
-      const nextRole  = isObj && 'role' in action.payload ? action.payload.role : state.role;
+
+      const nextRole =
+        isObj && 'role' in action.payload
+          ? action.payload.role
+          : state.role;
+
       const rawIsAdmin =
-        isObj && 'is_admin' in action.payload ? action.payload.is_admin : state.is_admin;
+        isObj && 'is_admin' in action.payload
+          ? action.payload.is_admin
+          : state.is_admin;
 
       return {
         ...state,
         loading: false,
         token: nextToken,
         role: nextRole,
-        // ✅ burada boolean garanti
-        is_admin: resolveIsAdmin(rawIsAdmin, nextRole, state.is_admin),
+        // ✅ burada asla null kalmaz
+        is_admin: normalizeIsAdmin(rawIsAdmin, nextRole, state.is_admin),
         bootstrapped: true,
       };
     }
@@ -56,6 +65,7 @@ export default function auth(state = initialState, action) {
 
     case LOAD_USER: {
       const nextUser = action.payload;
+
       const nextRole = nextUser?.role ?? state.role;
       const rawIsAdmin = nextUser?.is_admin ?? state.is_admin;
 
@@ -63,24 +73,16 @@ export default function auth(state = initialState, action) {
         ...state,
         user: nextUser,
         role: nextRole,
-        // ✅ /auth/me is_admin göndermese bile role'dan doldurur
-        is_admin: resolveIsAdmin(rawIsAdmin, nextRole, state.is_admin),
+        // ✅ /auth/me is_admin göndermese bile role’dan true/false üretir
+        is_admin: normalizeIsAdmin(rawIsAdmin, nextRole, state.is_admin),
       };
     }
 
     case LOAD_USER_FAIL:
-      // ✅ fail durumda bile null bırakma → false
-      return {
-        ...state,
-        user: null,
-        is_admin: false,
-        role: null,
-        bootstrapped: true
-      }
+      return { ...state, user: null, is_admin: false, role: null, bootstrapped: true }
 
     case LOGOUT:
-      // ✅ logout sonrası da null kalmasın
-      return { ...initialState, is_admin: false, bootstrapped: true };
+      return { ...initialState, is_admin: false, bootstrapped: true }
 
     default:
       return state

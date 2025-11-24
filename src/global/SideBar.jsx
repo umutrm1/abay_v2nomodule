@@ -119,9 +119,11 @@ const SideBar = () => {
   // );
 const isAdmin = useSelector((s) => {
   const ia = s.auth?.is_admin ?? s.auth?.user?.is_admin;
+  console.log("ia",ia)
   if (ia === true || ia === false) return ia;
 
   const role = s.auth?.role ?? s.auth?.user?.role;
+  console.log("role",role)
   return role === "admin";
 });
 
