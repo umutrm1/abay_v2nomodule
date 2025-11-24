@@ -117,16 +117,9 @@ const SideBar = () => {
   // const isAdmin = useSelector(
   //   (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
   // );
-const isAdmin = useSelector((s) => {
-  const ia = s.auth?.is_admin ?? s.auth?.user?.is_admin;
-  console.log("ia",ia)
-  if (ia === true || ia === false) return ia;
-
-  const role = s.auth?.role ?? s.auth?.user?.role;
-  console.log("role",role)
-  return role === "admin";
-});
-
+    const isAdmin = useSelector(
+    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
+  );
   const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
 
   const { expanded, setExpanded } = useContext(SidebarContext);

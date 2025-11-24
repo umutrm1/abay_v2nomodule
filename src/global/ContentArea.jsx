@@ -41,13 +41,9 @@ const ContentArea = () => {
     location.pathname === "/reset-password";
 
   // Rol bilgisi gelene kadar "null" kalsın; böylece UI'yi blur'layabiliriz.
-const isAdmin = useSelector((s) => {
-  const ia = s.auth?.is_admin ?? s.auth?.user?.is_admin;
-  if (ia === true || ia === false) return ia;
-
-  const role = s.auth?.role ?? s.auth?.user?.role;
-  return role === "admin";
-});
+  const isAdmin = useSelector(
+    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
+  );
   const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
 
   // Karar verilene kadar (login/refresh sonucu belli olana kadar) blur
