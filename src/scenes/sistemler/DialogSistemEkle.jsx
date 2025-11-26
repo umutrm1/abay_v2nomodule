@@ -16,7 +16,7 @@ import {
 import AppButton from "@/components/ui/AppButton.jsx";
 
 const DialogSistemEkle = ({ system, onSave }) => {
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState({ name: '', description: '',photo_url:"string",is_active:true,sort_index:0 });
   const [photoFile, setPhotoFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -28,10 +28,10 @@ const DialogSistemEkle = ({ system, onSave }) => {
 
   useEffect(() => {
     if (system) {
-      setForm({ name: system.name, description: system.description || "" });
+      setForm({ name: system.name, description: system.description || "",photo_url:"string",is_active:true,sort_index:0 });
       if (system.id) dispatch(getSystemImageFromApi(system.id));
     } else {
-      setForm({ name: '', description: '' });
+      setForm({ name: '', description: '',photo_url:"string",is_active:true,sort_index:0 });
     }
     setPhotoFile(null);
   }, [system, dispatch]);
