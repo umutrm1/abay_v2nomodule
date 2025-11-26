@@ -98,6 +98,8 @@ function openPdf(doc, filename = "siparis.pdf") {
 }
 
 /* ============== split header (brand + pdf.infoRows merge) — pdfGlass ile birebir ============== */
+/* ============== split header (brand + pdf.infoRows merge) — ince header ============== */
+/* ============== split header (brand + pdf.infoRows merge) — kompakt ============== */
 async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   // brandConfig: leftImage + rightBox
   // pdfConfig: infoRowsLayout + infoRows
@@ -110,11 +112,17 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const pageW = doc.internal.pageSize.getWidth();
   const leftMargin = 40;
   const rightMargin = 40;
+
+  // HEADER’ı inceltmek için padding + fontlar
   const padX = 8;
-  const padY = 6;
-  const baseFontSize = 10;
-  const titleFontSize = 12;
-  const lineFactor = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
+  const padY = 4;               // 6 → 4
+  const baseFontSize = 9;       // 10 → 9
+  const titleFontSize = 9;      // 12 → 9
+
+  const lineFactor = (typeof doc.getLineHeightFactor === "function")
+    ? doc.getLineHeightFactor()
+    : 1.15;
+
   const fontName = (doc.getFontList && doc.getFontList()["Roboto"])
     ? "Roboto"
     : (doc.getFont().fontName || "helvetica");
@@ -134,7 +142,13 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     setFontSafe(doc, fontName, "bold");
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
-    const titleH = titleFontSize * lineFactor + 2 * padY;
+
+    // min yükseklik 22 → 18
+    const titleH = Math.max(
+      18,
+      titleFontSize * lineFactor + 2 * padY
+    );
+
     doc.setLineWidth(0.8);
     doc.rect(rightX, rightCursorY, rightW, titleH, "S");
 
@@ -149,33 +163,51 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const rLines = Array.isArray(headerCfg?.rightBox?.lines) ? headerCfg.rightBox.lines : [];
   for (const line of rLines) {
     setFontSafe(doc, fontName, "bold");
+
     const txt = (line.type === "labelValue")
       ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
       : (String(line.text || line.value || line.href || ""));
+
     const lines = doc.splitTextToSize(txt, Math.max(10, rightW - 2 * padX));
-    const h = Math.max(22, lines.length * (baseFontSize * lineFactor) + 2 * padY);
+
+    // satır min yüksekliğini de incelttik: 22 → 18
+    const h = Math.max(
+      18,
+      lines.length * (baseFontSize * lineFactor) + 2 * padY
+    );
+
     doc.setLineWidth(0.8);
     doc.rect(rightX, rightCursorY, rightW, h, "S");
     doc.setFontSize(baseFontSize);
     doc.text(lines, rightX + padX, rightCursorY + padY + baseFontSize, { align: "left" });
+
     if (line.type === "link" && line.href) {
-      try { doc.link(rightX + padX, rightCursorY + padY, rightW - 2 * padX, baseFontSize * lineFactor, { url: line.href }); } catch {}
+      try {
+        doc.link(
+          rightX + padX,
+          rightCursorY + padY,
+          rightW - 2 * padX,
+          baseFontSize * lineFactor,
+          { url: line.href }
+        );
+      } catch {}
     }
     rightCursorY += h;
   }
 
-  // Sol logo kutusu: sağ blok yüksekliğine eşit — public/logo.png ile
+  // Sol logo kutusu: sağ blok yüksekliğine eşit
   const rightBottomY = rightCursorY;
   const leftFinalW = leftRequestedW;
   const leftFinalH = rightBottomY - topY;
   doc.setLineWidth(0.8);
   doc.rect(leftX, topY, leftFinalW, leftFinalH, "S");
 
+  // Logo (public/logo.png) — daha küçük ve orantılı
   try {
     const leftImg = await getBrandImage();
     if (!leftImg) throw new Error("Boş logo yanıtı");
 
-    const inset = 2;
+    const inset = 4;                         // 2 → 4, kenarlardan uzak
     const boxW = leftFinalW - 2 * inset;
     const boxH = Math.max(0, leftFinalH - 2 * inset);
 
@@ -184,23 +216,33 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     await new Promise(r => { img.onload = r; });
 
     const ratio = img.width / img.height;
-    let drawW = boxW;
+
+    // Kutunun tamamını değil %85’ini kullanalım → logo küçülür
+    const LOGO_MAX_SCALE = 0.85;
+    let drawW = boxW * LOGO_MAX_SCALE;
     let drawH = drawW / ratio;
-    if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
+
+    if (drawH > boxH * LOGO_MAX_SCALE) {
+      drawH = boxH * LOGO_MAX_SCALE;
+      drawW = drawH * ratio;
+    }
 
     const x = leftX + inset + (boxW - drawW) / 2;
     const y = topY + inset + (boxH - drawH) / 2;
 
-    doc.addImage(leftImg, "PNG", x, y, drawW, drawH);
+    doc.addImage(leftImg, headerCfg?.leftImage?.type || "PNG", x, y, drawW, drawH);
   } catch (e) {
     console.warn("logo.png yüklenemedi:", e);
   }
 
-  // infoRows grid
+  /* ----------- infoRows grid (alt kısım) — sabit satır yüksekliği ----------- */
   const layoutCfg = headerCfg?.infoRowsLayout || {};
   const COLS_MAX = Math.min(3, Number(layoutCfg.columnsPerRow) || 3);
   const cellPadX = Number(layoutCfg.cellPaddingX ?? 6);
   const cellPadY = Number(layoutCfg.cellPaddingY ?? 6);
+
+  // SABİT satır yüksekliği
+  const FIX_ROW_H = 16; // burayı istediğin gibi 14 / 18 vs. yapabilirsin
 
   const gridLeftX = leftMargin;
   const gridRight = pageW - rightMargin;
@@ -209,7 +251,11 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
   const itemsAll = Array.isArray(headerCfg?.infoRows) ? headerCfg.infoRows : [];
   const items = itemsAll.filter(it => it == null ? false : (it.enabled !== false));
 
-  const getByPath = (o, p) => !o || !p ? "" : String(p).split(".").reduce((a, k) => (a && a[k] != null ? a[k] : undefined), o);
+  const getByPath = (o, p) =>
+    !o || !p
+      ? ""
+      : String(p).split(".").reduce((a, k) => (a && a[k] != null ? a[k] : undefined), o);
+
   const evalExpr = (expr) => /^date\(/i.test(expr)
     ? (() => {
         const inner = expr.slice(expr.indexOf("(") + 1, expr.lastIndexOf(")")).trim();
@@ -219,10 +265,16 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
         return isNaN(d.getTime()) ? "" : d.toLocaleDateString();
       })()
     : "";
-  const getValue = it => it.valueExpr ? evalExpr(it.valueExpr) : it.valueField ? (getByPath(ctx, it.valueField) ?? "") : "";
+
+  const getValue = it =>
+    it.valueExpr ? evalExpr(it.valueExpr)
+    : it.valueField ? (getByPath(ctx, it.valueField) ?? "")
+    : "";
 
   const rows = [];
-  for (let i = 0; i < items.length; i += COLS_MAX) rows.push(items.slice(i, i + COLS_MAX));
+  for (let i = 0; i < items.length; i += COLS_MAX) {
+    rows.push(items.slice(i, i + COLS_MAX));
+  }
 
   let bottomY = rightBottomY;
   if (rows.length) {
@@ -233,32 +285,35 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     let gy = bottomY;
     for (const rowItems of rows) {
       const cellW = gridW / rowItems.length;
-      let rowMaxH = 22;
+      let rowMaxH = FIX_ROW_H; // her satır için sabit
 
       const prepared = rowItems.map(it => {
         const label = String(it.label ?? "");
         const val   = String(getValue(it) ?? "");
         const mode  = it.labelMode || "inline";
+
         let text = "";
         if (mode === "hidden") text = val;
         else if (mode === "stack") text = (label ? (label + ":") : "") + "\n" + val;
         else text = label ? (label + ": " + val) : val;
 
         const lines = doc.splitTextToSize(text, Math.max(10, cellW - 2 * cellPadX));
-        const contentH = Math.max(baseFontSize * lfac, lines.length * (baseFontSize * lfac));
-        const boxH = Math.max(22, contentH + 2 * cellPadY);
-        rowMaxH = Math.max(rowMaxH, boxH);
+        // Artık height’i content’e göre büyütmüyoruz → kutu yüksekliği FIX_ROW_H
         return { it, lines };
       });
 
       let cx = gridLeftX;
       for (const m of prepared) {
+        const cellH = rowMaxH;
+
         doc.setLineWidth(0.8);
-        doc.rect(cx, gy, cellW, rowMaxH, "S");
+        doc.rect(cx, gy, cellW, cellH, "S");
 
         const hAlign = (m.it.hAlign || "left");
         const vAlign = (m.it.vAlign || "middle");
-        const alignOpt = hAlign === "center" ? "center" : (hAlign === "right" ? "right" : "left");
+        const alignOpt = hAlign === "center"
+          ? "center"
+          : (hAlign === "right" ? "right" : "left");
 
         let tx;
         if (hAlign === "center") tx = cx + cellW / 2;
@@ -267,9 +322,14 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
         const linesH = m.lines.length * (baseFontSize * lfac);
         let ty;
-        if (vAlign === "top") ty = gy + cellPadY + baseFontSize;
-        else if (vAlign === "bottom") ty = gy + rowMaxH - cellPadY - (linesH - baseFontSize);
-        else ty = gy + (rowMaxH - linesH) / 2 + baseFontSize;
+        if (vAlign === "top") {
+          ty = gy + cellPadY + baseFontSize;
+        } else if (vAlign === "bottom") {
+          ty = gy + cellH - cellPadY - (linesH - baseFontSize);
+        } else {
+          // middle
+          ty = gy + (cellH - linesH) / 2 + baseFontSize;
+        }
 
         doc.text(m.lines, tx, ty, { align: alignOpt });
         cx += cellW;
@@ -282,6 +342,8 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   return { bottomY };
 }
+
+
 
 /* --------------------------- ANA: ORDER PDF ÜRET --------------------------- */
 /**
@@ -314,7 +376,7 @@ export async function generateOrderPdf(ctx, pdfConfig = {}, brandConfig = {}) {
     // 3) InfoRows'un hemen altında bitişik "Sistem / En / Boy / Adet" kutusu
     const pageW = doc.internal.pageSize.getWidth();
     const leftMargin = 40, rightMargin = 40;
-    const boxX = leftMargin, boxW = pageW - leftMargin - rightMargin, boxH = 22;
+    const boxX = leftMargin, boxW = pageW - leftMargin - rightMargin, boxH = 14;
 
 // (kutuyu zaten çiziyorsun)
 doc.setLineWidth(0.8);
