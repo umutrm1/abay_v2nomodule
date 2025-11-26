@@ -62,8 +62,12 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   const pageW = doc.internal.pageSize.getWidth();
   const leftMargin = 40, rightMargin = 40;
-  const padX = 8, padY = 6;
-  const baseFontSize = 9, titleFontSize = 9; // tüm font size 9
+
+  // ▌HEADER’ı inceltmek için padding’i düşürdük
+  const padX = 8;
+  const padY = 4;                  // 6 → 4
+
+  const baseFontSize = 9, titleFontSize = 9; // font aynı kalsın
   const lineFactor = (typeof doc.getLineHeightFactor === "function") ? doc.getLineHeightFactor() : 1.15;
   const fontName = (doc.getFontList?.()["Roboto"] ? "Roboto" : (doc.getFont().fontName || "helvetica"));
 
@@ -81,7 +85,13 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     setFontSafe(doc, fontName, "bold");
     doc.setFontSize(titleFontSize);
     const t = String(headerCfg.rightBox.title);
-    const titleH = titleFontSize * lineFactor + 2 * padY;
+
+    // ▌TITLE kutusunun yüksekliğini de küçülttük
+    const titleH = Math.max(
+      18,                                  // 22 yerine 18 min yükseklik
+      titleFontSize * lineFactor + 2 * padY
+    );
+
     doc.setLineWidth(0.8);
     doc.rect(rightX, rightCursorY, rightW, titleH, "S");
     const centerX = rightX + rightW / 2;
@@ -97,19 +107,35 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     const txt = (line.type === "labelValue")
       ? ((line.label ? (String(line.label) + ": ") : "") + (line.value ?? ""))
       : (String(line.text || line.value || line.href || ""));
+
     const lines = doc.splitTextToSize(txt, Math.max(10, rightW - 2 * padX));
-    const h = Math.max(22, lines.length * (baseFontSize * lineFactor) + 2 * padY);
+
+    // ▌Bilgi satırlarının min yüksekliğini de 22 → 18 yaptık
+    const h = Math.max(
+      18,                                   // daha ince satır
+      lines.length * (baseFontSize * lineFactor) + 2 * padY
+    );
+
     doc.setLineWidth(0.8);
     doc.rect(rightX, rightCursorY, rightW, h, "S");
     doc.setFontSize(baseFontSize);
     doc.text(lines, rightX + padX, rightCursorY + padY + baseFontSize, { align: "left" });
+
     if (line.type === "link" && line.href) {
-      try { doc.link(rightX + padX, rightCursorY + padY, rightW - 2 * padX, baseFontSize * lineFactor, { url: line.href }); } catch { }
+      try {
+        doc.link(
+          rightX + padX,
+          rightCursorY + padY,
+          rightW - 2 * padX,
+          baseFontSize * lineFactor,
+          { url: line.href }
+        );
+      } catch { }
     }
     rightCursorY += h;
   }
 
-  // sol logo kutusu sağ yükseklikle eşit
+  // sol logo kutusu sağ yükseklikle eşit (header toplam yüksekliği)
   const rightBottom = rightCursorY;
   const leftFinalW = leftRequestedW;
   const leftFinalH = rightBottom - topY;
@@ -121,7 +147,8 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     const leftImg = await getBrandImage();
     if (!leftImg) throw new Error("Boş logo yanıtı");
 
-    const inset = 2;
+    // ▌Kutuyu küçülttüğümüz için logo da otomatik orantılı küçülecek
+    const inset = 4;              // 2 → 4 biraz daha içerden başlasın
     const boxW = leftFinalW - 2 * inset;
     const boxH = Math.max(0, leftFinalH - 2 * inset);
 
@@ -130,9 +157,16 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     await new Promise(r => { img.onload = r; });
 
     const ratio = img.width / img.height;
-    let drawW = boxW;
+
+    // LOGO_MAX_SCALE ile kutunun içinde biraz daha küçük çiziyoruz
+    const LOGO_MAX_SCALE = 0.85;
+    let drawW = boxW * LOGO_MAX_SCALE;
     let drawH = drawW / ratio;
-    if (drawH > boxH) { drawH = boxH; drawW = drawH * ratio; }
+
+    if (drawH > boxH * LOGO_MAX_SCALE) {
+      drawH = boxH * LOGO_MAX_SCALE;
+      drawW = drawH * ratio;
+    }
 
     const x = leftX + inset + (boxW - drawW) / 2;
     const y = topY + inset + (boxH - drawH) / 2;
@@ -142,7 +176,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
     console.warn("logo.png yüklenemedi:", e);
   }
 
-  // infoRows
+  // infoRows (alt grid) kısmı aynı kalıyor
   const layout = headerCfg?.infoRowsLayout || {};
   const COLS = Math.min(3, Number(layout.columnsPerRow) || 3);
   const cellPadX = Number(layout.cellPaddingX ?? 6);
@@ -204,7 +238,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
         let tx;
         if (hAlign === "center") tx = cx + cellW / 2;
-        else if (hAlign === "right") tx = cx + cellW - cellPadX;
+        else if (hAlign === "right") tx = cx + cellPadX + cellW - 2 * cellPadX;
         else tx = cx + cellPadX;
 
         const linesH = m.lines.length * (baseFontSize * lfac);
@@ -223,6 +257,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
   return { bottomY, leftMargin, rightMargin };
 }
+
 
 /* ───── ANA: Boya Çıktısı ───── */
 export async function generatePaintPdf(ctx, pdfConfig, brandConfig) {
