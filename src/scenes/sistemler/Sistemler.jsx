@@ -1,3 +1,4 @@
+// @/pages/Sistemler.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -264,55 +265,63 @@ const Sistemler = () => {
             ) : (
               <tbody>
                 {filteredSystemItems.length > 0 ? (
-                  filteredSystemItems.map(sys => (
-                    <tr key={sys.id} className="border borderase-300 border-gray-500">
-                      <td className="font-semibold">{sys.name}</td>
-                      <td>{sys.description}</td>
-                      <td className="text-center">
-                        <div className="flex items-center justify-center gap-2 text-xs">
-                          <span className={`px-2 py-1 rounded-md ${sys.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                            {sys.is_active ? 'Aktif' : 'Pasif'}
-                          </span>
-                          <span className={`px-2 py-1 rounded-md ${sys.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                            {sys.is_published ? 'Yayında' : 'Taslak'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="text-center">
-                        <div className="flex flex-wrap justify-center gap-2">
-                          <DialogSistemEkle system={sys} onSave={handleEditSystem} />
+                  filteredSystemItems.map(sys => {
+                    const isInactive = !sys.is_active;
+                    return (
+                      <tr key={sys.id} className="border borderase-300 border-gray-500">
+                        <td className="font-semibold">{sys.name}</td>
+                        <td>{sys.description}</td>
+                        <td className="text-center">
+                          <div className="flex items-center justify-center gap-2 text-xs">
+                            <span className={`px-2 py-1 rounded-md ${sys.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                              {sys.is_active ? 'Aktif' : 'Pasif'}
+                            </span>
+                            <span className={`px-2 py-1 rounded-md ${sys.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                              {sys.is_published ? 'Yayında' : 'Taslak'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {sys.is_active && (
+                              <DialogSistemEkle system={sys} onSave={handleEditSystem} />
+                            )}
 
-                          <AppButton
-                            size="sm"
-                            variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
-                            shape="none"
-                            onClick={() => togglePublishSystem(sys)}
-                          >
-                            {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
-                          </AppButton>
+                            <AppButton
+                              size="sm"
+                              variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
+                              shape="none"
+                              onClick={() => togglePublishSystem(sys)}
+                              disabled={isInactive}
+                            >
+                              {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                            </AppButton>
 
-                          <AppButton
-                            size="sm"
-                            variant={sys.is_active ? 'turuncu' : 'yesil'}
-                            shape="none"
-                            onClick={() => toggleActiveSystem(sys)}
-                          >
-                            {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                          </AppButton>
+                            <AppButton
+                              size="sm"
+                              variant={sys.is_active ? 'turuncu' : 'yesil'}
+                              shape="none"
+                              onClick={() => toggleActiveSystem(sys)}
+                              disabled={isInactive}
+                            >
+                              {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                            </AppButton>
 
-                          <AppButton
-                            size="sm"
-                            variant="lacivert"
-                            shape="none"
-                            onClick={() => openSortModal(sys)}
-                            title="Bu sistemin varyantlarını gör ve sırala"
-                          >
-                            Gör ve Sırala
-                          </AppButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            <AppButton
+                              size="sm"
+                              variant="lacivert"
+                              shape="none"
+                              onClick={() => openSortModal(sys)}
+                              title="Bu sistemin varyantlarını gör ve sırala"
+                              disabled={isInactive}
+                            >
+                              Gör ve Sırala
+                            </AppButton>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={5} className="border border-gray-500 text-center text-muted-foreground py-4">
@@ -331,61 +340,69 @@ const Sistemler = () => {
             <Spinner />
           ) : filteredSystemItems.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {filteredSystemItems.map(sys => (
-                <div
-                  key={sys.id}
-                  className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-sm truncate">{sys.name}</div>
-                      <div className="text-xs text-muted-foreground break-words">
-                        {sys.description || "—"}
+              {filteredSystemItems.map(sys => {
+                const isInactive = !sys.is_active;
+                return (
+                  <div
+                    key={sys.id}
+                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm truncate">{sys.name}</div>
+                        <div className="text-xs text-muted-foreground break-words">
+                          {sys.description || "—"}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 text-[11px] items-end">
+                        <span className={`px-2 py-0.5 rounded-md ${sys.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                          {sys.is_active ? 'Aktif' : 'Pasif'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md ${sys.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                          {sys.is_published ? 'Yayında' : 'Taslak'}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1 text-[11px] items-end">
-                      <span className={`px-2 py-0.5 rounded-md ${sys.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                        {sys.is_active ? 'Aktif' : 'Pasif'}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-md ${sys.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                        {sys.is_published ? 'Yayında' : 'Taslak'}
-                      </span>
+                    <div className="flex flex-wrap gap-2">
+                      {sys.is_active && (
+                        <DialogSistemEkle system={sys} onSave={handleEditSystem} />
+                      )}
+
+                      <AppButton
+                        size="sm"
+                        variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
+                        shape="none"
+                        onClick={() => togglePublishSystem(sys)}
+                        disabled={isInactive}
+                      >
+                        {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                      </AppButton>
+
+                      <AppButton
+                        size="sm"
+                        variant={sys.is_active ? 'turuncu' : 'yesil'}
+                        shape="none"
+                        onClick={() => toggleActiveSystem(sys)}
+                        disabled={isInactive}
+                      >
+                        {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                      </AppButton>
+
+                      <AppButton
+                        size="sm"
+                        variant="lacivert"
+                        shape="none"
+                        onClick={() => openSortModal(sys)}
+                        disabled={isInactive}
+                      >
+                        Gör ve Sırala
+                      </AppButton>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <DialogSistemEkle system={sys} onSave={handleEditSystem} />
-
-                    <AppButton
-                      size="sm"
-                      variant={sys.is_published ? 'gri' : 'kurumsalmavi'}
-                      shape="none"
-                      onClick={() => togglePublishSystem(sys)}
-                    >
-                      {sys.is_published ? 'Yayından Kaldır' : 'Yayınla'}
-                    </AppButton>
-
-                    <AppButton
-                      size="sm"
-                      variant={sys.is_active ? 'turuncu' : 'yesil'}
-                      shape="none"
-                      onClick={() => toggleActiveSystem(sys)}
-                    >
-                      {sys.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                    </AppButton>
-
-                    <AppButton
-                      size="sm"
-                      variant="lacivert"
-                      shape="none"
-                      onClick={() => openSortModal(sys)}
-                    >
-                      Gör ve Sırala
-                    </AppButton>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-6 text-sm">
@@ -486,46 +503,57 @@ const Sistemler = () => {
               ) : (
                 <tbody>
                   {filteredVariantItems.length > 0 ? (
-                    filteredVariantItems.map(variant => (
-                      <tr key={variant.id} className="border borderase-300 border-gray-500">
-                        <td>{variant.name} | {variant.system_name}</td>
-                        <td className="text-center">
-                          <div className="flex items-center justify-center gap-2 text-xs">
-                            <span className={`px-2 py-1 rounded-md ${variant.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                              {variant.is_active ? 'Aktif' : 'Pasif'}
-                            </span>
-                            <span className={`px-2 py-1 rounded-md ${variant.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                              {variant.is_published ? 'Yayında' : 'Taslak'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="text-center">
-                          <div className="flex flex-wrap justify-center gap-2">
-                            <AppButton size="sm" variant="sari" shape="none" onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}>
-                              Düzenle
-                            </AppButton>
+                    filteredVariantItems.map(variant => {
+                      const isInactive = !variant.is_active;
+                      return (
+                        <tr key={variant.id} className="border borderase-300 border-gray-500">
+                          <td>{variant.name} | {variant.system_name}</td>
+                          <td className="text-center">
+                            <div className="flex items-center justify-center gap-2 text-xs">
+                              <span className={`px-2 py-1 rounded-md ${variant.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                                {variant.is_active ? 'Aktif' : 'Pasif'}
+                              </span>
+                              <span className={`px-2 py-1 rounded-md ${variant.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                                {variant.is_published ? 'Yayında' : 'Taslak'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <div className="flex flex-wrap justify-center gap-2">
+                              <AppButton
+                                size="sm"
+                                variant="sari"
+                                shape="none"
+                                onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}
+                                disabled={isInactive}
+                              >
+                                Düzenle
+                              </AppButton>
 
-                            <AppButton
-                              size="sm"
-                              variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
-                              shape="none"
-                              onClick={() => togglePublishVariant(variant)}
-                            >
-                              {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
-                            </AppButton>
+                              <AppButton
+                                size="sm"
+                                variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
+                                shape="none"
+                                onClick={() => togglePublishVariant(variant)}
+                                disabled={isInactive}
+                              >
+                                {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                              </AppButton>
 
-                            <AppButton
-                              size="sm"
-                              variant={variant.is_active ? 'turuncu' : 'yesil'}
-                              shape="none"
-                              onClick={() => toggleActiveVariant(variant)}
-                            >
-                              {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                            </AppButton>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                              <AppButton
+                                size="sm"
+                                variant={variant.is_active ? 'turuncu' : 'yesil'}
+                                shape="none"
+                                onClick={() => toggleActiveVariant(variant)}
+                                disabled={isInactive}
+                              >
+                                {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                              </AppButton>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={3} className="border border-gray-500 text-center text-muted-foreground py-4">
@@ -544,53 +572,64 @@ const Sistemler = () => {
               <Spinner />
             ) : filteredVariantItems.length > 0 ? (
               <div className="flex flex-col gap-3">
-                {filteredVariantItems.map(variant => (
-                  <div
-                    key={variant.id}
-                    className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-sm truncate">
-                          {variant.name} | {variant.system_name}
+                {filteredVariantItems.map(variant => {
+                  const isInactive = !variant.is_active;
+                  return (
+                    <div
+                      key={variant.id}
+                      className="bg-background/60 border border-border rounded-xl p-3 shadow-sm flex flex-col gap-3"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm truncate">
+                            {variant.name} | {variant.system_name}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1 text-[11px] items-end">
+                          <span className={`px-2 py-0.5 rounded-md ${variant.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                            {variant.is_active ? 'Aktif' : 'Pasif'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md ${variant.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
+                            {variant.is_published ? 'Yayında' : 'Taslak'}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-1 text-[11px] items-end">
-                        <span className={`px-2 py-0.5 rounded-md ${variant.is_active ? 'bg-emerald-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                          {variant.is_active ? 'Aktif' : 'Pasif'}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-md ${variant.is_published ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-white'}`}>
-                          {variant.is_published ? 'Yayında' : 'Taslak'}
-                        </span>
+                      <div className="flex flex-wrap gap-2">
+                        <AppButton
+                          size="sm"
+                          variant="sari"
+                          shape="none"
+                          onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}
+                          disabled={isInactive}
+                        >
+                          Düzenle
+                        </AppButton>
+
+                        <AppButton
+                          size="sm"
+                          variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
+                          shape="none"
+                          onClick={() => togglePublishVariant(variant)}
+                          disabled={isInactive}
+                        >
+                          {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
+                        </AppButton>
+
+                        <AppButton
+                          size="sm"
+                          variant={variant.is_active ? 'turuncu' : 'yesil'}
+                          shape="none"
+                          onClick={() => toggleActiveVariant(variant)}
+                          disabled={isInactive}
+                        >
+                          {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                        </AppButton>
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <AppButton size="sm" variant="sari" shape="none" onClick={() => navigate(`/sistemvaryantduzenle/${variant.id}`)}>
-                        Düzenle
-                      </AppButton>
-
-                      <AppButton
-                        size="sm"
-                        variant={variant.is_published ? 'gri' : 'kurumsalmavi'}
-                        shape="none"
-                        onClick={() => togglePublishVariant(variant)}
-                      >
-                        {variant.is_published ? 'Yayından Kaldır' : 'Yayınla'}
-                      </AppButton>
-
-                      <AppButton
-                        size="sm"
-                        variant={variant.is_active ? 'turuncu' : 'yesil'}
-                        shape="none"
-                        onClick={() => toggleActiveVariant(variant)}
-                      >
-                        {variant.is_active ? 'Pasifleştir' : 'Aktifleştir'}
-                      </AppButton>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center text-muted-foreground py-6 text-sm">

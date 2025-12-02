@@ -42,7 +42,7 @@ const ContentArea = () => {
 
   // Rol bilgisi gelene kadar "null" kalsın; böylece UI'yi blur'layabiliriz.
   const isAdmin = useSelector(
-    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
+    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
   );
   const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
 

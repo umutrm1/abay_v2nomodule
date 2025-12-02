@@ -248,7 +248,7 @@ export default function BrandSection() {
               value={brandCfg?.rightBox?.title ?? ""}
               onChange={(e) => handleBrandChange(["rightBox", "title"], e.target.value)}
               className="border border-border rounded-xl px-3 py-2 bg-card text-foreground placeholder:text-muted-foreground"
-              placeholder="Örn: TÜMEN ALÜMİNYUM"
+              placeholder="Örn: AUTOMATA ALÜMİNYUM"
             />
           </div>
 

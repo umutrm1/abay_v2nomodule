@@ -118,7 +118,7 @@ const SideBar = () => {
   //   (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
   // );
     const isAdmin = useSelector(
-    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
+    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
   );
   const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
 
