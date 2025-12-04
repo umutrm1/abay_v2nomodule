@@ -1,5 +1,5 @@
-// src/scenes/bayiler/DialogResendInvite.jsx
-import React, { useMemo, useState } from "react";
+// Path Alias: src/scenes/bayiler/DialogResendInvite.jsx
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,24 +10,20 @@ import {
 } from "@/components/ui/dialog.jsx";
 import AppButton from "@/components/ui/AppButton.jsx";
 
-export default function DialogResendInvite({ open, onOpenChange, debugToken = "" }) {
+export default function DialogResendInvite({ open, onOpenChange, inviteLink = "" }) {
   const [copied, setCopied] = useState(false);
 
-  const BASE_URL = import.meta.env.VITE_API_INVITE_URL;
-
-  const fullUrl = useMemo(() => {
-    const cleanBase = (BASE_URL || "").replace(/\/+$/, "");
-    const path = "/set-password";
-    const tokenQuery = debugToken ? `?token=${encodeURIComponent(debugToken)}` : "";
-    return `${cleanBase}${path}${tokenQuery}`;
-  }, [BASE_URL, debugToken]);
+  const fullUrl = inviteLink || "";
 
   const handleCopy = async () => {
+    if (!fullUrl) return;
     try {
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch {
+      // kopyalama hatasını sessizce yutuyoruz
+    }
   };
 
   return (
@@ -50,24 +46,30 @@ export default function DialogResendInvite({ open, onOpenChange, debugToken = ""
               value={fullUrl}
               className="input input-bordered w-full font-mono text-sm"
               title="Davet bağlantısı"
+              placeholder="Davet bağlantısı henüz alınamadı."
             />
-            <AppButton variant="kurumsalmavi" onClick={handleCopy} className="w-full sm:w-auto">
+            <AppButton
+              variant="kurumsalmavi"
+              onClick={handleCopy}
+              className="w-full sm:w-auto"
+              disabled={!fullUrl}
+            >
               {copied ? "Kopyalandı" : "Kopyala"}
             </AppButton>
           </div>
 
-          {!BASE_URL && (
+          {!fullUrl && (
             <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-2">
-              Uyarı: Base URL .env’de tanımlı görünmüyor. Lütfen{" "}
-              <span className="font-mono">VITE_APP_BASE_URL</span>{" "}
-              (veya alternatiflerinden biri) ekleyin.
+              Uyarı: Sunucudan davet bağlantısı alınamadı. Lütfen işlemi tekrar deneyin.
             </p>
           )}
         </div>
 
         <div className="flex justify-end mt-6">
           <DialogClose asChild>
-            <AppButton variant="neutral" className="w-full sm:w-auto">Kapat</AppButton>
+            <AppButton variant="neutral" className="w-full sm:w-auto">
+              Kapat
+            </AppButton>
           </DialogClose>
         </div>
       </DialogContent>

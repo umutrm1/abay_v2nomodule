@@ -1,4 +1,4 @@
-// src/scenes/projeekle/pdf/pdfGlass.js
+// Path Alias: src/scenes/projeekle/pdf/pdfGlass.js
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { mapGlass } from "./mappers/glass.mapper.js";
@@ -152,7 +152,8 @@ async function fetchVariantPngSafe(systemVariantId, ctx) {
   }
 }
 
-// PNG'leri sayfa altında sabit en ile çiz
+// PNG'leri tablo bittikten SONRA, sayfa üstünden AŞAĞI doğru çiz
+// ve mevcut sabit genişliğin 5 KATI olacak şekilde (sayfa enini aşmayacak şekilde) büyüt
 async function drawSystemVariantPngs(doc, requirements, ctx, startAfterY = 0) {
   const systems = requirements?.systems || [];
   const uniqIds = [];
@@ -171,24 +172,25 @@ async function drawSystemVariantPngs(doc, requirements, ctx, startAfterY = 0) {
 
   const leftMargin = 40;
   const rightMargin = 40;
+  const topMargin = 20;
   const bottomMargin = 10;
 
   // =========================
-  // 1) SABİT GENİŞLİK (CM → PT)
+  // 1) SABİT GENİŞLİK (5x)
   // =========================
   const cmToPt = (cm) => cm * 28.3464567;
 
-  // Kırmızı kutu gibi SABİT EN: 4 cm
-  let FIXED_W = cmToPt(7);
+  // Eski değer 7 cm idi → 5 katı:
+  let FIXED_W = cmToPt(7) * 3;
 
-  // Sayfada kullanılabilir alanı aşmasın (taşma olursa kırpmasın diye)
+  // Sayfada kullanılabilir alanı aşmasın
   const maxAllowedW = pageW - leftMargin - rightMargin;
   if (FIXED_W > maxAllowedW) FIXED_W = maxAllowedW;
 
   const GAP = 10; // pngler arası boşluk (pt)
 
-  // 2) en alttan yukarı doğru yerleştireceğiz
-  let cursorBottomY = pageH - bottomMargin;
+  // 2) TABLODAN SONRA, ÜSTTEN AŞAĞI DOĞRU YERLEŞTİR
+  let cursorY = Math.max(startAfterY + 20, topMargin);
 
   for (const variantId of uniqIds) {
     const dataUrl = await fetchVariantPngSafe(variantId, ctx);
@@ -209,29 +211,22 @@ async function drawSystemVariantPngs(doc, requirements, ctx, startAfterY = 0) {
     const drawW = FIXED_W;
     const drawH = drawW / ratio;
 
-    // =========================
-    // 4) TABLOYLA ÇAKIŞMA KONTROLÜ
-    // =========================
-    const topLimit = Math.max(startAfterY + 10, 20);
-
-    // Burada şu mantık var:
-    // - Eğer mevcut sayfada PNG sığmıyorsa yeni sayfaya geç
-    // - Yeni sayfada da yine en alttan başla
-    if (cursorBottomY - drawH < topLimit) {
+    // Bu sayfada altta yer kalmıyorsa yeni sayfaya geç
+    const usableBottom = pageH - bottomMargin;
+    if (cursorY + drawH > usableBottom) {
       doc.addPage();
-      cursorBottomY = pageH - bottomMargin;
+      // Yeni sayfada en üstten başla
+      cursorY = topMargin;
     }
 
-    // =========================
-    // 5) ALT-ORTA HİZALAMA
-    // =========================
-    const x = (pageW - drawW) / 2;       // ortala
-    const y = cursorBottomY - drawH;     // en alt referanslı yukarı çiz
+    // Ortala ve yukarıdan aşağı doğru yerleştir
+    const x = (pageW - drawW) / 2;  // yatay ortalama
+    const y = cursorY;              // üstten aşağı doğru
 
     doc.addImage(dataUrl, "PNG", x, y, drawW, drawH);
 
-    // bir sonraki PNG yukarıdan devam etsin
-    cursorBottomY = y - GAP;
+    // bir sonraki PNG altta devam etsin
+    cursorY = y + drawH + GAP;
   }
 }
 
@@ -418,7 +413,7 @@ async function drawSplitHeader(doc, brandConfig, pdfConfig, ctx) {
 
         let textX;
         if (hAlign === "center") textX = cellX + cellW / 2;
-        else if (hAlign === "right") textX = cellX + cellW - cellPadX;
+        else if (hAlign === "right") textX = cellX + cellPadX;
         else textX = cellX + cellPadX;
 
         const linesH = m.lines.length * (baseFontSize * lineFactor2);
@@ -561,7 +556,7 @@ export async function generateCamCiktisiPdf(ctx, pdfConfig, brandConfig) {
     doc.text(lines, textX, textY, { align: "center" });
   }
 
-  // 3) System variant PNG'leri en altta çiz (tablo bittikten sonra çakışmasın diye Y veriyoruz)
+  // 3) System variant PNG'leri tablo bittikten sonra, üstten aşağı doğru çiz
   const afterTableY = doc.lastAutoTable?.finalY || cursorY;
   await drawSystemVariantPngs(doc, requirements, ctx, afterTableY);
 

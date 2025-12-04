@@ -242,3 +242,32 @@ export const reActivateDealerOnApi = ({ id, email, sendInvite = true }) => {
     }
   };
 };
+
+// 9) Davet linki oluştur / getir (POST)
+export const getDealerInviteLinkOnApi = (id, sendEmail = false) => {
+  return async (dispatch) => {
+    try {
+      const res = await fetchWithAuth(
+        `${API_BASE_URL}/dealers/${id}/invite-link?send_email=${sendEmail ? "true" : "false"}`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json" },
+        },
+        dispatch
+      );
+
+      if (!res.ok) {
+        let detail;
+        try { detail = await res.json(); } catch { detail = await res.text(); }
+        toastError();
+        throw new Error(`Davet linki oluşturulamadı (${res.status}): ${JSON.stringify(detail)}`);
+      }
+
+      toastSuccess();
+      return res.json();
+    } catch (err) {
+      toastError();
+      throw err;
+    }
+  };
+};

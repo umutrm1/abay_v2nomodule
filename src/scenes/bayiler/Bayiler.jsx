@@ -1,4 +1,4 @@
-// src/scenes/bayiler/Bayiler.jsx
+// Path Alias: src/scenes/bayiler/Bayiler.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -6,7 +6,7 @@ import {
   addDealerOnApi,
   editDealerOnApi,
   sellDealerOnApi,
-  reSendInviteOnApi
+  getDealerInviteLinkOnApi,   // <<< yeni import
 } from "@/redux/actions/actions_bayiler.js";
 import Header from '@/components/mycomponents/Header.jsx';
 import DialogBayiEkle from './DialogBayiEkle.jsx';
@@ -49,7 +49,7 @@ const Bayiler = () => {
 
   // Resend modal
   const [resendOpen, setResendOpen] = useState(false);
-  const [resendToken, setResendToken] = useState("");
+  const [resendInviteLink, setResendInviteLink] = useState("");
 
   // Silme modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -59,11 +59,13 @@ const Bayiler = () => {
   // Tekrar Davet Gönder — buton handler'ı
   const handleResendInvite = useCallback(async (bayi) => {
     try {
-      const res = await dispatch(reSendInviteOnApi(bayi.id));
-      const token = res?.debug_token || "";
-      setResendToken(token);
+      const res = await dispatch(getDealerInviteLinkOnApi(bayi.id, false));
+      const link = res?.invite_link || "";
+      setResendInviteLink(link);
       setResendOpen(true);
-    } catch (e) {}
+    } catch (e) {
+      // hata durumda sessiz kalıyoruz, toast action içinde zaten atılıyor
+    }
   }, [dispatch]);
 
   // Listeyi çek — sayfa/arama/limit değişince
@@ -167,7 +169,7 @@ const Bayiler = () => {
         </div>
 
         {/* =========================
-            DESKTOP TABLO (md ve üstü): AYNEN KALDI
+            DESKTOP TABLO (md ve üstü)
            ========================= */}
         <div className="hidden md:flex flex-grow overflow-x-auto">
           <table className="table w-full border border-base-500 border-gray-500 rounded-lg">
@@ -337,7 +339,7 @@ const Bayiler = () => {
           )}
         </div>
 
-        {/* Sayfalama — mobilde de güzel dursun diye full-width buton davranışı ekledim */}
+        {/* Sayfalama */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-2 sm:mt-4">
           <AppButton
             variant="kurumsalmavi"
@@ -424,7 +426,7 @@ const Bayiler = () => {
       <DialogResendInvite
         open={resendOpen}
         onOpenChange={setResendOpen}
-        debugToken={resendToken}
+        inviteLink={resendInviteLink}
       />
     </div>
   );
