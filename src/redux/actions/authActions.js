@@ -48,37 +48,35 @@ export const logoutUser = () => dispatch => {
 
 export const refreshAccessToken = () => async (dispatch) => {
   try {
-    const { data } = await api.post('/auth/refresh', null, {
-      headers: { 'accept': 'application/json' }
-      // withCredentials zaten api seviyesinde açık
-    })
-    const newToken = data?.access_token
-    if (!newToken) throw new Error('access_token yok')
+    console.log("[refreshAccessToken] /auth/refresh çağrılıyor (axios)...");
+    const { data } = await api.post("/auth/refresh", null, {
+      headers: { accept: "application/json" },
+    });
+    console.log("[refreshAccessToken] /auth/refresh status: 200, data:", data);
 
-    // rememberMe'yi storage'tan anlayamayız; var olan nerede ise oraya yazalım
-    const rememberMe = !!localStorage.getItem('token')
-    setAccessToken(newToken, rememberMe)
+    const newToken = data?.access_token;
+    if (!newToken) throw new Error("access_token yok");
 
-    // Auth reducer'ı güncelle
+    const rememberMe = !!localStorage.getItem("token");
+    setAccessToken(newToken, rememberMe);
+
     dispatch({
       type: LOGIN_SUCCESS,
       payload: {
         token: newToken,
         is_admin: data?.is_admin ?? null,
         role: data?.role ?? null,
-      }
-    })
-    // Sessiz yenileme -> kullanıcıyı bildirim bombardımanına tutmamak için toast koymuyoruz.
-    return newToken
+      },
+    });
+
+    return newToken;
   } catch (err) {
-    // 🔴 ARTIK: refresh token geçersiz/çıkarılmış ise kesin logout.
-    dispatch({ type: LOAD_USER_FAIL })
-    dispatch({ type: LOGOUT })
-    // İsteğe bağlı kısa bir bilgilendirme ekleyebilirsiniz (toast):
-    // toastError('Oturum yenileme başarısız. Lütfen tekrar giriş yapın.')
-    throw err
+    console.error("[refreshAccessToken] refresh hata:", err?.response || err);
+    dispatch({ type: LOAD_USER_FAIL });
+    dispatch({ type: LOGOUT });
+    throw err;
   }
-}
+};
 
 // loginUser artık rememberMe de alıyor
 export const loginUser = (username, password, rememberMe = false) => async dispatch => {

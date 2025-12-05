@@ -35,7 +35,8 @@ async function doRefresh(dispatch) {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
-    // /auth/refresh cookie ile çalışır → credentials: 'include'
+    console.log("[doRefresh] /auth/refresh çağrılıyor...");
+
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: { accept: "application/json" },
@@ -43,15 +44,21 @@ async function doRefresh(dispatch) {
       body: null,
     });
 
-    if (!res.ok) throw new Error(`refresh failed: ${res.status}`);
+    console.log("[doRefresh] /auth/refresh yanıt status:", res.status);
+
+    if (!res.ok) {
+      console.warn("[doRefresh] refresh başarısız, ok=false");
+      throw new Error(`refresh failed: ${res.status}`);
+    }
 
     const data = await res.json().catch(() => ({}));
+    console.log("[doRefresh] /auth/refresh payload:", data);
+
     const newToken = data.access_token || data.accessToken || data.token;
     if (!newToken) throw new Error("no access token in refresh payload");
 
     setStoredToken(newToken);
 
-    // Redux’a başarılı login/refresh’i bildir (is_admin/role dahil)
     dispatch?.({
       type: LOGIN_SUCCESS,
       payload: {
@@ -70,7 +77,6 @@ async function doRefresh(dispatch) {
     refreshInFlight = null;
   }
 }
-
 /**
  * Yetkili fetch yardımcı fonksiyonu:
  * - Başta token yoksa: bir kez refresh dener, olmazsa LOGOUT.
