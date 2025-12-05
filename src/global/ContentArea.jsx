@@ -1,3 +1,4 @@
+// src/global/ContentArea.jsx
 import React, { useContext, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -40,10 +41,15 @@ const ContentArea = () => {
     location.pathname === "/forgot-password" ||
     location.pathname === "/reset-password";
 
-  // Rol bilgisi gelene kadar "null" kalsın; böylece UI'yi blur'layabiliriz.
-  const isAdmin = useSelector(
-    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
-  );
+  /**
+   * 🔑 ARTIK TEK KAYNAK: state.auth.isAdmin
+   *
+   * authReducer içindeki deriveIsAdmin sayesinde bu alan:
+   *  - her zaman boolean: true / false
+   *  - is_admin, user.is_admin ve role içinden normalize ediliyor
+   */
+  const isAdmin = useSelector((s) => s.auth?.isAdmin === true);
+
   const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
 
   // Karar verilene kadar (login/refresh sonucu belli olana kadar) blur
@@ -138,7 +144,6 @@ const ContentArea = () => {
                     </>
                   ) : (
                     <>
-
                       <Route path="/" element={<Projeler />} />
                       <Route path="/musteriler" element={<Musteriler />} />
                       <Route path="/projeler" element={<Projeler />} />
@@ -174,7 +179,7 @@ const ContentArea = () => {
         </div>
       </div>
 
-      {/* Üstte sabit overlay + spinner: sadece is_admin bilinmiyorken */}
+      {/* Üstte sabit overlay + spinner: sadece yetki bilgisi/bootstrapping aşamasında */}
       {isBootstrapping && (
         <div
           className="pointer-events-none absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm"

@@ -114,12 +114,12 @@ function SidebarItem({ icon, text, active, alert, onClick }) {
 
 const SideBar = () => {
   const navigate = useNavigate();
-  // const isAdmin = useSelector(
-  //   (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? null
-  // );
-    const isAdmin = useSelector(
-    (s) => s.auth?.is_admin ?? s.auth?.user?.is_admin ?? true
-  );
+
+  /**
+   * 🔑 Yine tek kaynak: state.auth.isAdmin
+   *  - deriveIsAdmin sayesinde boolean garantili
+   */
+  const isAdmin = useSelector((s) => s.auth?.isAdmin === true);
   const bootstrapped = useSelector((s) => !!s.auth?.bootstrapped);
 
   const { expanded, setExpanded } = useContext(SidebarContext);
