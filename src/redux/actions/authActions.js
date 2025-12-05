@@ -1,3 +1,4 @@
+// Path Alias: src/redux/actions/authActions.js
 // src/redux/actions/authActions.js
 import axios from 'axios'
 import {
@@ -16,6 +17,8 @@ const api = axios.create({
 })
 
 function setAccessToken(token, rememberMe = false) {
+  // TODO: rememberMe'ye göre localStorage / sessionStorage ayrımını sonra düzeltebiliriz.
+  // Şimdilik mevcut davranışı bozmadan devam ediyoruz.
   if (rememberMe) {
     sessionStorage.setItem('token', token)
   } else {
@@ -46,36 +49,77 @@ export const logoutUser = () => dispatch => {
   window.location.href = '/login'
 }
 
-export const refreshAccessToken = () => async (dispatch) => {
-  try {
-    console.log("[refreshAccessToken] /auth/refresh çağrılıyor (axios)...");
-    const { data } = await api.post("/auth/refresh", null, {
-      headers: { accept: "application/json" },
-    });
-    console.log("[refreshAccessToken] /auth/refresh status: 200, data:", data);
+/**
+ * 🔄 refreshAccessToken için "in-flight" guard
+ *
+ * Amaç:
+ *  - Aynı anda birden fazla refreshAccessToken() çağrılırsa
+ *    sadece TEK adet /auth/refresh isteği atsın
+ *  - Diğer tüm çağrılar aynı promise'i beklesin
+ *
+ * Böylece:
+ *  - İlk istek 200 → yeni access_token + is_admin: true
+ *  - Aynı anda giden ikinci istek → eski refresh_token ile 401 ALMA problemi kalmaz
+ */
+let refreshPromise = null;
 
-    const newToken = data?.access_token;
-    if (!newToken) throw new Error("access_token yok");
-
-    const rememberMe = !!localStorage.getItem("token");
-    setAccessToken(newToken, rememberMe);
-
-    dispatch({
-      type: LOGIN_SUCCESS,
-      payload: {
-        token: newToken,
-        is_admin: data?.is_admin ?? null,
-        role: data?.role ?? null,
-      },
-    });
-
-    return newToken;
-  } catch (err) {
-    console.error("[refreshAccessToken] refresh hata:", err?.response || err);
-    dispatch({ type: LOAD_USER_FAIL });
-    dispatch({ type: LOGOUT });
-    throw err;
+export const refreshAccessToken = () => (dispatch) => {
+  // Eğer hâlihazırda bir refresh isteği devam ediyorsa, aynı promise'i döndür
+  if (refreshPromise) {
+    console.log('[refreshAccessToken] mevcut refreshPromise dönüyor...');
+    return refreshPromise;
   }
+
+  // Yeni bir refresh isteği başlat ve referansını sakla
+  refreshPromise = (async () => {
+    try {
+      console.log('[refreshAccessToken] /auth/refresh çağrılıyor (axios)...');
+      const { data } = await api.post(
+        '/auth/refresh',
+        null,
+        {
+          headers: { accept: 'application/json' }
+        }
+      );
+
+      console.log('[refreshAccessToken] /auth/refresh status: 200, data:', data);
+
+      const newToken = data?.access_token;
+      if (!newToken) throw new Error('access_token yok');
+
+      // rememberMe'yi var olan localStorage kaydından anlıyoruz
+      const rememberMe = !!localStorage.getItem('token');
+      setAccessToken(newToken, rememberMe);
+
+      // Backend burada is_admin / role dönerse, deriveIsAdmin ile normalize edilecek
+      dispatch({
+        type: LOGIN_SUCCESS,
+        payload: {
+          token: newToken,
+          is_admin: data?.is_admin ?? null,
+          role: data?.role ?? null,
+        },
+      });
+
+      // Bu thunk'in sonucunu kullanan yerler (await dispatch(refreshAccessToken()))
+      // newToken alacak
+      return newToken;
+    } catch (err) {
+      console.error('[refreshAccessToken] refresh hata:', err?.response || err);
+
+      // Buraya geliyorsak, gerçekten refresh başarısız demektir (401, 403, vs.)
+      // Bu durumda oturumu düşürmek hâlâ mantıklı
+      dispatch({ type: LOAD_USER_FAIL });
+      dispatch({ type: LOGOUT });
+
+      throw err;
+    } finally {
+      // İstek bittiğinde (başarılı veya hatalı) referansı sıfırla
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 };
 
 // loginUser artık rememberMe de alıyor
@@ -166,8 +210,8 @@ export const loadCurrentUser = () => async dispatch => {
         return
       }
     }
-      dispatch({ type: LOAD_USER_FAIL })
-      dispatch({ type: LOGOUT }) // refresh yoksa oturum yok
+    dispatch({ type: LOAD_USER_FAIL })
+    dispatch({ type: LOGOUT }) // refresh yoksa oturum yok
   }
 }
 
@@ -176,12 +220,9 @@ export const initAuth = () => async (dispatch) => {
   try {
     const stored = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (stored) {
-      // api burada closure’dan erişilebilir
-      // eslint-disable-next-line no-undef
       api.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
     }
   } catch {}
-
 
   try {
     await dispatch(loadCurrentUser()); // loadCurrentUser zaten yoksa refresh deniyor
