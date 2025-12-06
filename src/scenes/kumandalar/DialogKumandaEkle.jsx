@@ -15,11 +15,14 @@ const initialForm = {
   price: 0
 };
 
-const DialogKumandaEkle = ({ onSave, children }) => {
-  const [open, setOpen] = useState(false);
+const DialogKumandaEkle = ({ onSave, children, open: externalOpen, onOpenChange: externalOnOpenChange }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
 
   const resetForm = useCallback(() => setForm(initialForm), []);
+
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
 
   const handleOpenChange = (next) => {
     setOpen(next);
@@ -41,20 +44,22 @@ const DialogKumandaEkle = ({ onSave, children }) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {children ? (
-          children
-        ) : (
-          <AppButton
-            variant="kurumsalmavi"
-            size="mdtxtlg"
-            className="w-full sm:w-auto sm:ml-auto"
-            title="Yeni kumanda ekle"
-          >
-            + Kumanda Ekle
-          </AppButton>
-        )}
-      </DialogTrigger>
+      {externalOpen === undefined && (
+        <DialogTrigger asChild>
+          {children ? (
+            children
+          ) : (
+            <AppButton
+              variant="kurumsalmavi"
+              size="mdtxtlg"
+              className="w-full sm:w-auto sm:ml-auto"
+              title="Yeni kumanda ekle"
+            >
+              + Kumanda Ekle
+            </AppButton>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-w-md">
         <DialogHeader>
