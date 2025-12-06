@@ -66,7 +66,7 @@ const PreviewLine = ({ title, value }) => (
   </div>
 );
 
-const DialogCamEkle = ({ onSave, children }) => {
+const DialogCamEkle = ({ onSave, children, open, onOpenChange }) => {
   const [form, setForm] = useState({
     cam_isim: '',
     thickness_mm: 1,
@@ -127,18 +127,20 @@ const DialogCamEkle = ({ onSave, children }) => {
   const isDouble = Number(form.thickness_mm) === 2;
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children ? children : (
-          <AppButton
-            variant="kurumsalmavi"
-            size="mdtxtlg"
-            className="w-full md:w-40 md:ml-auto"
-          >
-            + Cam Ekle
-          </AppButton>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {!open && !onOpenChange && (
+        <DialogTrigger asChild>
+          {children ? children : (
+            <AppButton
+              variant="kurumsalmavi"
+              size="mdtxtlg"
+              className="w-full md:w-40 md:ml-auto"
+            >
+              + Cam Ekle
+            </AppButton>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>

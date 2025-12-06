@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import PagedSelectDialog from "./PagedSelectDialog.jsx";
-import { getCamlarFromApi } from "@/redux/actions/actions_camlar.js";
+import { getCamlarFromApi, addCamToApi } from "@/redux/actions/actions_camlar.js";
+import DialogCamEkle from "@/scenes/camlar/DialogCamEkle.jsx";
 
 const EMPTY_PAGE = {
   items: [],
@@ -18,6 +19,7 @@ const LIMIT = 5;
 const DialogCamSec = ({ open, onOpenChange, onSelect }) => {
   const dispatch = useDispatch();
   const data = useSelector((s) => s.getCamlarFromApiReducer) || EMPTY_PAGE;
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   // PagedSelectDialog, page & query parametreleri ile bu fonksiyonu çağıracak
   const fetchPage = useCallback(
@@ -32,17 +34,37 @@ const DialogCamSec = ({ open, onOpenChange, onSelect }) => {
     }
   }, [open, fetchPage]);
 
+  const handleAddNew = () => {
+    setAddDialogOpen(true);
+  };
+
+  const handleSaveNewCam = async (camData) => {
+    await dispatch(addCamToApi(camData));
+    setAddDialogOpen(false);
+    // Refresh the list
+    fetchPage(1, "");
+  };
+
   return (
-    <PagedSelectDialog
-      title="Cam Seç"
-      open={open}
-      onOpenChange={onOpenChange}
-      data={data}
-      fetchPage={fetchPage}
-      columns={[{ key: "cam_isim", label: "Cam İsmi" }]}
-      onSelect={onSelect}
-      searchPlaceholder="Cam ismi ile ara…"
-    />
+    <>
+      <PagedSelectDialog
+        title="Cam Seç"
+        open={open}
+        onOpenChange={onOpenChange}
+        data={data}
+        fetchPage={fetchPage}
+        columns={[{ key: "cam_isim", label: "Cam İsmi" }]}
+        onSelect={onSelect}
+        searchPlaceholder="Cam ismi ile ara…"
+        onAddNew={handleAddNew}
+        addButtonText="+ Cam Ekle"
+      />
+      <DialogCamEkle
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSave={handleSaveNewCam}
+      />
+    </>
   );
 };
 

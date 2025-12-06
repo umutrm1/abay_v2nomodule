@@ -3,9 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import * as RadixDialog from "@radix-ui/react-dialog";
 
 import PagedSelectDialog from "./PagedSelectDialog.jsx";
-import { getGlassColorFromApi } from "@/redux/actions/actions_boyalar.js";
+import { getGlassColorFromApi, addColorToApi } from "@/redux/actions/actions_boyalar.js";
 import * as actions_projeler from "@/redux/actions/actions_projeler.js";
 import AppButton from "@/components/ui/AppButton.jsx";
+import DialogCamBoyaEkle from "@/scenes/boyalar/DialogCamBoyaEkle.jsx";
 
 const EMPTY_PAGE = { items: [], total: 0, page: 1, limit: 5, total_pages: 1, has_next: false, has_prev: false };
 const LIMIT = 5;
@@ -27,6 +28,7 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
   const [colorDialogOpen, setColorDialogOpen] = useState(false);
   const [selectContext, setSelectContext] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const systems = Array.isArray(requirements?.systems) ? requirements.systems : [];
 
@@ -280,6 +282,17 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
     return !!(row.id1 || row.id2);
   };
   const hasPendingForAll = !!(pendingAll.id1 || pendingAll.id2);
+
+  const handleAddNew = () => {
+    setAddDialogOpen(true);
+  };
+
+  const handleSaveNewColor = async (colorData) => {
+    await dispatch(addColorToApi(colorData));
+    setAddDialogOpen(false);
+    // Refresh the color list
+    fetchPage(1, "");
+  };
 
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -549,10 +562,17 @@ const DialogCamRenkSec = ({ open, onOpenChange, requirements, projectId }) => {
               columns={[{ key: "name", label: "Renk Adı" }]}
               onSelect={handleColorPicked}
               searchPlaceholder="Renk adına göre ara…"
+              onAddNew={handleAddNew}
+              addButtonText="+ Boya Ekle"
             />
           </RadixDialog.Content>
         </div>
       </RadixDialog.Portal>
+      <DialogCamBoyaEkle
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSave={handleSaveNewColor}
+      />
     </RadixDialog.Root>
   );
 };
