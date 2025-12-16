@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import AppButton from "@/components/ui/AppButton";
 
-const DialogProfilEkle = ({ onSave, children, open, onOpenChange }) => {
+const DialogProfilEkle = ({ onSave, children }) => {
   const [form, setForm] = useState({
     profil_kodu: '',
     profil_isim: '',
@@ -33,23 +33,21 @@ const DialogProfilEkle = ({ onSave, children, open, onOpenChange }) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {!open && !onOpenChange && (
-        <DialogTrigger asChild>
-          {children ? (
-            children
-          ) : (
-            <AppButton
-              variant="kurumsalmavi"
-              size="mdtxtlg"
-              className="w-full sm:w-auto sm:ml-auto"
-              title="Yeni profil ekle"
-            >
-              + Profil Ekle
-            </AppButton>
-          )}
-        </DialogTrigger>
-      )}
+    <Dialog>
+      <DialogTrigger asChild>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-full sm:w-auto sm:ml-auto"
+            title="Yeni profil ekle"
+          >
+            + Profil Ekle
+          </AppButton>
+        )}
+      </DialogTrigger>
 
       <DialogContent className="max-w-md">
         <DialogHeader>

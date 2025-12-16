@@ -8,14 +8,11 @@ import AppButton from '@/components/ui/AppButton';
 
 const initialForm = { name: '', unit_cost: 0 };
 
-const DialogProfilBoyaEkle = ({ onSave, children, open: externalOpen, onOpenChange: externalOnOpenChange }) => {
-  const [internalOpen, setInternalOpen] = useState(false);
+const DialogProfilBoyaEkle = ({ onSave, children }) => {
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
 
   const resetForm = useCallback(() => setForm(initialForm), []);
-
-  const open = externalOpen !== undefined ? externalOpen : internalOpen;
-  const setOpen = externalOnOpenChange || setInternalOpen;
 
   const handleOpenChange = (next) => {
     setOpen(next);
@@ -34,21 +31,19 @@ const DialogProfilBoyaEkle = ({ onSave, children, open: externalOpen, onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {externalOpen === undefined && (
-        <DialogTrigger asChild>
-          {children ? (
-            children
-          ) : (
-            <AppButton
-              variant="kurumsalmavi"
-              size="mdtxtlg"
-              className="w-full md:w-40 md:ml-auto"
-            >
-              + Profil Boya Ekle
-            </AppButton>
-          )}
-        </DialogTrigger>
-      )}
+      <DialogTrigger asChild>
+        {children ? (
+          children
+        ) : (
+          <AppButton
+            variant="kurumsalmavi"
+            size="mdtxtlg"
+            className="w-full md:w-40 md:ml-auto"
+          >
+            + Profil Boya Ekle
+          </AppButton>
+        )}
+      </DialogTrigger>
 
       <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
