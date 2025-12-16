@@ -34,6 +34,8 @@ const PagedSelectDialog = ({
   columns,            // [{ key, label }]
   onSelect,           // (item) => void
   searchPlaceholder,  // string
+  onAddNew,
+  addButtonText,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounced(searchTerm, 300);
@@ -82,7 +84,19 @@ const PagedSelectDialog = ({
       {/* ✅ mobilde taşmaması için max-h ve scroll */}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle>{title}</DialogTitle>
+            {onAddNew && addButtonText && (
+              <AppButton
+                size="sm"
+                variant="yesil"
+                shape="none"
+                onClick={onAddNew}
+              >
+                {addButtonText}
+              </AppButton>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="grid gap-4 overflow-hidden">

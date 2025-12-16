@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import AppButton from "@/components/ui/AppButton";
 
-const DialogDigerMalzemeEkle = ({ onSave, children }) => {
+const DialogDigerMalzemeEkle = ({ onSave, children, open, onOpenChange }) => {
   const [form, setForm] = useState({
     diger_malzeme_isim: '',
     birim: '',
@@ -32,21 +32,23 @@ const DialogDigerMalzemeEkle = ({ onSave, children }) => {
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children ? (
-          children
-        ) : (
-          <AppButton
-            variant="kurumsalmavi"
-            size="mdtxtlg"
-            className="w-full md:w-40 md:ml-auto"
-            title="Yeni malzeme ekle"
-          >
-            + Malzeme Ekle
-          </AppButton>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {!open && !onOpenChange && (
+        <DialogTrigger asChild>
+          {children ? (
+            children
+          ) : (
+            <AppButton
+              variant="kurumsalmavi"
+              size="mdtxtlg"
+              className="w-full md:w-40 md:ml-auto"
+              title="Yeni malzeme ekle"
+            >
+              + Malzeme Ekle
+            </AppButton>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent className="w-[94vw] max-w-md">
         <DialogHeader>
