@@ -39,7 +39,6 @@ const Boyalar = () => {
 
   const profileData = useSelector((s: any) => s.getProfileColorsFromApiReducer) || EMPTY_PAGE;
   const glassData = useSelector((s: any) => s.getGlassColorsFromApiReducer) || EMPTY_PAGE;
-
   const [profileSearch, setProfileSearch] = useState("");
   const [glassSearch, setGlassSearch] = useState("");
 
@@ -52,7 +51,10 @@ const Boyalar = () => {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingGlass, setLoadingGlass] = useState(false);
 
-  const [deletingId, setDeletingId] = useState<number | string | null>(null);
+  /**
+   * UUIDv4 id kullanıldığı için deletingId string olmalı.
+   */
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [defaultOpen, setDefaultOpen] = useState(false);
   const [defaultTarget, setDefaultTarget] = useState<any>(null);
@@ -90,11 +92,15 @@ const Boyalar = () => {
     }
   }, [dispatch, glassPage, glassSearch, glassLimit]);
 
+  /**
+   * Backend contract gereği create + edit işlemlerinde unit_cost her zaman 0 gönderilmeli.
+   * Create tarafında da unit_cost ekliyoruz.
+   */
   const handleAddProfile = useCallback(
     async (data: { name: string }) => {
       setLoadingProfile(true);
       try {
-        await dispatch(addColorToApi({ ...data, type: "profile" }));
+        await dispatch(addColorToApi({ ...data, type: "profile", unit_cost: 0 }));
         await refetchProfiles();
       } finally {
         setLoadingProfile(false);
@@ -103,11 +109,15 @@ const Boyalar = () => {
     [dispatch, refetchProfiles]
   );
 
+  /**
+   * UUIDv4 id kullanıldığı için id: string
+   * PUT body: { name, unit_cost } (type gönderilmez)
+   */
   const handleEditProfile = useCallback(
-    async (data: { id: number; name: string }) => {
+    async (data: { id: string; name: string }) => {
       setLoadingProfile(true);
       try {
-        await dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0, type: "profile" }));
+        await dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0 }));
         await refetchProfiles();
       } finally {
         setLoadingProfile(false);
@@ -120,7 +130,7 @@ const Boyalar = () => {
     async (data: { name: string }) => {
       setLoadingGlass(true);
       try {
-        await dispatch(addColorToApi({ ...data, type: "glass" }));
+        await dispatch(addColorToApi({ ...data, type: "glass", unit_cost: 0 }));
         await refetchGlasses();
       } finally {
         setLoadingGlass(false);
@@ -129,11 +139,17 @@ const Boyalar = () => {
     [dispatch, refetchGlasses]
   );
 
+  /**
+   * UUIDv4 id kullanıldığı için id: string
+   * PUT body: { name, unit_cost } (type gönderilmez)
+   */
   const handleEditGlass = useCallback(
-    async (data: { id: number; name: string }) => {
+    async (data: { id: string; name: string }) => {
       setLoadingGlass(true);
+      console.log({ id: data.id, name: data.name, unit_cost: 0 }, { data });
+
       try {
-        await dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0, type: "glass" }));
+        await dispatch(editColorInApi({ id: data.id, name: data.name, unit_cost: 0 }));
         await refetchGlasses();
       } finally {
         setLoadingGlass(false);
@@ -158,7 +174,8 @@ const Boyalar = () => {
       kind: "profile",
       color,
       onSave: async (payload: any) => {
-        await handleEditProfile({ id: Number(payload.id), name: payload.name });
+        // UUIDv4 -> string; Number(...) dönüşümü kaldırıldı
+        await handleEditProfile({ id: String(payload.id), name: payload.name });
       },
     });
   };
@@ -179,7 +196,8 @@ const Boyalar = () => {
       kind: "glass",
       color,
       onSave: async (payload: any) => {
-        await handleEditGlass({ id: Number(payload.id), name: payload.name });
+        // UUIDv4 -> string; Number(...) dönüşümü kaldırıldı
+        await handleEditGlass({ id: String(payload.id), name: payload.name });
       },
     });
   };
@@ -199,8 +217,9 @@ const Boyalar = () => {
     if (!ok) return;
 
     try {
-      setDeletingId(color.id);
-      await dispatch(deleteColorFromApi(color.id));
+      const id = String(color.id);
+      setDeletingId(id);
+      await dispatch(deleteColorFromApi(id));
       if (kind === "profile") await refetchProfiles();
       else await refetchGlasses();
     } finally {
@@ -217,7 +236,7 @@ const Boyalar = () => {
     if (!defaultTarget) return;
     try {
       setDefaultLoading(true);
-      await dispatch(makeDefaultColorOne(defaultTarget.id));
+      await dispatch(makeDefaultColorOne(String(defaultTarget.id)));
       await refetchGlasses();
       setDefaultOpen(false);
     } finally {
@@ -229,7 +248,7 @@ const Boyalar = () => {
     if (!defaultTarget) return;
     try {
       setDefaultLoading(true);
-      await dispatch(makeDefaultColorTwo(defaultTarget.id));
+      await dispatch(makeDefaultColorTwo(String(defaultTarget.id)));
       await refetchGlasses();
       setDefaultOpen(false);
     } finally {
@@ -312,7 +331,7 @@ const Boyalar = () => {
                   <tbody>
                     {profileData.items?.length > 0 ? (
                       profileData.items.map((color: any) => {
-                        const isDeleting = deletingId === color.id;
+                        const isDeleting = deletingId === String(color.id);
                         return (
                           <tr key={color.id} className="border-b border-gray-500">
                             <td>{color.name}</td>
@@ -347,7 +366,7 @@ const Boyalar = () => {
               <div className="md:hidden flex flex-col gap-3">
                 {profileData.items?.length > 0 ? (
                   profileData.items.map((color: any) => {
-                    const isDeleting = deletingId === color.id;
+                    const isDeleting = deletingId === String(color.id);
                     return (
                       <div key={color.id} className="border border-border rounded-2xl p-4 bg-card shadow-sm flex flex-col gap-3">
                         <div className="text-base font-semibold">{color.name}</div>
@@ -490,7 +509,7 @@ const Boyalar = () => {
                   <tbody>
                     {glassData.items?.length > 0 ? (
                       glassData.items.map((color: any) => {
-                        const isDeleting = deletingId === color.id;
+                        const isDeleting = deletingId === String(color.id);
                         return (
                           <tr key={color.id} className="border-b border-gray-500">
                             <td className="flex items-center gap-1">
@@ -531,7 +550,7 @@ const Boyalar = () => {
               <div className="md:hidden flex flex-col gap-3">
                 {glassData.items?.length > 0 ? (
                   glassData.items.map((color: any) => {
-                    const isDeleting = deletingId === color.id;
+                    const isDeleting = deletingId === String(color.id);
                     return (
                       <div key={color.id} className="border border-border rounded-2xl p-4 bg-card shadow-sm flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-2">
