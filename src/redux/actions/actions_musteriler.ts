@@ -19,7 +19,12 @@ export function getMusterilerFromApi(page = 1, q = "", limit = 5) {
       page: String(page),
       limit: String(limit),
     });
-    if (q) params.append("q", q);
+    if (q) {
+      // Backend'in güncel versiyonu "name" bekliyor.
+      // Eski sürümlerle uyum için "q" de bırakılıyor.
+      params.append("name", q);
+      params.append("q", q);
+    }
 
     const res = await fetchWithAuth(
       `${API_BASE_URL}/customers/?${params.toString()}`,
