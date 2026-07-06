@@ -69,6 +69,12 @@ const SistemTable = ({ systems = [], onRefresh }) => {
     fullName(a).toLowerCase().localeCompare(fullName(b).toLowerCase())
   );
 
+  // Projedeki tüm sistemlerin adet (sistem_adet) toplamı
+  const toplamSistem = sorted.reduce((sum, s) => {
+    const n = Number(s.quantity);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+
   // Satırdaki mevcut R1/R2’yi diyaloga geçirmek için
   const extractInitialColors = (sys) => {
     const g = Array.isArray(sys?.glasses) && sys.glasses.length > 0 ? sys.glasses[0] : null;
@@ -294,6 +300,17 @@ const SistemTable = ({ systems = [], onRefresh }) => {
               </tr>
             )}
           </tbody>
+          {sorted.length > 0 && (
+            <tfoot>
+              <tr className="font-semibold border-t border-border bg-muted/30">
+                <td>Toplam Sistem</td>
+                <td></td>
+                <td></td>
+                <td className="text-right">{toplamSistem}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
@@ -371,6 +388,13 @@ const SistemTable = ({ systems = [], onRefresh }) => {
         ) : (
           <div className="text-center text-muted-foreground py-6 text-sm">
             Sistem bulunamadı
+          </div>
+        )}
+
+        {sorted.length > 0 && (
+          <div className="bg-muted/30 border border-border rounded-xl p-3 flex justify-between items-center font-semibold text-sm">
+            <span>Toplam Sistem</span>
+            <span>{toplamSistem}</span>
           </div>
         )}
       </div>
